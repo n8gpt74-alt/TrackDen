@@ -19,7 +19,6 @@ import { formatMoney } from '../../shared/lib/money';
 import { CloseIcon, ReceiptIcon, SegmentedControl, SparklesIcon, UploadIcon } from '../../shared/ui/premium';
 import { Skeleton } from '../../shared/ui/Skeleton';
 
-
 type ComposerState = {
   amount: string;
   type: TransactionType;
@@ -99,6 +98,7 @@ export function FinanceActionSheet() {
   const createMutation = useCreateTransactionMutation();
   const updateMutation = useUpdateTransactionMutation();
   const uploadMutation = useUploadReceiptMutation();
+  const isTransactionMode = mode === 'add' || mode === 'ocr' || mode === 'edit';
 
   const [form, setForm] = useState<ComposerState>(DEFAULT_FORM);
   const [detailsOpen, setDetailsOpen] = useState(false);
@@ -110,7 +110,7 @@ export function FinanceActionSheet() {
   const categories = sessionQuery.data?.categories ?? [];
 
   useEffect(() => {
-    if (!isOpen || mode === 'edit') {
+    if (!isOpen || !isTransactionMode || mode === 'edit') {
       return;
     }
 
@@ -127,10 +127,10 @@ export function FinanceActionSheet() {
     setDetailsOpen(false);
     setReceiptId(null);
     setOcrHydrated(false);
-  }, [isOpen, mode]);
+  }, [isOpen, isTransactionMode, mode]);
 
   useEffect(() => {
-    if (mode !== 'edit' || !transactionQuery.data) {
+    if (!isTransactionMode || mode !== 'edit' || !transactionQuery.data) {
       return;
     }
 
@@ -138,10 +138,10 @@ export function FinanceActionSheet() {
     setDetailsOpen(Boolean(transactionQuery.data.description || transactionQuery.data.merchant || transactionQuery.data.receipt_id));
     setReceiptId(transactionQuery.data.receipt_id ?? null);
     setOcrHydrated(Boolean(transactionQuery.data.receipt_id));
-  }, [mode, transactionQuery.data]);
+  }, [isTransactionMode, mode, transactionQuery.data]);
 
   useEffect(() => {
-    if (!isOpen || mode === 'edit') {
+    if (!isOpen || !isTransactionMode || mode === 'edit') {
       return;
     }
 
@@ -150,10 +150,10 @@ export function FinanceActionSheet() {
       detailsOpen,
       receiptId,
     });
-  }, [detailsOpen, form, isOpen, mode, receiptId]);
+  }, [detailsOpen, form, isOpen, isTransactionMode, mode, receiptId]);
 
   useEffect(() => {
-    if (mode !== 'ocr' || !receipt || receipt.status !== 'processed' || ocrHydrated) {
+    if (!isTransactionMode || mode !== 'ocr' || !receipt || receipt.status !== 'processed' || ocrHydrated) {
       return;
     }
 
@@ -167,10 +167,10 @@ export function FinanceActionSheet() {
     }));
     setDetailsOpen(true);
     setOcrHydrated(true);
-  }, [mode, ocrHydrated, receipt]);
+  }, [isTransactionMode, mode, ocrHydrated, receipt]);
 
   const isBusy = createMutation.isPending || updateMutation.isPending;
-  const canSubmit = Number(form.amount) > 0 && Boolean(mode);
+  const canSubmit = Number(form.amount) > 0 && isTransactionMode;
   const headerTitle = mode === 'edit' ? 'Редактировать операцию' : mode === 'ocr' ? 'Добавить по чеку' : 'Быстрое добавление';
   const headerSubtitle = mode === 'edit' ? 'Измените сумму, категорию и детали' : mode === 'ocr' ? 'Сначала загрузите чек, потом подтвердите данные' : 'Сумма, категория и одно нажатие на сохранение';
 
@@ -185,6 +185,7 @@ export function FinanceActionSheet() {
       queryClient.invalidateQueries({ queryKey: ['transactions'] }),
       queryClient.invalidateQueries({ queryKey: ['analytics'] }),
       queryClient.invalidateQueries({ queryKey: ['transaction'] }),
+      queryClient.invalidateQueries({ queryKey: ['budgets'] }),
     ]);
   };
 
@@ -206,7 +207,7 @@ export function FinanceActionSheet() {
   };
 
   const handleSubmit = async () => {
-    if (!canSubmit || !mode) {
+    if (!canSubmit || !mode || !isTransactionMode) {
       return;
     }
 
@@ -233,13 +234,13 @@ export function FinanceActionSheet() {
   };
 
   const handleClose = () => {
-    if (mode !== 'edit') {
+    if (isTransactionMode && mode !== 'edit') {
       writeDraft({ form, detailsOpen, receiptId });
     }
     closeSheet();
   };
 
-  if (!isOpen || !mode) {
+  if (!isOpen || !mode || !isTransactionMode) {
     return null;
   }
 
@@ -405,7 +406,7 @@ export function FinanceActionSheet() {
           <button className="sheet-secondary-button" onClick={handleClose} type="button">
             Отмена
           </button>
-          <button className="sheet-primary-button" disabled={!canSubmit || isBusy} onClick={handleSubmit} type="button">
+          <button className="sheet-primary-button" disabled={!canSubmit || isBusy} onClick={() => void handleSubmit()} type="button">
             {isBusy ? 'Сохраняем…' : mode === 'edit' ? 'Обновить' : 'Сохранить'}
           </button>
         </div>
@@ -413,5 +414,3 @@ export function FinanceActionSheet() {
     </div>
   );
 }
-
-

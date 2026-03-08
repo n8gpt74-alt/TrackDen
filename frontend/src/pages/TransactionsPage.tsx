@@ -33,6 +33,7 @@ export function TransactionsPage() {
     await Promise.all([
       queryClient.invalidateQueries({ queryKey: ['transactions'] }),
       queryClient.invalidateQueries({ queryKey: ['analytics'] }),
+      queryClient.invalidateQueries({ queryKey: ['budgets'] }),
     ]);
   };
 
@@ -165,3 +166,4 @@ export function TransactionsPage() {
     </div>
   );
 }
+

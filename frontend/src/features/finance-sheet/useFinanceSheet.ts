@@ -1,8 +1,8 @@
-﻿import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 
-export type FinanceSheetMode = 'add' | 'ocr' | 'edit';
+export type FinanceSheetMode = 'add' | 'ocr' | 'edit' | 'budget';
 
-const SHEET_MODES = new Set<FinanceSheetMode>(['add', 'ocr', 'edit']);
+const SHEET_MODES = new Set<FinanceSheetMode>(['add', 'ocr', 'edit', 'budget']);
 
 export function useFinanceSheet() {
   const location = useLocation();

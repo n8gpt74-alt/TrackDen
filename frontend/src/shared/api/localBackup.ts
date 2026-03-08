@@ -1,4 +1,5 @@
-import type { Category } from '../../features/auth/api';
+п»їimport type { Category } from '../../features/auth/api';
+import { normalizeBudgetConfig, type BudgetConfig } from '../../features/budgets/model';
 import { FINANCE_SHEET_DRAFT_STORAGE_KEY } from '../../features/finance-sheet/constants';
 import type { Receipt } from '../../features/receipts/api';
 import { ApiError } from './errors';
@@ -33,6 +34,7 @@ export type LocalWorkspaceSummary = {
   receipts: number;
   categories: number;
   custom_categories: number;
+  budget_limits: number;
 };
 
 function getStorage() {
@@ -104,7 +106,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 function readString(value: unknown, field: string) {
   if (typeof value !== 'string') {
-    invalidBackup(`Поле ${field} имеет неверный формат.`);
+    invalidBackup(`РџРѕР»Рµ ${field} РёРјРµРµС‚ РЅРµРІРµСЂРЅС‹Р№ С„РѕСЂРјР°С‚.`);
   }
 
   return value;
@@ -116,7 +118,7 @@ function readOptionalString(value: unknown, field: string) {
   }
 
   if (typeof value !== 'string') {
-    invalidBackup(`Поле ${field} имеет неверный формат.`);
+    invalidBackup(`РџРѕР»Рµ ${field} РёРјРµРµС‚ РЅРµРІРµСЂРЅС‹Р№ С„РѕСЂРјР°С‚.`);
   }
 
   return value;
@@ -128,7 +130,7 @@ function readOptionalNumber(value: unknown, field: string) {
   }
 
   if (typeof value !== 'number' || !Number.isFinite(value)) {
-    invalidBackup(`Поле ${field} имеет неверный формат.`);
+    invalidBackup(`РџРѕР»Рµ ${field} РёРјРµРµС‚ РЅРµРІРµСЂРЅС‹Р№ С„РѕСЂРјР°С‚.`);
   }
 
   return value;
@@ -136,7 +138,7 @@ function readOptionalNumber(value: unknown, field: string) {
 
 function readBoolean(value: unknown, field: string) {
   if (typeof value !== 'boolean') {
-    invalidBackup(`Поле ${field} имеет неверный формат.`);
+    invalidBackup(`РџРѕР»Рµ ${field} РёРјРµРµС‚ РЅРµРІРµСЂРЅС‹Р№ С„РѕСЂРјР°С‚.`);
   }
 
   return value;
@@ -144,7 +146,7 @@ function readBoolean(value: unknown, field: string) {
 
 function readEnum<T extends string>(value: unknown, field: string, allowed: readonly T[]) {
   if (typeof value !== 'string' || !allowed.includes(value as T)) {
-    invalidBackup(`Поле ${field} имеет неподдерживаемое значение.`);
+    invalidBackup(`РџРѕР»Рµ ${field} РёРјРµРµС‚ РЅРµРїРѕРґРґРµСЂР¶РёРІР°РµРјРѕРµ Р·РЅР°С‡РµРЅРёРµ.`);
   }
 
   return value as T;
@@ -152,7 +154,7 @@ function readEnum<T extends string>(value: unknown, field: string, allowed: read
 
 function readObject(value: unknown, field: string) {
   if (!isRecord(value)) {
-    invalidBackup(`Поле ${field} имеет неверный формат.`);
+    invalidBackup(`РџРѕР»Рµ ${field} РёРјРµРµС‚ РЅРµРІРµСЂРЅС‹Р№ С„РѕСЂРјР°С‚.`);
   }
 
   return value;
@@ -160,7 +162,7 @@ function readObject(value: unknown, field: string) {
 
 function readArray(value: unknown, field: string) {
   if (!Array.isArray(value)) {
-    invalidBackup(`Поле ${field} имеет неверный формат.`);
+    invalidBackup(`РџРѕР»Рµ ${field} РёРјРµРµС‚ РЅРµРІРµСЂРЅС‹Р№ С„РѕСЂРјР°С‚.`);
   }
 
   return value;
@@ -183,7 +185,7 @@ function validateReceipt(value: unknown): Receipt {
   const rawOcr = record.ocr_raw;
 
   if (!(rawOcr == null || isRecord(rawOcr))) {
-    invalidBackup('Поле workspace.receipts[].ocr_raw имеет неверный формат.');
+    invalidBackup('РџРѕР»Рµ workspace.receipts[].ocr_raw РёРјРµРµС‚ РЅРµРІРµСЂРЅС‹Р№ С„РѕСЂРјР°С‚.');
   }
 
   return {
@@ -209,7 +211,7 @@ function validateStoredTransaction(value: unknown): StoredTransaction {
   const amount = readOptionalNumber(record.amount, 'workspace.transactions[].amount');
 
   if (amount == null || amount < 0) {
-    invalidBackup('Поле workspace.transactions[].amount имеет неверный формат.');
+    invalidBackup('РџРѕР»Рµ workspace.transactions[].amount РёРјРµРµС‚ РЅРµРІРµСЂРЅС‹Р№ С„РѕСЂРјР°С‚.');
   }
 
   return {
@@ -229,18 +231,49 @@ function validateStoredTransaction(value: unknown): StoredTransaction {
   };
 }
 
+function validateBudgetConfig(value: unknown, categories: Category[]): BudgetConfig {
+  if (value == null) {
+    return normalizeBudgetConfig(null, categories);
+  }
+
+  const record = readObject(value, 'workspace.budgets');
+  const rawCategories = Array.isArray(record.categories)
+    ? record.categories.map((item) => {
+        const rawItem = readObject(item, 'workspace.budgets.categories[]');
+        return {
+          category_id: readString(rawItem.category_id, 'workspace.budgets.categories[].category_id'),
+          amount: readOptionalNumber(rawItem.amount, 'workspace.budgets.categories[].amount') ?? 0,
+          enabled: readBoolean(rawItem.enabled, 'workspace.budgets.categories[].enabled'),
+        };
+      })
+    : [];
+
+  return normalizeBudgetConfig(
+    {
+      overall_enabled: readBoolean(record.overall_enabled ?? false, 'workspace.budgets.overall_enabled'),
+      overall_amount: readOptionalNumber(record.overall_amount, 'workspace.budgets.overall_amount'),
+      updated_at: readOptionalString(record.updated_at, 'workspace.budgets.updated_at'),
+      categories: rawCategories,
+    },
+    categories,
+  );
+}
+
 function validateWorkspace(value: unknown): WorkspaceState {
   const record = readObject(value, 'workspace');
 
   if (typeof record.version !== 'number' || !Number.isFinite(record.version)) {
-    invalidBackup('Поле workspace.version имеет неверный формат.');
+    invalidBackup('РџРѕР»Рµ workspace.version РёРјРµРµС‚ РЅРµРІРµСЂРЅС‹Р№ С„РѕСЂРјР°С‚.');
   }
+
+  const categories = readArray(record.categories, 'workspace.categories').map(validateCategory);
 
   return {
     version: record.version,
-    categories: readArray(record.categories, 'workspace.categories').map(validateCategory),
+    categories,
     receipts: readArray(record.receipts, 'workspace.receipts').map(validateReceipt),
     transactions: readArray(record.transactions, 'workspace.transactions').map(validateStoredTransaction),
+    budgets: validateBudgetConfig(record.budgets, categories),
   };
 }
 
@@ -260,11 +293,15 @@ function buildFileName(exportedAt: string) {
 }
 
 export function summarizeWorkspace(workspace: WorkspaceState): LocalWorkspaceSummary {
+  const budgetLimits = workspace.budgets.categories.filter((category) => category.enabled && category.amount > 0).length
+    + (workspace.budgets.overall_enabled && (workspace.budgets.overall_amount ?? 0) > 0 ? 1 : 0);
+
   return {
     transactions: workspace.transactions.length,
     receipts: workspace.receipts.length,
     categories: workspace.categories.length,
     custom_categories: workspace.categories.filter((category) => !category.is_system).length,
+    budget_limits: budgetLimits,
   };
 }
 
@@ -304,14 +341,14 @@ export function exportWorkspace(initDataRaw?: string) {
 
 export async function parseBackupFile(file: File) {
   if (!file.name.toLowerCase().endsWith('.json')) {
-    invalidBackup('Нужен файл резервной копии в формате .json.');
+    invalidBackup('РќСѓР¶РµРЅ С„Р°Р№Р» СЂРµР·РµСЂРІРЅРѕР№ РєРѕРїРёРё РІ С„РѕСЂРјР°С‚Рµ .json.');
   }
 
   let parsed: unknown;
   try {
     parsed = JSON.parse(await file.text());
   } catch {
-    invalidBackup('Не удалось прочитать JSON-файл резервной копии.');
+    invalidBackup('РќРµ СѓРґР°Р»РѕСЃСЊ РїСЂРѕС‡РёС‚Р°С‚СЊ JSON-С„Р°Р№Р» СЂРµР·РµСЂРІРЅРѕР№ РєРѕРїРёРё.');
   }
 
   return validateBackup(parsed);
@@ -323,11 +360,11 @@ export function validateBackup(value: unknown): LocalBackupFileV1 {
   const version = record.version;
 
   if (record.format !== BACKUP_FORMAT) {
-    invalidBackup('Этот файл не похож на резервную копию TrackDen.');
+    invalidBackup('Р­С‚РѕС‚ С„Р°Р№Р» РЅРµ РїРѕС…РѕР¶ РЅР° СЂРµР·РµСЂРІРЅСѓСЋ РєРѕРїРёСЋ TrackDen.');
   }
 
   if (version !== BACKUP_VERSION) {
-    invalidBackup(`Версия backup ${String(version)} не поддерживается этой сборкой.`);
+    invalidBackup(`Р’РµСЂСЃРёСЏ backup ${String(version)} РЅРµ РїРѕРґРґРµСЂР¶РёРІР°РµС‚СЃСЏ СЌС‚РѕР№ СЃР±РѕСЂРєРѕР№.`);
   }
 
   return {
@@ -368,3 +405,5 @@ export function clearWorkspace(initDataRaw?: string) {
     currentSummary: summarizeWorkspace(currentWorkspace),
   };
 }
+
+

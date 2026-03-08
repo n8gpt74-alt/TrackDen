@@ -4,8 +4,11 @@ import { useNavigate } from 'react-router-dom';
 
 import { useOverviewQuery } from '../features/analytics/api';
 import { useSessionQuery } from '../features/auth/api';
+import { useBudgetOverviewQuery } from '../features/budgets/api';
+import type { BudgetOverview, BudgetStatus } from '../features/budgets/model';
 import { useFinanceSheet } from '../features/finance-sheet/useFinanceSheet';
 import { useTransactionsQuery } from '../features/transactions/api';
+import { isLocalDataMode } from '../shared/api/mode';
 import { currentMonthKey } from '../shared/lib/date';
 import { buildRecurringPreview, calculateAverageTicket, calculateRecentTrend } from '../shared/lib/finance';
 import { formatCompactMoney, formatMoney, formatSignedPercent } from '../shared/lib/money';
@@ -35,15 +38,79 @@ function buildHeroBars(values: number[]) {
   }));
 }
 
+function getBudgetTone(status: BudgetStatus) {
+  switch (status) {
+    case 'exceeded':
+      return {
+        label: 'Перелимит',
+        badgeClass: 'border-red-400/20 bg-red-400/10 text-red-100',
+        fill: '#ff7d7d',
+        textClass: 'text-[var(--app-danger)]',
+      };
+    case 'warning':
+      return {
+        label: 'Порог 80%',
+        badgeClass: 'border-amber-400/20 bg-amber-400/10 text-amber-100',
+        fill: '#f59e0b',
+        textClass: 'text-amber-200',
+      };
+    case 'normal':
+      return {
+        label: 'В норме',
+        badgeClass: 'border-emerald-400/20 bg-emerald-400/10 text-emerald-100',
+        fill: '#2fd39a',
+        textClass: 'text-[var(--app-success)]',
+      };
+    default:
+      return {
+        label: 'Не настроено',
+        badgeClass: 'border-[var(--app-stroke)] bg-white/[0.03] text-[var(--app-muted)]',
+        fill: '#6f6bff',
+        textClass: 'text-[var(--app-muted)]',
+      };
+  }
+}
+
+function resolveBudgetState(overview: BudgetOverview | undefined | null): BudgetStatus {
+  if (!overview || overview.configured_count === 0) {
+    return 'inactive';
+  }
+
+  if (overview.overall.status === 'exceeded' || overview.exceeded_count > 0) {
+    return 'exceeded';
+  }
+
+  if (overview.overall.status === 'warning' || overview.warning_count > 0) {
+    return 'warning';
+  }
+
+  return overview.overall.enabled || overview.categories.length > 0 ? 'normal' : 'inactive';
+}
+
+function formatBudgetBalance(overview: BudgetOverview) {
+  if (!overview.overall.enabled || overview.overall.remaining == null) {
+    return 'Общий лимит не задан';
+  }
+
+  if (overview.overall.remaining >= 0) {
+    return `Осталось ${formatMoney(overview.overall.remaining)}`;
+  }
+
+  return `Перерасход ${formatMoney(Math.abs(overview.overall.remaining))}`;
+}
+
 export function DashboardPage() {
   const navigate = useNavigate();
   const month = currentMonthKey();
+  const localMode = isLocalDataMode();
   const sessionQuery = useSessionQuery();
   const overviewQuery = useOverviewQuery(month);
+  const budgetOverviewQuery = useBudgetOverviewQuery(month);
   const transactionsQuery = useTransactionsQuery(month, 12);
   const { openSheet } = useFinanceSheet();
 
   const overview = overviewQuery.data;
+  const budgetOverview = localMode ? budgetOverviewQuery.data : null;
   const transactions = transactionsQuery.data?.items ?? [];
   const user = sessionQuery.data?.user;
 
@@ -70,6 +137,12 @@ export function DashboardPage() {
       dayBudget: available / daysLeft,
     };
   }, [overview, transactions]);
+
+  const budgetState = resolveBudgetState(budgetOverview);
+  const budgetTone = getBudgetTone(budgetState);
+  const budgetProgress = budgetOverview?.overall.enabled
+    ? budgetOverview.overall
+    : budgetOverview?.highlighted[0] ?? null;
 
   const firstName = user?.first_name?.trim() || 'друг';
   const balance = overview?.balance ?? 0;
@@ -150,6 +223,89 @@ export function DashboardPage() {
           </div>
         </section>
       )}
+
+      {localMode ? (
+        budgetOverviewQuery.isLoading ? (
+          <Skeleton className="h-[224px] w-full rounded-[28px]" />
+        ) : (
+          <section className="premium-card rounded-[28px] p-5">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="soft-kicker">Budget control</p>
+                <h2 className="mt-1 text-xl font-semibold text-white">Лимиты месяца</h2>
+              </div>
+              <button className="rounded-full border border-[var(--app-stroke)] bg-white/[0.03] px-3 py-2 text-xs font-medium uppercase tracking-[0.18em] text-[var(--app-muted)]" onClick={() => openSheet('budget')} type="button">
+                Настроить
+              </button>
+            </div>
+
+            {!budgetOverview || budgetOverview.configured_count === 0 ? (
+              <div className="mt-4 rounded-[24px] border border-dashed border-[var(--app-stroke)] bg-white/[0.02] p-4">
+                <p className="text-base font-medium text-white">Пока без лимитов</p>
+                <p className="mt-2 text-sm leading-6 text-[var(--app-muted)]">Задай общий бюджет или потолки по категориям — и мы сразу покажем, где появляется давление на месяц.</p>
+                <button className="sheet-primary-button mt-4 w-full" onClick={() => openSheet('budget')} type="button">
+                  Настроить бюджеты
+                </button>
+              </div>
+            ) : (
+              <>
+                <div className="mt-4 flex items-start justify-between gap-4">
+                  <div>
+                    <p className="text-sm text-[var(--app-muted)]">{budgetOverview.overall.enabled ? 'Потрачено от общего лимита' : 'Под контролем категорий'}</p>
+                    <p className="mt-2 text-[30px] font-semibold tracking-[-0.04em] text-white">
+                      {budgetOverview.overall.enabled ? formatMoney(budgetOverview.overall.spent) : `${budgetOverview.categories.length}`}
+                    </p>
+                    <p className={clsx('mt-2 text-sm', budgetTone.textClass)}>{formatBudgetBalance(budgetOverview)}</p>
+                  </div>
+                  <div className={clsx('rounded-full border px-3 py-2 text-xs font-semibold uppercase tracking-[0.18em]', budgetTone.badgeClass)}>
+                    {budgetTone.label}
+                  </div>
+                </div>
+
+                <div className="mt-4 h-3 overflow-hidden rounded-full bg-white/[0.05]">
+                  <div
+                    className="h-full rounded-full transition-all"
+                    style={{
+                      width: `${Math.max(8, Math.min(100, Math.round((budgetProgress?.ratio ?? 0) * 100)))}%`,
+                      background: budgetTone.fill,
+                      opacity: budgetProgress ? 1 : 0.3,
+                    }}
+                  />
+                </div>
+
+                <div className="mt-3 flex items-center justify-between gap-3 text-sm text-[var(--app-muted)]">
+                  <span>
+                    {budgetOverview.overall.enabled && budgetOverview.overall.limit
+                      ? `Лимит ${formatMoney(budgetOverview.overall.limit)}`
+                      : `${budgetOverview.categories.length} категорий с лимитами`}
+                  </span>
+                  <span>{budgetOverview.exceeded_count > 0 ? `${budgetOverview.exceeded_count} в красной зоне` : `${budgetOverview.warning_count} близко к лимиту`}</span>
+                </div>
+
+                {budgetOverview.highlighted.length > 0 ? (
+                  <div className="mt-4 grid grid-cols-3 gap-3">
+                    {budgetOverview.highlighted.map((item) => {
+                      const tone = getBudgetTone(item.status);
+                      return (
+                        <div key={item.category_id} className="rounded-[22px] border border-[var(--app-stroke)] bg-[#0c1018] p-3">
+                          <div className="flex items-center justify-between gap-2">
+                            <p className="truncate text-sm font-medium text-white">{item.category_name}</p>
+                            <span className={clsx('rounded-full px-2 py-1 text-[10px] uppercase tracking-[0.16em]', tone.badgeClass)}>
+                              {Math.round(item.ratio * 100)}%
+                            </span>
+                          </div>
+                          <p className="mt-3 text-sm font-semibold text-white">{formatCompactMoney(item.spent)}</p>
+                          <p className="mt-1 text-xs text-[var(--app-muted)]">из {formatCompactMoney(item.limit ?? 0)}</p>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : null}
+              </>
+            )}
+          </section>
+        )
+      ) : null}
 
       <section className="grid grid-cols-2 gap-3">
         {overviewQuery.isLoading ? (
@@ -277,6 +433,3 @@ export function DashboardPage() {
     </div>
   );
 }
-
-
-

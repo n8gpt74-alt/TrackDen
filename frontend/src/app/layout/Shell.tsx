@@ -1,15 +1,16 @@
-п»їimport clsx from 'clsx';
+import clsx from 'clsx';
 import { App as KonstaApp, KonstaProvider } from 'konsta/react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 
+import { BudgetActionSheet } from '../../features/budgets/BudgetActionSheet';
 import { FinanceActionSheet } from '../../features/finance-sheet/FinanceActionSheet';
 import { useFinanceSheet } from '../../features/finance-sheet/useFinanceSheet';
 import { ActivityIcon, ChartIcon, HomeIcon, PlusIcon } from '../../shared/ui/premium';
 
 const NAV_ITEMS = [
-  { path: '/dashboard', label: 'Р“Р»Р°РІРЅР°СЏ', icon: HomeIcon },
-  { path: '/insights', label: 'РЎС‚Р°С‚РёСЃС‚РёРєР°', icon: ChartIcon },
-  { path: '/transactions', label: 'РСЃС‚РѕСЂРёСЏ', icon: ActivityIcon },
+  { path: '/dashboard', label: 'Главная', icon: HomeIcon },
+  { path: '/insights', label: 'Статистика', icon: ChartIcon },
+  { path: '/transactions', label: 'История', icon: ActivityIcon },
 ] as const;
 
 export function Shell() {
@@ -28,7 +29,7 @@ export function Shell() {
           <button className="premium-fab" onClick={() => openSheet('add')} type="button">
             <PlusIcon size={24} strokeWidth={2.2} />
           </button>
-          <nav className="premium-nav" aria-label="РћСЃРЅРѕРІРЅР°СЏ РЅР°РІРёРіР°С†РёСЏ">
+          <nav className="premium-nav" aria-label="Основная навигация">
             {NAV_ITEMS.map((item) => {
               const isActive = location.pathname === item.path;
               const Icon = item.icon;
@@ -49,6 +50,7 @@ export function Shell() {
         </div>
 
         <FinanceActionSheet />
+        <BudgetActionSheet />
       </KonstaApp>
     </KonstaProvider>
   );

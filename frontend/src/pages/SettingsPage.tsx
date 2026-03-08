@@ -5,9 +5,17 @@ import { useNavigate } from 'react-router-dom';
 
 import { useInitData } from '../features/auth/useInitData';
 import { ApiError } from '../shared/api/errors';
-import { clearWorkspace, exportWorkspace, getWorkspaceSummary, parseBackupFile, restoreWorkspace, summarizeWorkspace, type LocalBackupFileV1 } from '../shared/api/localBackup';
-import { isLocalDataMode } from '../shared/api/mode';
+import {
+  clearWorkspace,
+  exportWorkspace,
+  getWorkspaceSummary,
+  parseBackupFile,
+  restoreWorkspace,
+  summarizeWorkspace,
+  type LocalBackupFileV1,
+} from '../shared/api/localBackup';
 import { getLocalWorkspaceContext } from '../shared/api/localApi';
+import { isLocalDataMode } from '../shared/api/mode';
 import { formatDateTimeLabel } from '../shared/lib/date';
 import { AlertTriangleIcon, ChevronLeftIcon, DownloadIcon, IconCircleButton, SettingsIcon, TrashIcon, UploadIcon } from '../shared/ui/premium';
 
@@ -58,7 +66,8 @@ export function SettingsPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement | null>(null);
-  const initDataRaw = useInitData();  const [notice, setNotice] = useState<NoticeState | null>(null);
+  const initDataRaw = useInitData();
+  const [notice, setNotice] = useState<NoticeState | null>(null);
   const [summaryVersion, setSummaryVersion] = useState(0);
   const [preview, setPreview] = useState<BackupPreviewState | null>(null);
   const [ownerConfirmed, setOwnerConfirmed] = useState(false);
@@ -70,8 +79,13 @@ export function SettingsPage() {
   const storageSnapshot = useMemo(() => (localMode ? getWorkspaceSummary(initDataRaw) : null), [initDataRaw, localMode, summaryVersion]);
   const summary = storageSnapshot?.summary;
   const previewSummary = preview ? summarizeWorkspace(preview.backup.workspace) : null;
-  const currentTelegramId = useMemo(() => (localMode ? getLocalWorkspaceContext(initDataRaw).principal.user.telegram_id ?? null : null), [initDataRaw, localMode]);
-  const ownerMismatch = Boolean(preview && preview.backup.owner.telegram_id != null && currentTelegramId != null && preview.backup.owner.telegram_id !== currentTelegramId);
+  const currentTelegramId = useMemo(
+    () => (localMode ? getLocalWorkspaceContext(initDataRaw).principal.user.telegram_id ?? null : null),
+    [initDataRaw, localMode],
+  );
+  const ownerMismatch = Boolean(
+    preview && preview.backup.owner.telegram_id != null && currentTelegramId != null && preview.backup.owner.telegram_id !== currentTelegramId,
+  );
 
   const invalidateFinanceQueries = async () => {
     await Promise.all([
@@ -80,6 +94,7 @@ export function SettingsPage() {
       queryClient.invalidateQueries({ queryKey: ['transaction'] }),
       queryClient.invalidateQueries({ queryKey: ['receipt'] }),
       queryClient.invalidateQueries({ queryKey: ['analytics'] }),
+      queryClient.invalidateQueries({ queryKey: ['budgets'] }),
     ]);
   };
 
@@ -146,7 +161,7 @@ export function SettingsPage() {
       setClearArmed(false);
       setNotice({
         tone: 'success',
-        message: 'Локальные данные полностью восстановлены из backup.',
+        message: 'Локальные данные, OCR metadata и лимиты полностью восстановлены из backup.',
       });
     } catch (error) {
       setNotice({
@@ -175,7 +190,7 @@ export function SettingsPage() {
       setClearArmed(false);
       setNotice({
         tone: 'success',
-        message: `Локальные данные очищены: ${result.deletedSummary.transactions} операций и ${result.deletedSummary.receipts} чеков удалено.`,
+        message: `Локальные данные очищены: ${result.deletedSummary.transactions} операций, ${result.deletedSummary.receipts} чеков и ${result.deletedSummary.budget_limits} лимитов удалено.`,
       });
     } catch (error) {
       setNotice({
@@ -202,7 +217,7 @@ export function SettingsPage() {
         <p className="soft-kicker">Local vault</p>
         <h1 className="mt-2 text-[32px] font-semibold leading-[1.04] tracking-[-0.05em] text-white">Резервные копии и восстановление</h1>
         <p className="mt-3 max-w-[310px] text-sm leading-6 text-[var(--app-muted)]">
-          TrackDen хранит данные локально на устройстве. Здесь можно экспортировать JSON backup, восстановить его или полностью очистить локальный профиль.
+          TrackDen хранит данные локально на устройстве. Здесь можно экспортировать JSON backup, восстановить его или полностью очистить локальный профиль вместе с лимитами месяца.
         </p>
 
         {!localMode ? (
@@ -214,7 +229,7 @@ export function SettingsPage() {
             <div className="mt-5 grid grid-cols-3 gap-3">
               <MetricCard hint="Всего локально" label="Операции" value={String(summary?.transactions ?? 0)} />
               <MetricCard hint="OCR и metadata" label="Чеки" value={String(summary?.receipts ?? 0)} />
-              <MetricCard hint="Системные + свои" label="Категории" value={String(summary?.categories ?? 0)} />
+              <MetricCard hint="Активные лимиты" label="Бюджеты" value={String(summary?.budget_limits ?? 0)} />
             </div>
 
             <div className="mt-4 rounded-[24px] border border-[var(--app-stroke)] bg-white/[0.03] p-4">
@@ -251,7 +266,7 @@ export function SettingsPage() {
           </div>
         </div>
         <p className="mt-3 text-sm leading-6 text-[var(--app-muted)]">
-          Файл содержит чувствительные финансовые данные: операции, категории и OCR metadata чеков. Храни его там, где тебе комфортно.
+          Файл содержит чувствительные финансовые данные: операции, категории, OCR metadata чеков и шаблоны месячных лимитов. Храни его там, где тебе комфортно.
         </p>
         <button className="sheet-primary-button mt-5 w-full" disabled={!localMode} onClick={handleExport} type="button">
           Экспортировать JSON
@@ -269,7 +284,7 @@ export function SettingsPage() {
           </div>
         </div>
         <p className="mt-3 text-sm leading-6 text-[var(--app-muted)]">
-          Импорт полностью заменит текущие локальные данные этого профиля. Перед подтверждением покажем, что лежит внутри файла.
+          Импорт полностью заменит текущие локальные данные этого профиля. Перед подтверждением покажем владельца backup, объём данных и проверим совпадение Telegram-аккаунта.
         </p>
 
         <input accept=".json,application/json" className="hidden" onChange={handleFilePick} ref={fileInputRef} type="file" />
@@ -283,9 +298,7 @@ export function SettingsPage() {
             <div className="flex items-start justify-between gap-3">
               <div>
                 <p className="text-sm font-medium text-white">{preview.fileName}</p>
-                <p className="mt-1 text-sm text-[var(--app-muted)]">
-                  Экспорт: {formatDateTimeLabel(preview.backup.exported_at)}
-                </p>
+                <p className="mt-1 text-sm text-[var(--app-muted)]">Экспорт: {formatDateTimeLabel(preview.backup.exported_at)}</p>
               </div>
               <div className="rounded-full border border-[var(--app-stroke)] bg-white/[0.03] px-3 py-2 text-xs uppercase tracking-[0.18em] text-[var(--app-muted)]">
                 v{preview.backup.version}
@@ -305,7 +318,7 @@ export function SettingsPage() {
             <div className="grid grid-cols-3 gap-3">
               <MetricCard hint="Будут заменены" label="Операции" value={String(previewSummary?.transactions ?? 0)} />
               <MetricCard hint="OCR metadata" label="Чеки" value={String(previewSummary?.receipts ?? 0)} />
-              <MetricCard hint="Всего в backup" label="Категории" value={String(previewSummary?.categories ?? 0)} />
+              <MetricCard hint="Лимиты внутри backup" label="Бюджеты" value={String(previewSummary?.budget_limits ?? 0)} />
             </div>
 
             {ownerMismatch ? (
@@ -355,7 +368,7 @@ export function SettingsPage() {
         </div>
         <>
           <p className="mt-3 text-sm leading-6 text-[var(--app-muted)]">
-            Будут удалены {summary?.transactions ?? 0} операций, {summary?.receipts ?? 0} чеков и {summary?.custom_categories ?? 0} пользовательских категорий. Системные категории останутся и создадутся заново.
+            Будут удалены {summary?.transactions ?? 0} операций, {summary?.receipts ?? 0} чеков, {summary?.budget_limits ?? 0} лимитов и {summary?.custom_categories ?? 0} пользовательских категорий. Системные категории останутся и создадутся заново.
           </p>
 
           {clearArmed ? (
@@ -389,7 +402,3 @@ export function SettingsPage() {
     </div>
   );
 }
-
-
-
-

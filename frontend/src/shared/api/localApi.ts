@@ -1,9 +1,10 @@
-import { ApiError } from './errors';
+п»їimport { ApiError } from './errors';
 
 import type { AnalyticsOverviewResponse, CategorySpendPoint, DailySpendPoint } from '../../features/analytics/api';
 import type { Category, SessionResponse, UserSession } from '../../features/auth/api';
 import type { Receipt } from '../../features/receipts/api';
 import type { Transaction, TransactionPayload, TransactionType } from '../../features/transactions/api';
+import { BUDGET_WORKSPACE_VERSION, createEmptyBudgetConfig, normalizeBudgetConfig, type BudgetConfig } from '../../features/budgets/model';
 
 type RequestOptions = {
   body?: BodyInit | FormData | Record<string, unknown> | null;
@@ -20,6 +21,7 @@ export type WorkspaceState = {
   categories: Category[];
   receipts: Receipt[];
   transactions: StoredTransaction[];
+  budgets: BudgetConfig;
 };
 
 export type LocalPrincipal = {
@@ -34,26 +36,26 @@ const LOCAL_ORIGIN = 'https://trackden.local';
 const memoryFallback = new Map<string, string>();
 
 const SEEDED_CATEGORIES: Category[] = [
-  { id: 'system-products', name: 'Продукты', icon: 'cart', color: '#22c55e', is_system: true },
-  { id: 'system-transport', name: 'Транспорт', icon: 'car', color: '#3b82f6', is_system: true },
-  { id: 'system-cafe', name: 'Кафе', icon: 'cup', color: '#f59e0b', is_system: true },
-  { id: 'system-home', name: 'Дом', icon: 'house', color: '#8b5cf6', is_system: true },
-  { id: 'system-health', name: 'Здоровье', icon: 'heart', color: '#ef4444', is_system: true },
-  { id: 'system-fun', name: 'Развлечения', icon: 'game', color: '#ec4899', is_system: true },
-  { id: 'system-subscriptions', name: 'Подписки', icon: 'sparkles', color: '#06b6d4', is_system: true },
-  { id: 'system-salary', name: 'Зарплата', icon: 'wallet', color: '#10b981', is_system: true },
-  { id: 'system-other', name: 'Другое', icon: 'tray', color: '#64748b', is_system: true },
+  { id: 'system-products', name: 'РџСЂРѕРґСѓРєС‚С‹', icon: 'cart', color: '#22c55e', is_system: true },
+  { id: 'system-transport', name: 'РўСЂР°РЅСЃРїРѕСЂС‚', icon: 'car', color: '#3b82f6', is_system: true },
+  { id: 'system-cafe', name: 'РљР°С„Рµ', icon: 'cup', color: '#f59e0b', is_system: true },
+  { id: 'system-home', name: 'Р”РѕРј', icon: 'house', color: '#8b5cf6', is_system: true },
+  { id: 'system-health', name: 'Р—РґРѕСЂРѕРІСЊРµ', icon: 'heart', color: '#ef4444', is_system: true },
+  { id: 'system-fun', name: 'Р Р°Р·РІР»РµС‡РµРЅРёСЏ', icon: 'game', color: '#ec4899', is_system: true },
+  { id: 'system-subscriptions', name: 'РџРѕРґРїРёСЃРєРё', icon: 'sparkles', color: '#06b6d4', is_system: true },
+  { id: 'system-salary', name: 'Р—Р°СЂРїР»Р°С‚Р°', icon: 'wallet', color: '#10b981', is_system: true },
+  { id: 'system-other', name: 'Р”СЂСѓРіРѕРµ', icon: 'tray', color: '#64748b', is_system: true },
 ];
 
 const CATEGORY_RULES: Array<{ confidence: number; name: string; type: TransactionType; keywords: string[] }> = [
-  { name: 'Продукты', type: 'expense', confidence: 0.93, keywords: ['food', 'grocery', 'market', 'supermarket', 'продукт', 'еда', 'магазин', 'ферма', 'вкусвилл', 'магнит', 'пятерочка'] },
-  { name: 'Транспорт', type: 'expense', confidence: 0.91, keywords: ['uber', 'taxi', 'metro', 'bus', 'transport', 'fuel', 'бензин', 'такси', 'метро', 'автобус', 'поезд', 'yandex go'] },
-  { name: 'Кафе', type: 'expense', confidence: 0.94, keywords: ['coffee', 'cafe', 'restaurant', 'bar', 'pizza', 'burger', 'starbucks', 'кафе', 'кофе', 'ресторан', 'пицца', 'бургер'] },
-  { name: 'Дом', type: 'expense', confidence: 0.88, keywords: ['rent', 'ikea', 'home', 'furniture', 'house', 'аренда', 'дом', 'квартира', 'ремонт', 'мебель'] },
-  { name: 'Здоровье', type: 'expense', confidence: 0.89, keywords: ['pharmacy', 'doctor', 'health', 'medicine', 'аптека', 'врач', 'лекар', 'здоров'] },
-  { name: 'Развлечения', type: 'expense', confidence: 0.87, keywords: ['movie', 'cinema', 'game', 'games', 'concert', 'кино', 'игр', 'концерт', 'playstation', 'steam'] },
-  { name: 'Подписки', type: 'expense', confidence: 0.95, keywords: ['subscription', 'netflix', 'spotify', 'figma', 'notion', 'saas', 'подпис', 'icloud', 'youtube premium'] },
-  { name: 'Зарплата', type: 'income', confidence: 0.96, keywords: ['salary', 'payroll', 'bonus', 'income', 'freelance', 'invoice', 'зарплата', 'премия', 'аванс', 'гонорар'] },
+  { name: 'РџСЂРѕРґСѓРєС‚С‹', type: 'expense', confidence: 0.93, keywords: ['food', 'grocery', 'market', 'supermarket', 'РїСЂРѕРґСѓРєС‚', 'РµРґР°', 'РјР°РіР°Р·РёРЅ', 'С„РµСЂРјР°', 'РІРєСѓСЃРІРёР»Р»', 'РјР°РіРЅРёС‚', 'РїСЏС‚РµСЂРѕС‡РєР°'] },
+  { name: 'РўСЂР°РЅСЃРїРѕСЂС‚', type: 'expense', confidence: 0.91, keywords: ['uber', 'taxi', 'metro', 'bus', 'transport', 'fuel', 'Р±РµРЅР·РёРЅ', 'С‚Р°РєСЃРё', 'РјРµС‚СЂРѕ', 'Р°РІС‚РѕР±СѓСЃ', 'РїРѕРµР·Рґ', 'yandex go'] },
+  { name: 'РљР°С„Рµ', type: 'expense', confidence: 0.94, keywords: ['coffee', 'cafe', 'restaurant', 'bar', 'pizza', 'burger', 'starbucks', 'РєР°С„Рµ', 'РєРѕС„Рµ', 'СЂРµСЃС‚РѕСЂР°РЅ', 'РїРёС†С†Р°', 'Р±СѓСЂРіРµСЂ'] },
+  { name: 'Р”РѕРј', type: 'expense', confidence: 0.88, keywords: ['rent', 'ikea', 'home', 'furniture', 'house', 'Р°СЂРµРЅРґР°', 'РґРѕРј', 'РєРІР°СЂС‚РёСЂР°', 'СЂРµРјРѕРЅС‚', 'РјРµР±РµР»СЊ'] },
+  { name: 'Р—РґРѕСЂРѕРІСЊРµ', type: 'expense', confidence: 0.89, keywords: ['pharmacy', 'doctor', 'health', 'medicine', 'Р°РїС‚РµРєР°', 'РІСЂР°С‡', 'Р»РµРєР°СЂ', 'Р·РґРѕСЂРѕРІ'] },
+  { name: 'Р Р°Р·РІР»РµС‡РµРЅРёСЏ', type: 'expense', confidence: 0.87, keywords: ['movie', 'cinema', 'game', 'games', 'concert', 'РєРёРЅРѕ', 'РёРіСЂ', 'РєРѕРЅС†РµСЂС‚', 'playstation', 'steam'] },
+  { name: 'РџРѕРґРїРёСЃРєРё', type: 'expense', confidence: 0.95, keywords: ['subscription', 'netflix', 'spotify', 'figma', 'notion', 'saas', 'РїРѕРґРїРёСЃ', 'icloud', 'youtube premium'] },
+  { name: 'Р—Р°СЂРїР»Р°С‚Р°', type: 'income', confidence: 0.96, keywords: ['salary', 'payroll', 'bonus', 'income', 'freelance', 'invoice', 'Р·Р°СЂРїР»Р°С‚Р°', 'РїСЂРµРјРёСЏ', 'Р°РІР°РЅСЃ', 'РіРѕРЅРѕСЂР°СЂ'] },
 ];
 
 function getStorage() {
@@ -136,10 +138,11 @@ function normalizeCategories(categories: Category[] | undefined) {
 
 function defaultWorkspace(): WorkspaceState {
   return {
-    version: 2,
+    version: BUDGET_WORKSPACE_VERSION,
     categories: normalizeCategories(undefined),
     receipts: [],
     transactions: [],
+    budgets: createEmptyBudgetConfig(),
   };
 }
 
@@ -148,11 +151,13 @@ function workspaceKey(scopeId: string) {
 }
 
 function sanitizeWorkspace(workspace: Partial<WorkspaceState> | WorkspaceState): WorkspaceState {
+  const categories = normalizeCategories(workspace.categories);
   return {
-    version: 2,
-    categories: normalizeCategories(workspace.categories),
+    version: BUDGET_WORKSPACE_VERSION,
+    categories,
     receipts: Array.isArray(workspace.receipts) ? workspace.receipts : [],
     transactions: Array.isArray(workspace.transactions) ? workspace.transactions : [],
+    budgets: normalizeBudgetConfig(workspace.budgets, categories),
   };
 }
 
@@ -271,7 +276,7 @@ function findCategoryById(categories: Category[], categoryId: string | null | un
 }
 
 function fallbackCategory(categories: Category[], type: TransactionType) {
-  const fallbackName = type === 'income' ? 'Зарплата' : 'Другое';
+  const fallbackName = type === 'income' ? 'Р—Р°СЂРїР»Р°С‚Р°' : 'Р”СЂСѓРіРѕРµ';
   return categories.find((category) => category.name === fallbackName) ?? categories[0] ?? null;
 }
 
@@ -344,7 +349,7 @@ function ensureTransactionPayload(body: RequestOptions['body']): TransactionPayl
   if (!body || body instanceof FormData || typeof body !== 'object') {
     throw new ApiError({
       code: 'invalid_payload',
-      message: 'Некорректные данные операции.',
+      message: 'РќРµРєРѕСЂСЂРµРєС‚РЅС‹Рµ РґР°РЅРЅС‹Рµ РѕРїРµСЂР°С†РёРё.',
     });
   }
 
@@ -355,7 +360,7 @@ function createTransaction(workspace: WorkspaceState, payload: TransactionPayloa
   if (!Number.isFinite(Number(payload.amount)) || Number(payload.amount) <= 0) {
     throw new ApiError({
       code: 'invalid_amount',
-      message: 'Сумма должна быть больше нуля.',
+      message: 'РЎСѓРјРјР° РґРѕР»Р¶РЅР° Р±С‹С‚СЊ Р±РѕР»СЊС€Рµ РЅСѓР»СЏ.',
     });
   }
 
@@ -386,7 +391,7 @@ function updateTransaction(workspace: WorkspaceState, id: string, payload: Parti
   if (index < 0) {
     throw new ApiError({
       code: 'transaction_not_found',
-      message: 'Операция не найдена.',
+      message: 'РћРїРµСЂР°С†РёСЏ РЅРµ РЅР°Р№РґРµРЅР°.',
     });
   }
 
@@ -394,7 +399,7 @@ function updateTransaction(workspace: WorkspaceState, id: string, payload: Parti
   if (!current) {
     throw new ApiError({
       code: 'transaction_not_found',
-      message: '???????? ?? ???????.',
+      message: 'РћРїРµСЂР°С†РёСЏ РЅРµ РЅР°Р№РґРµРЅР°.',
     });
   }
 
@@ -402,7 +407,7 @@ function updateTransaction(workspace: WorkspaceState, id: string, payload: Parti
   if (!Number.isFinite(nextAmount) || nextAmount <= 0) {
     throw new ApiError({
       code: 'invalid_amount',
-      message: 'Сумма должна быть больше нуля.',
+      message: 'РЎСѓРјРјР° РґРѕР»Р¶РЅР° Р±С‹С‚СЊ Р±РѕР»СЊС€Рµ РЅСѓР»СЏ.',
     });
   }
 
@@ -432,7 +437,7 @@ function deleteTransaction(workspace: WorkspaceState, id: string) {
   if (!exists) {
     throw new ApiError({
       code: 'transaction_not_found',
-      message: 'Операция не найдена.',
+      message: 'РћРїРµСЂР°С†РёСЏ РЅРµ РЅР°Р№РґРµРЅР°.',
     });
   }
 
@@ -442,7 +447,7 @@ function deleteTransaction(workspace: WorkspaceState, id: string) {
 function deriveMerchant(fileName: string) {
   const stem = fileName.replace(/\.[^.]+$/, '');
   const cleaned = stem
-    .replace(/(чек|receipt|check|invoice)/gi, ' ')
+    .replace(/(С‡РµРє|receipt|check|invoice)/gi, ' ')
     .replace(/\d+[.,]?\d*/g, ' ')
     .replace(/[_-]+/g, ' ')
     .replace(/\s+/g, ' ')
@@ -465,21 +470,21 @@ function uploadReceipt(workspace: WorkspaceState, body: FormData | null) {
   if (!(file instanceof File)) {
     throw new ApiError({
       code: 'file_required',
-      message: 'Нужно выбрать файл чека.',
+      message: 'РќСѓР¶РЅРѕ РІС‹Р±СЂР°С‚СЊ С„Р°Р№Р» С‡РµРєР°.',
     });
   }
 
   if (!file.type.startsWith('image/')) {
     throw new ApiError({
       code: 'unsupported_file_type',
-      message: 'Поддерживаются только изображения.',
+      message: 'РџРѕРґРґРµСЂР¶РёРІР°СЋС‚СЃСЏ С‚РѕР»СЊРєРѕ РёР·РѕР±СЂР°Р¶РµРЅРёСЏ.',
     });
   }
 
   if (file.size > MAX_UPLOAD_BYTES) {
     throw new ApiError({
       code: 'file_too_large',
-      message: 'Файл слишком большой.',
+      message: 'Р¤Р°Р№Р» СЃР»РёС€РєРѕРј Р±РѕР»СЊС€РѕР№.',
       details: { max_upload_bytes: MAX_UPLOAD_BYTES },
     });
   }
@@ -549,7 +554,7 @@ function buildCategoryBreakdown(transactions: Transaction[]): CategorySpendPoint
       continue;
     }
 
-    const categoryName = transaction.category?.name ?? 'Другое';
+    const categoryName = transaction.category?.name ?? 'Р”СЂСѓРіРѕРµ';
     const key = transaction.category?.id ?? categoryName;
     const current = totals.get(key) ?? {
       category_id: transaction.category?.id ?? null,
@@ -627,7 +632,7 @@ async function handleTransactions(pathname: string, searchParams: URLSearchParam
   if (!match) {
     throw new ApiError({
       code: 'not_found',
-      message: 'Маршрут не найден.',
+      message: 'РњР°СЂС€СЂСѓС‚ РЅРµ РЅР°Р№РґРµРЅ.',
     });
   }
 
@@ -637,7 +642,7 @@ async function handleTransactions(pathname: string, searchParams: URLSearchParam
     if (!transaction) {
       throw new ApiError({
         code: 'transaction_not_found',
-        message: 'Операция не найдена.',
+        message: 'РћРїРµСЂР°С†РёСЏ РЅРµ РЅР°Р№РґРµРЅР°.',
       });
     }
 
@@ -658,7 +663,7 @@ async function handleTransactions(pathname: string, searchParams: URLSearchParam
 
   throw new ApiError({
     code: 'method_not_allowed',
-    message: 'Метод не поддерживается.',
+    message: 'РњРµС‚РѕРґ РЅРµ РїРѕРґРґРµСЂР¶РёРІР°РµС‚СЃСЏ.',
   });
 }
 
@@ -676,7 +681,7 @@ async function handleReceipts(pathname: string, principal: LocalPrincipal, optio
   if (!match || method !== 'GET') {
     throw new ApiError({
       code: 'not_found',
-      message: 'Маршрут не найден.',
+      message: 'РњР°СЂС€СЂСѓС‚ РЅРµ РЅР°Р№РґРµРЅ.',
     });
   }
 
@@ -685,7 +690,7 @@ async function handleReceipts(pathname: string, principal: LocalPrincipal, optio
   if (!receipt) {
     throw new ApiError({
       code: 'receipt_not_found',
-      message: 'Чек не найден.',
+      message: 'Р§РµРє РЅРµ РЅР°Р№РґРµРЅ.',
     });
   }
 
@@ -697,7 +702,7 @@ async function handleAnalytics(searchParams: URLSearchParams, principal: LocalPr
   if (!month) {
     throw new ApiError({
       code: 'missing_month',
-      message: 'Нужно передать параметр month.',
+      message: 'РќСѓР¶РЅРѕ РїРµСЂРµРґР°С‚СЊ РїР°СЂР°РјРµС‚СЂ month.',
     });
   }
 
@@ -728,9 +733,11 @@ export async function localApiRequest<T>(path: string, options: RequestOptions =
 
   throw new ApiError({
     code: 'not_found',
-    message: 'Маршрут не найден.',
+    message: 'РњР°СЂС€СЂСѓС‚ РЅРµ РЅР°Р№РґРµРЅ.',
   });
 }
+
+
 
 
 

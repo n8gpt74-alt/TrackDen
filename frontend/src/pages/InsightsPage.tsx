@@ -1,9 +1,13 @@
-п»їimport clsx from 'clsx';
+import clsx from 'clsx';
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import { useOverviewQuery } from '../features/analytics/api';
+import { useBudgetOverviewQuery } from '../features/budgets/api';
+import type { BudgetStatus } from '../features/budgets/model';
+import { useFinanceSheet } from '../features/finance-sheet/useFinanceSheet';
 import { useTransactionsQuery, type TransactionType } from '../features/transactions/api';
+import { isLocalDataMode } from '../shared/api/mode';
 import { currentMonthKey, formatMonthCaption } from '../shared/lib/date';
 import { buildSourceBreakdown, buildWeeklyBuckets, calculateRecentTrend } from '../shared/lib/finance';
 import { formatCompactMoney, formatMoney, formatSignedPercent } from '../shared/lib/money';
@@ -36,14 +40,63 @@ function GaugeCard({ amount, label, percent }: { amount: number; label: string; 
   );
 }
 
+function getBudgetTone(status: BudgetStatus) {
+  switch (status) {
+    case 'exceeded':
+      return {
+        label: 'Перелимит',
+        badgeClass: 'border-red-400/20 bg-red-400/10 text-red-100',
+        fill: '#ff7d7d',
+        textClass: 'text-[var(--app-danger)]',
+      };
+    case 'warning':
+      return {
+        label: '80%+',
+        badgeClass: 'border-amber-400/20 bg-amber-400/10 text-amber-100',
+        fill: '#f59e0b',
+        textClass: 'text-amber-200',
+      };
+    case 'normal':
+      return {
+        label: 'В норме',
+        badgeClass: 'border-emerald-400/20 bg-emerald-400/10 text-emerald-100',
+        fill: '#2fd39a',
+        textClass: 'text-[var(--app-success)]',
+      };
+    default:
+      return {
+        label: 'Не настроено',
+        badgeClass: 'border-[var(--app-stroke)] bg-white/[0.03] text-[var(--app-muted)]',
+        fill: '#6f6bff',
+        textClass: 'text-[var(--app-muted)]',
+      };
+  }
+}
+
+function formatBudgetFooter(remaining: number | null) {
+  if (remaining == null) {
+    return 'Лимит не задан';
+  }
+
+  if (remaining >= 0) {
+    return `Осталось ${formatMoney(remaining)}`;
+  }
+
+  return `Перерасход ${formatMoney(Math.abs(remaining))}`;
+}
+
 export function InsightsPage() {
   const month = currentMonthKey();
   const navigate = useNavigate();
+  const localMode = isLocalDataMode();
   const [segment, setSegment] = useState<TransactionType>('expense');
   const overviewQuery = useOverviewQuery(month);
+  const budgetOverviewQuery = useBudgetOverviewQuery(month);
   const transactionsQuery = useTransactionsQuery(month, 100);
+  const { openSheet } = useFinanceSheet();
 
   const overview = overviewQuery.data;
+  const budgetOverview = localMode ? budgetOverviewQuery.data : null;
   const transactions = transactionsQuery.data?.items ?? [];
 
   const derived = useMemo(() => {
@@ -72,7 +125,7 @@ export function InsightsPage() {
         <button className="icon-circle-button" onClick={() => navigate('/dashboard')} type="button">
           <ChevronLeftIcon size={18} />
         </button>
-        <button className="icon-circle-button" type="button">
+        <button className="icon-circle-button" onClick={() => openSheet('budget')} type="button">
           <DotsIcon size={18} />
         </button>
       </header>
@@ -120,7 +173,7 @@ export function InsightsPage() {
         <div className="mb-3 flex items-center justify-between">
           <div>
             <p className="soft-kicker">Breakdown</p>
-            <h2 className="mt-1 text-xl font-semibold text-white">{segment === 'expense' ? 'РЎС‚СЂСѓРєС‚СѓСЂР° СЂР°СЃС…РѕРґРѕРІ' : 'РСЃС‚РѕС‡РЅРёРєРё РґРѕС…РѕРґР°'}</h2>
+            <h2 className="mt-1 text-xl font-semibold text-white">{segment === 'expense' ? 'Структура расходов' : 'Источники дохода'}</h2>
           </div>
         </div>
 
@@ -130,7 +183,7 @@ export function InsightsPage() {
             <Skeleton className="h-32 w-full rounded-[26px]" />
           </div>
         ) : derived.breakdown.length === 0 ? (
-          <div className="empty-card">Р—РґРµСЃСЊ РїРѕСЏРІСЏС‚СЃСЏ РєР°С‚РµРіРѕСЂРёРё Рё РёСЃС‚РѕС‡РЅРёРєРё, РєРѕРіРґР° РІ РјРµСЃСЏС†Рµ РЅР°РєРѕРїСЏС‚СЃСЏ РѕРїРµСЂР°С†РёРё.</div>
+          <div className="empty-card">Здесь появятся категории и источники, когда в месяце накопятся операции.</div>
         ) : (
           <div className="space-y-3">
             {derived.breakdown.map((item) => (
@@ -145,6 +198,97 @@ export function InsightsPage() {
         )}
       </section>
 
+      {localMode && segment === 'expense' ? (
+        <section>
+          <div className="mb-3 flex items-center justify-between gap-3">
+            <div>
+              <p className="soft-kicker">Budget vs actual</p>
+              <h2 className="mt-1 text-xl font-semibold text-white">Лимиты и факт</h2>
+            </div>
+            <button className="text-sm text-[var(--app-accent)]" onClick={() => openSheet('budget')} type="button">
+              Настроить
+            </button>
+          </div>
+
+          {budgetOverviewQuery.isLoading ? (
+            <div className="space-y-3">
+              <Skeleton className="h-28 w-full rounded-[24px]" />
+              <Skeleton className="h-24 w-full rounded-[24px]" />
+            </div>
+          ) : !budgetOverview || budgetOverview.configured_count === 0 ? (
+            <div className="empty-card">
+              Здесь появится управленческий слой: общий бюджет месяца и категории, которые быстрее всего подходят к лимиту.
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {budgetOverview.overall.enabled ? (
+                <div className="premium-card rounded-[26px] p-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="text-sm text-[var(--app-muted)]">Общий лимит</p>
+                      <p className="mt-2 text-2xl font-semibold tracking-[-0.04em] text-white">{formatMoney(budgetOverview.overall.spent)}</p>
+                    </div>
+                    <div className={clsx('rounded-full border px-3 py-2 text-xs font-semibold uppercase tracking-[0.18em]', getBudgetTone(budgetOverview.overall.status).badgeClass)}>
+                      {getBudgetTone(budgetOverview.overall.status).label}
+                    </div>
+                  </div>
+                  <div className="mt-4 h-3 overflow-hidden rounded-full bg-white/[0.05]">
+                    <div
+                      className="h-full rounded-full"
+                      style={{
+                        width: `${Math.min(100, Math.max(6, Math.round(budgetOverview.overall.ratio * 100)))}%`,
+                        background: getBudgetTone(budgetOverview.overall.status).fill,
+                      }}
+                    />
+                  </div>
+                  <div className="mt-3 flex items-center justify-between gap-3 text-sm text-[var(--app-muted)]">
+                    <span>Лимит {formatMoney(budgetOverview.overall.limit ?? 0)}</span>
+                    <span className={getBudgetTone(budgetOverview.overall.status).textClass}>{formatBudgetFooter(budgetOverview.overall.remaining)}</span>
+                  </div>
+                </div>
+              ) : (
+                <div className="rounded-[24px] border border-[var(--app-stroke)] bg-white/[0.03] p-4 text-sm leading-6 text-[var(--app-muted)]">
+                  Общий лимит пока не задан, поэтому ниже сравниваем только расходы по категориям.
+                </div>
+              )}
+
+              {budgetOverview.categories.length === 0 ? (
+                <div className="rounded-[24px] border border-[var(--app-stroke)] bg-white/[0.03] p-4 text-sm leading-6 text-[var(--app-muted)]">
+                  По категориям лимиты ещё не включены. Можно оставить только общий бюджет или добавить категории в шторке настроек.
+                </div>
+              ) : (
+                budgetOverview.categories.map((item) => {
+                  const tone = getBudgetTone(item.status);
+                  return (
+                    <div key={item.category_id} className="rounded-[24px] border border-[var(--app-stroke)] bg-white/[0.03] p-4">
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <p className="text-base font-medium text-white">{item.category_name}</p>
+                          <p className="mt-1 text-sm text-[var(--app-muted)]">{formatMoney(item.spent)} из {formatMoney(item.limit ?? 0)}</p>
+                        </div>
+                        <div className={clsx('rounded-full border px-3 py-2 text-xs font-semibold uppercase tracking-[0.18em]', tone.badgeClass)}>
+                          {tone.label}
+                        </div>
+                      </div>
+                      <div className="mt-4 h-2.5 overflow-hidden rounded-full bg-white/[0.05]">
+                        <div
+                          className="h-full rounded-full"
+                          style={{
+                            width: `${Math.min(100, Math.max(6, Math.round(item.ratio * 100)))}%`,
+                            background: tone.fill,
+                          }}
+                        />
+                      </div>
+                      <p className={clsx('mt-3 text-sm', tone.textClass)}>{formatBudgetFooter(item.remaining)}</p>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          )}
+        </section>
+      ) : null}
+
       <section className="grid grid-cols-2 gap-3">
         {overviewQuery.isLoading ? (
           <>
@@ -154,16 +298,16 @@ export function InsightsPage() {
         ) : (
           <>
             <div className="metric-tile">
-              <p className="text-sm text-[var(--app-muted)]">РўСЂРµРЅРґ</p>
+              <p className="text-sm text-[var(--app-muted)]">Тренд</p>
               <p className={clsx('mt-2 text-[28px] font-semibold tracking-[-0.04em]', derived.trend >= 0 ? 'text-[var(--app-success)]' : 'text-[var(--app-danger)]')}>
                 {formatSignedPercent(derived.trend)}
               </p>
-              <p className="mt-2 text-xs text-[var(--app-muted)]">Р”РёРЅР°РјРёРєР° РѕС‚РЅРѕСЃРёС‚РµР»СЊРЅРѕ РїСЂРѕС€Р»РѕР№ РЅРµРґРµР»Рё</p>
+              <p className="mt-2 text-xs text-[var(--app-muted)]">Динамика относительно прошлой недели</p>
             </div>
             <div className="metric-tile">
-              <p className="text-sm text-[var(--app-muted)]">РЎСЂРµРґРЅСЏСЏ РЅРµРґРµР»СЏ</p>
+              <p className="text-sm text-[var(--app-muted)]">Средняя неделя</p>
               <p className="mt-2 text-[28px] font-semibold tracking-[-0.04em] text-white">{formatCompactMoney(derived.averagePerWeek)}</p>
-              <p className="mt-2 text-xs text-[var(--app-muted)]">РЎСЂРµРґРЅРµРµ Р·РЅР°С‡РµРЅРёРµ РїРѕ 4 РЅРµРґРµР»СЊРЅС‹Рј СЃР»РѕС‚Р°Рј</p>
+              <p className="mt-2 text-xs text-[var(--app-muted)]">Среднее значение по 4 недельным слотам</p>
             </div>
           </>
         )}
