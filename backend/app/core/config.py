@@ -42,7 +42,10 @@ class Settings(BaseSettings):
 
     @property
     def redis_enabled(self) -> bool:
-        return bool(self.redis_url and self.redis_url.strip())
+        if not self.redis_url:
+            return False
+        normalized = self.redis_url.strip().lower()
+        return normalized not in {'', 'none', 'null', 'disabled'}
 
 
 @lru_cache
