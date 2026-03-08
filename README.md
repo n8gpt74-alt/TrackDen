@@ -25,6 +25,13 @@ bot/       Telegram bot entry point for launching the Mini App
 - Dashboard analytics for the current month with category and time-series charts
 - Row-level security in PostgreSQL using `SET LOCAL app.user_id`
 
+
+## Local-first mode
+
+- Frontend now works in `local-first` mode by default and stores user data in browser storage per Telegram user
+- Transactions, receipts, AI categorization, and analytics work without backend or cloud database
+- To switch frontend back to API mode, set `VITE_DATA_MODE=remote` and provide `VITE_API_BASE_URL`
+
 ## Quick start with Docker
 
 1. Copy `.env.example` to `.env`

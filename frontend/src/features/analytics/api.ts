@@ -1,8 +1,9 @@
-import { useQuery } from '@tanstack/react-query';
+﻿import { useQuery } from '@tanstack/react-query';
 
 import { useTelegram } from '../../app/providers/TelegramProvider';
-import { useInitData } from '../auth/useInitData';
 import { apiRequest } from '../../shared/api/http';
+import { isLocalDataMode } from '../../shared/api/mode';
+import { useInitData } from '../auth/useInitData';
 
 export type CategorySpendPoint = {
   category_id?: string | null;
@@ -29,9 +30,10 @@ export type AnalyticsOverviewResponse = {
 export function useOverviewQuery(month: string) {
   const initDataRaw = useInitData();
   const { isReady, isTelegram } = useTelegram();
+  const enabled = isReady && (isLocalDataMode() || !isTelegram || Boolean(initDataRaw));
 
   return useQuery({
-    enabled: isReady && (!isTelegram || Boolean(initDataRaw)),
+    enabled,
     queryKey: ['analytics', month],
     queryFn: () =>
       apiRequest<AnalyticsOverviewResponse>(`/analytics/overview?month=${month}`, {

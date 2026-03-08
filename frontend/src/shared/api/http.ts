@@ -1,4 +1,6 @@
-import { ApiError, type ApiErrorPayload } from './errors';
+﻿import { ApiError, type ApiErrorPayload } from './errors';
+import { localApiRequest } from './localApi';
+import { isLocalDataMode } from './mode';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8000/api/v1';
 
@@ -8,6 +10,10 @@ type RequestOptions = Omit<RequestInit, 'body'> & {
 };
 
 export async function apiRequest<T>(path: string, options: RequestOptions = {}): Promise<T> {
+  if (isLocalDataMode()) {
+    return localApiRequest<T>(path, options);
+  }
+
   const headers = new Headers(options.headers);
   const isFormData = options.body instanceof FormData;
 
@@ -56,4 +62,3 @@ export async function apiRequest<T>(path: string, options: RequestOptions = {}):
 
   return (await response.json()) as T;
 }
-

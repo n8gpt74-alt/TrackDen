@@ -1,8 +1,9 @@
-import { useQuery } from '@tanstack/react-query';
+﻿import { useQuery } from '@tanstack/react-query';
 
 import { useInitData } from './useInitData';
 import { useTelegram } from '../../app/providers/TelegramProvider';
 import { apiRequest } from '../../shared/api/http';
+import { isLocalDataMode } from '../../shared/api/mode';
 
 export type Category = {
   id: string;
@@ -34,9 +35,10 @@ export type SessionResponse = {
 export function useSessionQuery() {
   const initDataRaw = useInitData();
   const { isReady, isTelegram } = useTelegram();
+  const enabled = isReady && (isLocalDataMode() || !isTelegram || Boolean(initDataRaw));
 
   return useQuery({
-    enabled: isReady && (!isTelegram || Boolean(initDataRaw)),
+    enabled,
     queryKey: ['session'],
     queryFn: () =>
       apiRequest<SessionResponse>('/auth/session', {

@@ -1,8 +1,9 @@
 ﻿import { useMutation, useQuery } from '@tanstack/react-query';
 
 import { useTelegram } from '../../app/providers/TelegramProvider';
-import { useInitData } from '../auth/useInitData';
 import { apiRequest } from '../../shared/api/http';
+import { isLocalDataMode } from '../../shared/api/mode';
+import { useInitData } from '../auth/useInitData';
 
 export type TransactionType = 'expense' | 'income';
 export type TransactionSource = 'manual' | 'ocr';
@@ -47,6 +48,7 @@ export type TransactionPayload = {
 export function useTransactionsQuery(month: string, limit = 30, type?: TransactionType) {
   const initDataRaw = useInitData();
   const { isReady, isTelegram } = useTelegram();
+  const enabled = isReady && (isLocalDataMode() || !isTelegram || Boolean(initDataRaw));
   const search = new URLSearchParams({
     month,
     limit: String(limit),
@@ -57,7 +59,7 @@ export function useTransactionsQuery(month: string, limit = 30, type?: Transacti
   }
 
   return useQuery({
-    enabled: isReady && (!isTelegram || Boolean(initDataRaw)),
+    enabled,
     queryKey: ['transactions', month, limit, type],
     queryFn: () =>
       apiRequest<TransactionsResponse>(`/transactions?${search.toString()}`, {
@@ -69,9 +71,10 @@ export function useTransactionsQuery(month: string, limit = 30, type?: Transacti
 export function useTransactionQuery(id: string | null) {
   const initDataRaw = useInitData();
   const { isReady, isTelegram } = useTelegram();
+  const enabled = Boolean(id) && isReady && (isLocalDataMode() || !isTelegram || Boolean(initDataRaw));
 
   return useQuery({
-    enabled: Boolean(id) && isReady && (!isTelegram || Boolean(initDataRaw)),
+    enabled,
     queryKey: ['transaction', id],
     queryFn: () =>
       apiRequest<Transaction>(`/transactions/${id}`, {
