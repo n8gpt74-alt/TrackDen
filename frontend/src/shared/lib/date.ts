@@ -20,11 +20,11 @@ export function formatDateGroupLabel(value: string) {
 
   const targetKey = target.toDateString();
   if (targetKey === today.toDateString()) {
-    return 'Сегодня';
+    return 'РЎРµРіРѕРґРЅСЏ';
   }
 
   if (targetKey === yesterday.toDateString()) {
-    return 'Вчера';
+    return 'Р’С‡РµСЂР°';
   }
 
   return new Intl.DateTimeFormat('ru-RU', {

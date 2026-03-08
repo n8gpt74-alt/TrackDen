@@ -48,7 +48,7 @@ function getErrorMessage(error: unknown) {
     return error.message;
   }
 
-  return 'Что-то пошло не так. Попробуй ещё раз.';
+  return 'Р§С‚Рѕ-С‚Рѕ РїРѕС€Р»Рѕ РЅРµ С‚Р°Рє. РџРѕРїСЂРѕР±СѓР№ РµС‰С‘ СЂР°Р·.';
 }
 
 function downloadBlob(fileName: string, blob: Blob) {
@@ -105,7 +105,7 @@ export function SettingsPage() {
       setSummaryVersion((current) => current + 1);
       setNotice({
         tone: 'success',
-        message: `JSON backup сохранён. Последний экспорт: ${formatDateTimeLabel(result.backup.exported_at)}.`,
+        message: `JSON backup СЃРѕС…СЂР°РЅС‘РЅ. РџРѕСЃР»РµРґРЅРёР№ СЌРєСЃРїРѕСЂС‚: ${formatDateTimeLabel(result.backup.exported_at)}.`,
       });
     } catch (error) {
       setNotice({
@@ -146,7 +146,7 @@ export function SettingsPage() {
     if (ownerMismatch && !ownerConfirmed) {
       setNotice({
         tone: 'danger',
-        message: 'Подтверди импорт backup от другого аккаунта, чтобы продолжить.',
+        message: 'РџРѕРґС‚РІРµСЂРґРё РёРјРїРѕСЂС‚ backup РѕС‚ РґСЂСѓРіРѕРіРѕ Р°РєРєР°СѓРЅС‚Р°, С‡С‚РѕР±С‹ РїСЂРѕРґРѕР»Р¶РёС‚СЊ.',
       });
       return;
     }
@@ -161,7 +161,7 @@ export function SettingsPage() {
       setClearArmed(false);
       setNotice({
         tone: 'success',
-        message: 'Локальные данные, OCR metadata и лимиты полностью восстановлены из backup.',
+        message: 'Р›РѕРєР°Р»СЊРЅС‹Рµ РґР°РЅРЅС‹Рµ, OCR metadata Рё Р»РёРјРёС‚С‹ РїРѕР»РЅРѕСЃС‚СЊСЋ РІРѕСЃСЃС‚Р°РЅРѕРІР»РµРЅС‹ РёР· backup.',
       });
     } catch (error) {
       setNotice({
@@ -190,7 +190,7 @@ export function SettingsPage() {
       setClearArmed(false);
       setNotice({
         tone: 'success',
-        message: `Локальные данные очищены: ${result.deletedSummary.transactions} операций, ${result.deletedSummary.receipts} чеков и ${result.deletedSummary.budget_limits} лимитов удалено.`,
+        message: `Р›РѕРєР°Р»СЊРЅС‹Рµ РґР°РЅРЅС‹Рµ РѕС‡РёС‰РµРЅС‹: ${result.deletedSummary.transactions} РѕРїРµСЂР°С†РёР№, ${result.deletedSummary.receipts} С‡РµРєРѕРІ Рё ${result.deletedSummary.budget_limits} Р»РёРјРёС‚РѕРІ СѓРґР°Р»РµРЅРѕ.`,
       });
     } catch (error) {
       setNotice({
@@ -215,27 +215,27 @@ export function SettingsPage() {
 
       <section className="premium-card rounded-[30px] p-5">
         <p className="soft-kicker">Local vault</p>
-        <h1 className="mt-2 text-[32px] font-semibold leading-[1.04] tracking-[-0.05em] text-white">Резервные копии и восстановление</h1>
+        <h1 className="mt-2 text-[32px] font-semibold leading-[1.04] tracking-[-0.05em] text-white">Р РµР·РµСЂРІРЅС‹Рµ РєРѕРїРёРё Рё РІРѕСЃСЃС‚Р°РЅРѕРІР»РµРЅРёРµ</h1>
         <p className="mt-3 max-w-[310px] text-sm leading-6 text-[var(--app-muted)]">
-          TrackDen хранит данные локально на устройстве. Здесь можно экспортировать JSON backup, восстановить его или полностью очистить локальный профиль вместе с лимитами месяца.
+          TrackDen С…СЂР°РЅРёС‚ РґР°РЅРЅС‹Рµ Р»РѕРєР°Р»СЊРЅРѕ РЅР° СѓСЃС‚СЂРѕР№СЃС‚РІРµ. Р—РґРµСЃСЊ РјРѕР¶РЅРѕ СЌРєСЃРїРѕСЂС‚РёСЂРѕРІР°С‚СЊ JSON backup, РІРѕСЃСЃС‚Р°РЅРѕРІРёС‚СЊ РµРіРѕ РёР»Рё РїРѕР»РЅРѕСЃС‚СЊСЋ РѕС‡РёСЃС‚РёС‚СЊ Р»РѕРєР°Р»СЊРЅС‹Р№ РїСЂРѕС„РёР»СЊ РІРјРµСЃС‚Рµ СЃ Р»РёРјРёС‚Р°РјРё РјРµСЃСЏС†Р°.
         </p>
 
         {!localMode ? (
           <div className="mt-5 rounded-[24px] border border-[var(--app-danger)]/20 bg-[var(--app-danger)]/10 p-4 text-sm leading-6 text-[var(--app-danger)]">
-            Сейчас включён remote mode. Local backup доступен только при `VITE_DATA_MODE=local`.
+            РЎРµР№С‡Р°СЃ РІРєР»СЋС‡С‘РЅ remote mode. Local backup РґРѕСЃС‚СѓРїРµРЅ С‚РѕР»СЊРєРѕ РїСЂРё `VITE_DATA_MODE=local`.
           </div>
         ) : (
           <>
             <div className="mt-5 grid grid-cols-3 gap-3">
-              <MetricCard hint="Всего локально" label="Операции" value={String(summary?.transactions ?? 0)} />
-              <MetricCard hint="OCR и metadata" label="Чеки" value={String(summary?.receipts ?? 0)} />
-              <MetricCard hint="Активные лимиты" label="Бюджеты" value={String(summary?.budget_limits ?? 0)} />
+              <MetricCard hint="Р’СЃРµРіРѕ Р»РѕРєР°Р»СЊРЅРѕ" label="РћРїРµСЂР°С†РёРё" value={String(summary?.transactions ?? 0)} />
+              <MetricCard hint="OCR Рё metadata" label="Р§РµРєРё" value={String(summary?.receipts ?? 0)} />
+              <MetricCard hint="РђРєС‚РёРІРЅС‹Рµ Р»РёРјРёС‚С‹" label="Р‘СЋРґР¶РµС‚С‹" value={String(summary?.budget_limits ?? 0)} />
             </div>
 
             <div className="mt-4 rounded-[24px] border border-[var(--app-stroke)] bg-white/[0.03] p-4">
-              <p className="text-sm font-medium text-white">Последний экспорт</p>
+              <p className="text-sm font-medium text-white">РџРѕСЃР»РµРґРЅРёР№ СЌРєСЃРїРѕСЂС‚</p>
               <p className="mt-2 text-sm leading-6 text-[var(--app-muted)]">
-                {storageSnapshot?.lastExportAt ? formatDateTimeLabel(storageSnapshot.lastExportAt) : 'Backup ещё не создавался на этом устройстве.'}
+                {storageSnapshot?.lastExportAt ? formatDateTimeLabel(storageSnapshot.lastExportAt) : 'Backup РµС‰С‘ РЅРµ СЃРѕР·РґР°РІР°Р»СЃСЏ РЅР° СЌС‚РѕРј СѓСЃС‚СЂРѕР№СЃС‚РІРµ.'}
               </p>
             </div>
           </>
@@ -259,17 +259,17 @@ export function SettingsPage() {
         <div className="flex items-start justify-between gap-3">
           <div>
             <p className="soft-kicker">Backup</p>
-            <h2 className="mt-1 text-xl font-semibold text-white">Экспорт JSON</h2>
+            <h2 className="mt-1 text-xl font-semibold text-white">Р­РєСЃРїРѕСЂС‚ JSON</h2>
           </div>
           <div className="icon-circle-button">
             <DownloadIcon size={18} />
           </div>
         </div>
         <p className="mt-3 text-sm leading-6 text-[var(--app-muted)]">
-          Файл содержит чувствительные финансовые данные: операции, категории, OCR metadata чеков и шаблоны месячных лимитов. Храни его там, где тебе комфортно.
+          Р¤Р°Р№Р» СЃРѕРґРµСЂР¶РёС‚ С‡СѓРІСЃС‚РІРёС‚РµР»СЊРЅС‹Рµ С„РёРЅР°РЅСЃРѕРІС‹Рµ РґР°РЅРЅС‹Рµ: РѕРїРµСЂР°С†РёРё, РєР°С‚РµРіРѕСЂРёРё, OCR metadata С‡РµРєРѕРІ Рё С€Р°Р±Р»РѕРЅС‹ РјРµСЃСЏС‡РЅС‹С… Р»РёРјРёС‚РѕРІ. РҐСЂР°РЅРё РµРіРѕ С‚Р°Рј, РіРґРµ С‚РµР±Рµ РєРѕРјС„РѕСЂС‚РЅРѕ.
         </p>
         <button className="sheet-primary-button mt-5 w-full" disabled={!localMode} onClick={handleExport} type="button">
-          Экспортировать JSON
+          Р­РєСЃРїРѕСЂС‚РёСЂРѕРІР°С‚СЊ JSON
         </button>
       </section>
 
@@ -277,20 +277,20 @@ export function SettingsPage() {
         <div className="flex items-start justify-between gap-3">
           <div>
             <p className="soft-kicker">Restore</p>
-            <h2 className="mt-1 text-xl font-semibold text-white">Восстановить backup</h2>
+            <h2 className="mt-1 text-xl font-semibold text-white">Р’РѕСЃСЃС‚Р°РЅРѕРІРёС‚СЊ backup</h2>
           </div>
           <div className="icon-circle-button">
             <UploadIcon size={18} />
           </div>
         </div>
         <p className="mt-3 text-sm leading-6 text-[var(--app-muted)]">
-          Импорт полностью заменит текущие локальные данные этого профиля. Перед подтверждением покажем владельца backup, объём данных и проверим совпадение Telegram-аккаунта.
+          РРјРїРѕСЂС‚ РїРѕР»РЅРѕСЃС‚СЊСЋ Р·Р°РјРµРЅРёС‚ С‚РµРєСѓС‰РёРµ Р»РѕРєР°Р»СЊРЅС‹Рµ РґР°РЅРЅС‹Рµ СЌС‚РѕРіРѕ РїСЂРѕС„РёР»СЏ. РџРµСЂРµРґ РїРѕРґС‚РІРµСЂР¶РґРµРЅРёРµРј РїРѕРєР°Р¶РµРј РІР»Р°РґРµР»СЊС†Р° backup, РѕР±СЉС‘Рј РґР°РЅРЅС‹С… Рё РїСЂРѕРІРµСЂРёРј СЃРѕРІРїР°РґРµРЅРёРµ Telegram-Р°РєРєР°СѓРЅС‚Р°.
         </p>
 
         <input accept=".json,application/json" className="hidden" onChange={handleFilePick} ref={fileInputRef} type="file" />
 
         <button className="sheet-secondary-button mt-5 w-full" disabled={!localMode || isRestoring} onClick={() => fileInputRef.current?.click()} type="button">
-          Выбрать JSON-файл
+          Р’С‹Р±СЂР°С‚СЊ JSON-С„Р°Р№Р»
         </button>
 
         {preview ? (
@@ -298,7 +298,7 @@ export function SettingsPage() {
             <div className="flex items-start justify-between gap-3">
               <div>
                 <p className="text-sm font-medium text-white">{preview.fileName}</p>
-                <p className="mt-1 text-sm text-[var(--app-muted)]">Экспорт: {formatDateTimeLabel(preview.backup.exported_at)}</p>
+                <p className="mt-1 text-sm text-[var(--app-muted)]">Р­РєСЃРїРѕСЂС‚: {formatDateTimeLabel(preview.backup.exported_at)}</p>
               </div>
               <div className="rounded-full border border-[var(--app-stroke)] bg-white/[0.03] px-3 py-2 text-xs uppercase tracking-[0.18em] text-[var(--app-muted)]">
                 v{preview.backup.version}
@@ -306,7 +306,7 @@ export function SettingsPage() {
             </div>
 
             <div className="rounded-[22px] border border-[var(--app-stroke)] bg-[#0c1018] p-4">
-              <p className="text-sm text-[var(--app-muted)]">Владелец backup</p>
+              <p className="text-sm text-[var(--app-muted)]">Р’Р»Р°РґРµР»РµС† backup</p>
               <p className="mt-2 text-base font-semibold text-white">
                 {preview.backup.owner.first_name || preview.backup.owner.username || 'TrackDen user'}
               </p>
@@ -316,9 +316,9 @@ export function SettingsPage() {
             </div>
 
             <div className="grid grid-cols-3 gap-3">
-              <MetricCard hint="Будут заменены" label="Операции" value={String(previewSummary?.transactions ?? 0)} />
-              <MetricCard hint="OCR metadata" label="Чеки" value={String(previewSummary?.receipts ?? 0)} />
-              <MetricCard hint="Лимиты внутри backup" label="Бюджеты" value={String(previewSummary?.budget_limits ?? 0)} />
+              <MetricCard hint="Р‘СѓРґСѓС‚ Р·Р°РјРµРЅРµРЅС‹" label="РћРїРµСЂР°С†РёРё" value={String(previewSummary?.transactions ?? 0)} />
+              <MetricCard hint="OCR metadata" label="Р§РµРєРё" value={String(previewSummary?.receipts ?? 0)} />
+              <MetricCard hint="Р›РёРјРёС‚С‹ РІРЅСѓС‚СЂРё backup" label="Р‘СЋРґР¶РµС‚С‹" value={String(previewSummary?.budget_limits ?? 0)} />
             </div>
 
             {ownerMismatch ? (
@@ -326,22 +326,22 @@ export function SettingsPage() {
                 <div className="flex items-start gap-3">
                   <AlertTriangleIcon className="mt-0.5 text-amber-300" size={18} />
                   <div className="min-w-0">
-                    <p className="text-sm font-medium text-amber-100">Backup создан для другого Telegram-профиля</p>
+                    <p className="text-sm font-medium text-amber-100">Backup СЃРѕР·РґР°РЅ РґР»СЏ РґСЂСѓРіРѕРіРѕ Telegram-РїСЂРѕС„РёР»СЏ</p>
                     <p className="mt-1 text-sm leading-6 text-amber-100/80">
-                      Можно продолжить, но текущие локальные данные будут полностью заменены данными из другого аккаунта.
+                      РњРѕР¶РЅРѕ РїСЂРѕРґРѕР»Р¶РёС‚СЊ, РЅРѕ С‚РµРєСѓС‰РёРµ Р»РѕРєР°Р»СЊРЅС‹Рµ РґР°РЅРЅС‹Рµ Р±СѓРґСѓС‚ РїРѕР»РЅРѕСЃС‚СЊСЋ Р·Р°РјРµРЅРµРЅС‹ РґР°РЅРЅС‹РјРё РёР· РґСЂСѓРіРѕРіРѕ Р°РєРєР°СѓРЅС‚Р°.
                     </p>
                   </div>
                 </div>
                 <label className="mt-4 flex items-start gap-3 rounded-[18px] border border-amber-300/15 bg-black/10 px-4 py-3 text-sm text-amber-50">
                   <input checked={ownerConfirmed} className="mt-1" onChange={(event) => setOwnerConfirmed(event.target.checked)} type="checkbox" />
-                  <span>Понимаю, что импортирую backup другого профиля, и подтверждаю полную замену локальных данных.</span>
+                  <span>РџРѕРЅРёРјР°СЋ, С‡С‚Рѕ РёРјРїРѕСЂС‚РёСЂСѓСЋ backup РґСЂСѓРіРѕРіРѕ РїСЂРѕС„РёР»СЏ, Рё РїРѕРґС‚РІРµСЂР¶РґР°СЋ РїРѕР»РЅСѓСЋ Р·Р°РјРµРЅСѓ Р»РѕРєР°Р»СЊРЅС‹С… РґР°РЅРЅС‹С….</span>
                 </label>
               </div>
             ) : null}
 
             <div className="flex gap-3">
               <button className="sheet-secondary-button" onClick={() => setPreview(null)} type="button">
-                Отменить
+                РћС‚РјРµРЅРёС‚СЊ
               </button>
               <button
                 className="sheet-primary-button"
@@ -349,7 +349,7 @@ export function SettingsPage() {
                 onClick={() => void handleRestore()}
                 type="button"
               >
-                {isRestoring ? 'Восстанавливаем…' : 'Полностью заменить данные'}
+                {isRestoring ? 'Р’РѕСЃСЃС‚Р°РЅР°РІР»РёРІР°РµРјвЂ¦' : 'РџРѕР»РЅРѕСЃС‚СЊСЋ Р·Р°РјРµРЅРёС‚СЊ РґР°РЅРЅС‹Рµ'}
               </button>
             </div>
           </div>
@@ -360,7 +360,7 @@ export function SettingsPage() {
         <div className="flex items-start justify-between gap-3">
           <div>
             <p className="soft-kicker">Danger zone</p>
-            <h2 className="mt-1 text-xl font-semibold text-white">Очистить локальные данные</h2>
+            <h2 className="mt-1 text-xl font-semibold text-white">РћС‡РёСЃС‚РёС‚СЊ Р»РѕРєР°Р»СЊРЅС‹Рµ РґР°РЅРЅС‹Рµ</h2>
           </div>
           <div className="icon-circle-button text-[var(--app-danger)]">
             <TrashIcon size={18} />
@@ -368,7 +368,7 @@ export function SettingsPage() {
         </div>
         <>
           <p className="mt-3 text-sm leading-6 text-[var(--app-muted)]">
-            Будут удалены {summary?.transactions ?? 0} операций, {summary?.receipts ?? 0} чеков, {summary?.budget_limits ?? 0} лимитов и {summary?.custom_categories ?? 0} пользовательских категорий. Системные категории останутся и создадутся заново.
+            Р‘СѓРґСѓС‚ СѓРґР°Р»РµРЅС‹ {summary?.transactions ?? 0} РѕРїРµСЂР°С†РёР№, {summary?.receipts ?? 0} С‡РµРєРѕРІ, {summary?.budget_limits ?? 0} Р»РёРјРёС‚РѕРІ Рё {summary?.custom_categories ?? 0} РїРѕР»СЊР·РѕРІР°С‚РµР»СЊСЃРєРёС… РєР°С‚РµРіРѕСЂРёР№. РЎРёСЃС‚РµРјРЅС‹Рµ РєР°С‚РµРіРѕСЂРёРё РѕСЃС‚Р°РЅСѓС‚СЃСЏ Рё СЃРѕР·РґР°РґСѓС‚СЃСЏ Р·Р°РЅРѕРІРѕ.
           </p>
 
           {clearArmed ? (
@@ -376,25 +376,25 @@ export function SettingsPage() {
               <div className="flex items-start gap-3">
                 <AlertTriangleIcon className="mt-0.5 text-[var(--app-danger)]" size={18} />
                 <div>
-                  <p className="text-sm font-medium text-white">Подтверди очистку</p>
+                  <p className="text-sm font-medium text-white">РџРѕРґС‚РІРµСЂРґРё РѕС‡РёСЃС‚РєСѓ</p>
                   <p className="mt-1 text-sm leading-6 text-[var(--app-muted)]">
-                    После очистки данные этого локального профиля исчезнут, пока ты не восстановишь их из backup.
+                    РџРѕСЃР»Рµ РѕС‡РёСЃС‚РєРё РґР°РЅРЅС‹Рµ СЌС‚РѕРіРѕ Р»РѕРєР°Р»СЊРЅРѕРіРѕ РїСЂРѕС„РёР»СЏ РёСЃС‡РµР·РЅСѓС‚, РїРѕРєР° С‚С‹ РЅРµ РІРѕСЃСЃС‚Р°РЅРѕРІРёС€СЊ РёС… РёР· backup.
                   </p>
                 </div>
               </div>
 
               <div className="mt-4 flex gap-3">
                 <button className="sheet-secondary-button" onClick={() => setClearArmed(false)} type="button">
-                  Отмена
+                  РћС‚РјРµРЅР°
                 </button>
                 <button className="sheet-primary-button" disabled={isClearing} onClick={() => void handleClear()} type="button">
-                  {isClearing ? 'Очищаем…' : 'Удалить навсегда'}
+                  {isClearing ? 'РћС‡РёС‰Р°РµРјвЂ¦' : 'РЈРґР°Р»РёС‚СЊ РЅР°РІСЃРµРіРґР°'}
                 </button>
               </div>
             </div>
           ) : (
             <button className="sheet-secondary-button mt-5 w-full border-[var(--app-danger)]/25 text-[var(--app-danger)]" disabled={!localMode} onClick={() => void handleClear()} type="button">
-              Начать очистку
+              РќР°С‡Р°С‚СЊ РѕС‡РёСЃС‚РєСѓ
             </button>
           )}
         </>

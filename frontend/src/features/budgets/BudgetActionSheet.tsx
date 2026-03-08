@@ -130,8 +130,8 @@ export function BudgetActionSheet() {
         <div className="flex items-start justify-between gap-4">
           <div>
             <p className="text-xs uppercase tracking-[0.28em] text-[var(--app-muted)]">Budget control</p>
-            <h2 className="mt-2 text-[26px] font-semibold leading-tight text-[var(--app-text)]">Месячные лимиты</h2>
-            <p className="mt-2 max-w-[280px] text-sm leading-6 text-[var(--app-muted)]">Настрой общий лимит и бюджеты по системным категориям. Предупреждения появятся прямо на главной и в аналитике.</p>
+            <h2 className="mt-2 text-[26px] font-semibold leading-tight text-[var(--app-text)]">РњРµСЃСЏС‡РЅС‹Рµ Р»РёРјРёС‚С‹</h2>
+            <p className="mt-2 max-w-[280px] text-sm leading-6 text-[var(--app-muted)]">РќР°СЃС‚СЂРѕР№ РѕР±С‰РёР№ Р»РёРјРёС‚ Рё Р±СЋРґР¶РµС‚С‹ РїРѕ СЃРёСЃС‚РµРјРЅС‹Рј РєР°С‚РµРіРѕСЂРёСЏРј. РџСЂРµРґСѓРїСЂРµР¶РґРµРЅРёСЏ РїРѕСЏРІСЏС‚СЃСЏ РїСЂСЏРјРѕ РЅР° РіР»Р°РІРЅРѕР№ Рё РІ Р°РЅР°Р»РёС‚РёРєРµ.</p>
           </div>
           <button className="icon-circle-button" onClick={closeSheet} type="button">
             <CloseIcon size={18} />
@@ -149,8 +149,8 @@ export function BudgetActionSheet() {
             <section className="premium-card mt-6 rounded-[24px] p-4">
               <div className="flex items-start justify-between gap-3">
                 <div>
-                  <p className="text-sm font-medium text-white">Общий лимит месяца</p>
-                  <p className="mt-1 text-sm leading-6 text-[var(--app-muted)]">Следим за общим расходом, независимо от категорий.</p>
+                  <p className="text-sm font-medium text-white">РћР±С‰РёР№ Р»РёРјРёС‚ РјРµСЃСЏС†Р°</p>
+                  <p className="mt-1 text-sm leading-6 text-[var(--app-muted)]">РЎР»РµРґРёРј Р·Р° РѕР±С‰РёРј СЂР°СЃС…РѕРґРѕРј, РЅРµР·Р°РІРёСЃРёРјРѕ РѕС‚ РєР°С‚РµРіРѕСЂРёР№.</p>
                 </div>
                 <button
                   className={clsx(
@@ -186,11 +186,11 @@ export function BudgetActionSheet() {
               <div className="flex items-center justify-between gap-3">
                 <div>
                   <p className="soft-kicker">Categories</p>
-                  <h3 className="mt-1 text-lg font-semibold text-white">Лимиты по категориям</h3>
-                  <p className="mt-1 text-sm text-[var(--app-muted)]">Активно {enabledCategoryCount} из {categories.length}</p>
+                  <h3 className="mt-1 text-lg font-semibold text-white">Р›РёРјРёС‚С‹ РїРѕ РєР°С‚РµРіРѕСЂРёСЏРј</h3>
+                  <p className="mt-1 text-sm text-[var(--app-muted)]">РђРєС‚РёРІРЅРѕ {enabledCategoryCount} РёР· {categories.length}</p>
                 </div>
                 <button className="text-sm text-[var(--app-accent)]" onClick={handleReset} type="button">
-                  Сбросить всё
+                  РЎР±СЂРѕСЃРёС‚СЊ РІСЃС‘
                 </button>
               </div>
 
@@ -203,7 +203,7 @@ export function BudgetActionSheet() {
                       </div>
                       <div>
                         <p className="font-medium text-white">{category.name}</p>
-                        <p className="mt-1 text-sm text-[var(--app-muted)]">Месячный потолок по этой категории</p>
+                        <p className="mt-1 text-sm text-[var(--app-muted)]">РњРµСЃСЏС‡РЅС‹Р№ РїРѕС‚РѕР»РѕРє РїРѕ СЌС‚РѕР№ РєР°С‚РµРіРѕСЂРёРё</p>
                       </div>
                     </div>
                     <button
@@ -240,7 +240,7 @@ export function BudgetActionSheet() {
 
             {invalidEnabledValue ? (
               <div className="mt-4 rounded-[20px] border border-amber-400/20 bg-amber-400/10 px-4 py-3 text-sm leading-6 text-amber-100">
-                Для включённых лимитов нужно указать сумму больше нуля.
+                Р”Р»СЏ РІРєР»СЋС‡С‘РЅРЅС‹С… Р»РёРјРёС‚РѕРІ РЅСѓР¶РЅРѕ СѓРєР°Р·Р°С‚СЊ СЃСѓРјРјСѓ Р±РѕР»СЊС€Рµ РЅСѓР»СЏ.
               </div>
             ) : null}
           </>
@@ -248,13 +248,13 @@ export function BudgetActionSheet() {
 
         <div className="mt-6 flex gap-3">
           <button className="sheet-secondary-button" onClick={closeSheet} type="button">
-            Отмена
+            РћС‚РјРµРЅР°
           </button>
           <button className="sheet-secondary-button" onClick={handleReset} type="button">
-            Очистить
+            РћС‡РёСЃС‚РёС‚СЊ
           </button>
           <button className="sheet-primary-button" disabled={isLoading || invalidEnabledValue || saveBudgetMutation.isPending} onClick={() => void handleSave()} type="button">
-            {saveBudgetMutation.isPending ? 'Сохраняем…' : 'Сохранить лимиты'}
+            {saveBudgetMutation.isPending ? 'РЎРѕС…СЂР°РЅСЏРµРјвЂ¦' : 'РЎРѕС…СЂР°РЅРёС‚СЊ Р»РёРјРёС‚С‹'}
           </button>
         </div>
       </div>

@@ -44,7 +44,7 @@ function getBudgetTone(status: BudgetStatus) {
   switch (status) {
     case 'exceeded':
       return {
-        label: 'Перелимит',
+        label: 'РџРµСЂРµР»РёРјРёС‚',
         badgeClass: 'border-red-400/20 bg-red-400/10 text-red-100',
         fill: '#ff7d7d',
         textClass: 'text-[var(--app-danger)]',
@@ -58,14 +58,14 @@ function getBudgetTone(status: BudgetStatus) {
       };
     case 'normal':
       return {
-        label: 'В норме',
+        label: 'Р’ РЅРѕСЂРјРµ',
         badgeClass: 'border-emerald-400/20 bg-emerald-400/10 text-emerald-100',
         fill: '#2fd39a',
         textClass: 'text-[var(--app-success)]',
       };
     default:
       return {
-        label: 'Не настроено',
+        label: 'РќРµ РЅР°СЃС‚СЂРѕРµРЅРѕ',
         badgeClass: 'border-[var(--app-stroke)] bg-white/[0.03] text-[var(--app-muted)]',
         fill: '#6f6bff',
         textClass: 'text-[var(--app-muted)]',
@@ -75,14 +75,14 @@ function getBudgetTone(status: BudgetStatus) {
 
 function formatBudgetFooter(remaining: number | null) {
   if (remaining == null) {
-    return 'Лимит не задан';
+    return 'Р›РёРјРёС‚ РЅРµ Р·Р°РґР°РЅ';
   }
 
   if (remaining >= 0) {
-    return `Осталось ${formatMoney(remaining)}`;
+    return `РћСЃС‚Р°Р»РѕСЃСЊ ${formatMoney(remaining)}`;
   }
 
-  return `Перерасход ${formatMoney(Math.abs(remaining))}`;
+  return `РџРµСЂРµСЂР°СЃС…РѕРґ ${formatMoney(Math.abs(remaining))}`;
 }
 
 export function InsightsPage() {
@@ -173,7 +173,7 @@ export function InsightsPage() {
         <div className="mb-3 flex items-center justify-between">
           <div>
             <p className="soft-kicker">Breakdown</p>
-            <h2 className="mt-1 text-xl font-semibold text-white">{segment === 'expense' ? 'Структура расходов' : 'Источники дохода'}</h2>
+            <h2 className="mt-1 text-xl font-semibold text-white">{segment === 'expense' ? 'РЎС‚СЂСѓРєС‚СѓСЂР° СЂР°СЃС…РѕРґРѕРІ' : 'РСЃС‚РѕС‡РЅРёРєРё РґРѕС…РѕРґР°'}</h2>
           </div>
         </div>
 
@@ -183,7 +183,7 @@ export function InsightsPage() {
             <Skeleton className="h-32 w-full rounded-[26px]" />
           </div>
         ) : derived.breakdown.length === 0 ? (
-          <div className="empty-card">Здесь появятся категории и источники, когда в месяце накопятся операции.</div>
+          <div className="empty-card">Р—РґРµСЃСЊ РїРѕСЏРІСЏС‚СЃСЏ РєР°С‚РµРіРѕСЂРёРё Рё РёСЃС‚РѕС‡РЅРёРєРё, РєРѕРіРґР° РІ РјРµСЃСЏС†Рµ РЅР°РєРѕРїСЏС‚СЃСЏ РѕРїРµСЂР°С†РёРё.</div>
         ) : (
           <div className="space-y-3">
             {derived.breakdown.map((item) => (
@@ -203,10 +203,10 @@ export function InsightsPage() {
           <div className="mb-3 flex items-center justify-between gap-3">
             <div>
               <p className="soft-kicker">Budget vs actual</p>
-              <h2 className="mt-1 text-xl font-semibold text-white">Лимиты и факт</h2>
+              <h2 className="mt-1 text-xl font-semibold text-white">Р›РёРјРёС‚С‹ Рё С„Р°РєС‚</h2>
             </div>
             <button className="text-sm text-[var(--app-accent)]" onClick={() => openSheet('budget')} type="button">
-              Настроить
+              РќР°СЃС‚СЂРѕРёС‚СЊ
             </button>
           </div>
 
@@ -217,7 +217,7 @@ export function InsightsPage() {
             </div>
           ) : !budgetOverview || budgetOverview.configured_count === 0 ? (
             <div className="empty-card">
-              Здесь появится управленческий слой: общий бюджет месяца и категории, которые быстрее всего подходят к лимиту.
+              Р—РґРµСЃСЊ РїРѕСЏРІРёС‚СЃСЏ СѓРїСЂР°РІР»РµРЅС‡РµСЃРєРёР№ СЃР»РѕР№: РѕР±С‰РёР№ Р±СЋРґР¶РµС‚ РјРµСЃСЏС†Р° Рё РєР°С‚РµРіРѕСЂРёРё, РєРѕС‚РѕСЂС‹Рµ Р±С‹СЃС‚СЂРµРµ РІСЃРµРіРѕ РїРѕРґС…РѕРґСЏС‚ Рє Р»РёРјРёС‚Сѓ.
             </div>
           ) : (
             <div className="space-y-3">
@@ -225,7 +225,7 @@ export function InsightsPage() {
                 <div className="premium-card rounded-[26px] p-4">
                   <div className="flex items-start justify-between gap-3">
                     <div>
-                      <p className="text-sm text-[var(--app-muted)]">Общий лимит</p>
+                      <p className="text-sm text-[var(--app-muted)]">РћР±С‰РёР№ Р»РёРјРёС‚</p>
                       <p className="mt-2 text-2xl font-semibold tracking-[-0.04em] text-white">{formatMoney(budgetOverview.overall.spent)}</p>
                     </div>
                     <div className={clsx('rounded-full border px-3 py-2 text-xs font-semibold uppercase tracking-[0.18em]', getBudgetTone(budgetOverview.overall.status).badgeClass)}>
@@ -242,19 +242,19 @@ export function InsightsPage() {
                     />
                   </div>
                   <div className="mt-3 flex items-center justify-between gap-3 text-sm text-[var(--app-muted)]">
-                    <span>Лимит {formatMoney(budgetOverview.overall.limit ?? 0)}</span>
+                    <span>Р›РёРјРёС‚ {formatMoney(budgetOverview.overall.limit ?? 0)}</span>
                     <span className={getBudgetTone(budgetOverview.overall.status).textClass}>{formatBudgetFooter(budgetOverview.overall.remaining)}</span>
                   </div>
                 </div>
               ) : (
                 <div className="rounded-[24px] border border-[var(--app-stroke)] bg-white/[0.03] p-4 text-sm leading-6 text-[var(--app-muted)]">
-                  Общий лимит пока не задан, поэтому ниже сравниваем только расходы по категориям.
+                  РћР±С‰РёР№ Р»РёРјРёС‚ РїРѕРєР° РЅРµ Р·Р°РґР°РЅ, РїРѕСЌС‚РѕРјСѓ РЅРёР¶Рµ СЃСЂР°РІРЅРёРІР°РµРј С‚РѕР»СЊРєРѕ СЂР°СЃС…РѕРґС‹ РїРѕ РєР°С‚РµРіРѕСЂРёСЏРј.
                 </div>
               )}
 
               {budgetOverview.categories.length === 0 ? (
                 <div className="rounded-[24px] border border-[var(--app-stroke)] bg-white/[0.03] p-4 text-sm leading-6 text-[var(--app-muted)]">
-                  По категориям лимиты ещё не включены. Можно оставить только общий бюджет или добавить категории в шторке настроек.
+                  РџРѕ РєР°С‚РµРіРѕСЂРёСЏРј Р»РёРјРёС‚С‹ РµС‰С‘ РЅРµ РІРєР»СЋС‡РµРЅС‹. РњРѕР¶РЅРѕ РѕСЃС‚Р°РІРёС‚СЊ С‚РѕР»СЊРєРѕ РѕР±С‰РёР№ Р±СЋРґР¶РµС‚ РёР»Рё РґРѕР±Р°РІРёС‚СЊ РєР°С‚РµРіРѕСЂРёРё РІ С€С‚РѕСЂРєРµ РЅР°СЃС‚СЂРѕРµРє.
                 </div>
               ) : (
                 budgetOverview.categories.map((item) => {
@@ -264,7 +264,7 @@ export function InsightsPage() {
                       <div className="flex items-start justify-between gap-3">
                         <div>
                           <p className="text-base font-medium text-white">{item.category_name}</p>
-                          <p className="mt-1 text-sm text-[var(--app-muted)]">{formatMoney(item.spent)} из {formatMoney(item.limit ?? 0)}</p>
+                          <p className="mt-1 text-sm text-[var(--app-muted)]">{formatMoney(item.spent)} РёР· {formatMoney(item.limit ?? 0)}</p>
                         </div>
                         <div className={clsx('rounded-full border px-3 py-2 text-xs font-semibold uppercase tracking-[0.18em]', tone.badgeClass)}>
                           {tone.label}
@@ -298,16 +298,16 @@ export function InsightsPage() {
         ) : (
           <>
             <div className="metric-tile">
-              <p className="text-sm text-[var(--app-muted)]">Тренд</p>
+              <p className="text-sm text-[var(--app-muted)]">РўСЂРµРЅРґ</p>
               <p className={clsx('mt-2 text-[28px] font-semibold tracking-[-0.04em]', derived.trend >= 0 ? 'text-[var(--app-success)]' : 'text-[var(--app-danger)]')}>
                 {formatSignedPercent(derived.trend)}
               </p>
-              <p className="mt-2 text-xs text-[var(--app-muted)]">Динамика относительно прошлой недели</p>
+              <p className="mt-2 text-xs text-[var(--app-muted)]">Р”РёРЅР°РјРёРєР° РѕС‚РЅРѕСЃРёС‚РµР»СЊРЅРѕ РїСЂРѕС€Р»РѕР№ РЅРµРґРµР»Рё</p>
             </div>
             <div className="metric-tile">
-              <p className="text-sm text-[var(--app-muted)]">Средняя неделя</p>
+              <p className="text-sm text-[var(--app-muted)]">РЎСЂРµРґРЅСЏСЏ РЅРµРґРµР»СЏ</p>
               <p className="mt-2 text-[28px] font-semibold tracking-[-0.04em] text-white">{formatCompactMoney(derived.averagePerWeek)}</p>
-              <p className="mt-2 text-xs text-[var(--app-muted)]">Среднее значение по 4 недельным слотам</p>
+              <p className="mt-2 text-xs text-[var(--app-muted)]">РЎСЂРµРґРЅРµРµ Р·РЅР°С‡РµРЅРёРµ РїРѕ 4 РЅРµРґРµР»СЊРЅС‹Рј СЃР»РѕС‚Р°Рј</p>
             </div>
           </>
         )}

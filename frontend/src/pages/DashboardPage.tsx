@@ -42,28 +42,28 @@ function getBudgetTone(status: BudgetStatus) {
   switch (status) {
     case 'exceeded':
       return {
-        label: 'Перелимит',
+        label: 'РџРµСЂРµР»РёРјРёС‚',
         badgeClass: 'border-red-400/20 bg-red-400/10 text-red-100',
         fill: '#ff7d7d',
         textClass: 'text-[var(--app-danger)]',
       };
     case 'warning':
       return {
-        label: 'Порог 80%',
+        label: 'РџРѕСЂРѕРі 80%',
         badgeClass: 'border-amber-400/20 bg-amber-400/10 text-amber-100',
         fill: '#f59e0b',
         textClass: 'text-amber-200',
       };
     case 'normal':
       return {
-        label: 'В норме',
+        label: 'Р’ РЅРѕСЂРјРµ',
         badgeClass: 'border-emerald-400/20 bg-emerald-400/10 text-emerald-100',
         fill: '#2fd39a',
         textClass: 'text-[var(--app-success)]',
       };
     default:
       return {
-        label: 'Не настроено',
+        label: 'РќРµ РЅР°СЃС‚СЂРѕРµРЅРѕ',
         badgeClass: 'border-[var(--app-stroke)] bg-white/[0.03] text-[var(--app-muted)]',
         fill: '#6f6bff',
         textClass: 'text-[var(--app-muted)]',
@@ -89,14 +89,14 @@ function resolveBudgetState(overview: BudgetOverview | undefined | null): Budget
 
 function formatBudgetBalance(overview: BudgetOverview) {
   if (!overview.overall.enabled || overview.overall.remaining == null) {
-    return 'Общий лимит не задан';
+    return 'РћР±С‰РёР№ Р»РёРјРёС‚ РЅРµ Р·Р°РґР°РЅ';
   }
 
   if (overview.overall.remaining >= 0) {
-    return `Осталось ${formatMoney(overview.overall.remaining)}`;
+    return `РћСЃС‚Р°Р»РѕСЃСЊ ${formatMoney(overview.overall.remaining)}`;
   }
 
-  return `Перерасход ${formatMoney(Math.abs(overview.overall.remaining))}`;
+  return `РџРµСЂРµСЂР°СЃС…РѕРґ ${formatMoney(Math.abs(overview.overall.remaining))}`;
 }
 
 export function DashboardPage() {
@@ -144,7 +144,7 @@ export function DashboardPage() {
     ? budgetOverview.overall
     : budgetOverview?.highlighted[0] ?? null;
 
-  const firstName = user?.first_name?.trim() || 'друг';
+  const firstName = user?.first_name?.trim() || 'РґСЂСѓРі';
   const balance = overview?.balance ?? 0;
 
   return (
@@ -160,7 +160,7 @@ export function DashboardPage() {
           )}
           <div>
             <p className="soft-kicker">Premium ledger</p>
-            <p className="text-sm text-[var(--app-muted)]">{overview?.month ?? 'Этот месяц'}</p>
+            <p className="text-sm text-[var(--app-muted)]">{overview?.month ?? 'Р­С‚РѕС‚ РјРµСЃСЏС†'}</p>
           </div>
         </div>
 
@@ -175,8 +175,8 @@ export function DashboardPage() {
       </header>
 
       <section>
-        <p className="text-[34px] font-semibold leading-[1.02] tracking-[-0.04em] text-white">Привет, {firstName}</p>
-        <p className="mt-2 max-w-[280px] text-[15px] leading-6 text-[var(--app-muted)]">Вот краткий обзор движения денег и самых важных трат за текущий месяц.</p>
+        <p className="text-[34px] font-semibold leading-[1.02] tracking-[-0.04em] text-white">РџСЂРёРІРµС‚, {firstName}</p>
+        <p className="mt-2 max-w-[280px] text-[15px] leading-6 text-[var(--app-muted)]">Р’РѕС‚ РєСЂР°С‚РєРёР№ РѕР±Р·РѕСЂ РґРІРёР¶РµРЅРёСЏ РґРµРЅРµРі Рё СЃР°РјС‹С… РІР°Р¶РЅС‹С… С‚СЂР°С‚ Р·Р° С‚РµРєСѓС‰РёР№ РјРµСЃСЏС†.</p>
       </section>
 
       {overviewQuery.isLoading ? (
@@ -186,8 +186,8 @@ export function DashboardPage() {
           <div className="glow-dot left-[-30px] top-[-28px] h-24 w-24 bg-[var(--app-glow-a)]" />
           <div className="glow-dot bottom-[-28px] right-[-20px] h-24 w-24 bg-[var(--app-glow-b)]" />
           <div className="relative">
-            <p className="text-[15px] font-medium text-[var(--app-muted-strong)]">Финансовый ритм месяца</p>
-            <p className="mt-1 max-w-[250px] text-sm leading-6 text-[var(--app-muted)]">Следи за темпом расходов и добавляй операции, не выпадая из потока.</p>
+            <p className="text-[15px] font-medium text-[var(--app-muted-strong)]">Р¤РёРЅР°РЅСЃРѕРІС‹Р№ СЂРёС‚Рј РјРµСЃСЏС†Р°</p>
+            <p className="mt-1 max-w-[250px] text-sm leading-6 text-[var(--app-muted)]">РЎР»РµРґРё Р·Р° С‚РµРјРїРѕРј СЂР°СЃС…РѕРґРѕРІ Рё РґРѕР±Р°РІР»СЏР№ РѕРїРµСЂР°С†РёРё, РЅРµ РІС‹РїР°РґР°СЏ РёР· РїРѕС‚РѕРєР°.</p>
 
             <div className="bar-strip mt-6">
               {derived.bars.map((bar, index) => (
@@ -201,23 +201,23 @@ export function DashboardPage() {
 
             <div className="mt-6 grid grid-cols-2 gap-4">
               <div>
-                <p className="text-xs uppercase tracking-[0.2em] text-[var(--app-muted)]">Баланс</p>
+                <p className="text-xs uppercase tracking-[0.2em] text-[var(--app-muted)]">Р‘Р°Р»Р°РЅСЃ</p>
                 <p className={clsx('mt-2 text-[28px] font-semibold tracking-[-0.04em]', balance >= 0 ? 'text-[var(--app-success)]' : 'text-[var(--app-danger)]')}>
                   {formatMoney(balance)}
                 </p>
               </div>
               <div>
-                <p className="text-right text-xs uppercase tracking-[0.2em] text-[var(--app-muted)]">Траты месяца</p>
+                <p className="text-right text-xs uppercase tracking-[0.2em] text-[var(--app-muted)]">РўСЂР°С‚С‹ РјРµСЃСЏС†Р°</p>
                 <p className="mt-2 text-right text-[28px] font-semibold tracking-[-0.04em] text-white">{formatMoney(overview?.total_expense ?? 0)}</p>
               </div>
             </div>
 
             <div className="mt-5 flex gap-3">
               <button className="sheet-primary-button" onClick={() => openSheet('add')} type="button">
-                Добавить операцию
+                Р”РѕР±Р°РІРёС‚СЊ РѕРїРµСЂР°С†РёСЋ
               </button>
               <button className="sheet-secondary-button" onClick={() => openSheet('ocr')} type="button">
-                OCR чек
+                OCR С‡РµРє
               </button>
             </div>
           </div>
@@ -232,26 +232,26 @@ export function DashboardPage() {
             <div className="flex items-start justify-between gap-3">
               <div>
                 <p className="soft-kicker">Budget control</p>
-                <h2 className="mt-1 text-xl font-semibold text-white">Лимиты месяца</h2>
+                <h2 className="mt-1 text-xl font-semibold text-white">Р›РёРјРёС‚С‹ РјРµСЃСЏС†Р°</h2>
               </div>
               <button className="rounded-full border border-[var(--app-stroke)] bg-white/[0.03] px-3 py-2 text-xs font-medium uppercase tracking-[0.18em] text-[var(--app-muted)]" onClick={() => openSheet('budget')} type="button">
-                Настроить
+                РќР°СЃС‚СЂРѕРёС‚СЊ
               </button>
             </div>
 
             {!budgetOverview || budgetOverview.configured_count === 0 ? (
               <div className="mt-4 rounded-[24px] border border-dashed border-[var(--app-stroke)] bg-white/[0.02] p-4">
-                <p className="text-base font-medium text-white">Пока без лимитов</p>
-                <p className="mt-2 text-sm leading-6 text-[var(--app-muted)]">Задай общий бюджет или потолки по категориям — и мы сразу покажем, где появляется давление на месяц.</p>
+                <p className="text-base font-medium text-white">РџРѕРєР° Р±РµР· Р»РёРјРёС‚РѕРІ</p>
+                <p className="mt-2 text-sm leading-6 text-[var(--app-muted)]">Р—Р°РґР°Р№ РѕР±С‰РёР№ Р±СЋРґР¶РµС‚ РёР»Рё РїРѕС‚РѕР»РєРё РїРѕ РєР°С‚РµРіРѕСЂРёСЏРј вЂ” Рё РјС‹ СЃСЂР°Р·Сѓ РїРѕРєР°Р¶РµРј, РіРґРµ РїРѕСЏРІР»СЏРµС‚СЃСЏ РґР°РІР»РµРЅРёРµ РЅР° РјРµСЃСЏС†.</p>
                 <button className="sheet-primary-button mt-4 w-full" onClick={() => openSheet('budget')} type="button">
-                  Настроить бюджеты
+                  РќР°СЃС‚СЂРѕРёС‚СЊ Р±СЋРґР¶РµС‚С‹
                 </button>
               </div>
             ) : (
               <>
                 <div className="mt-4 flex items-start justify-between gap-4">
                   <div>
-                    <p className="text-sm text-[var(--app-muted)]">{budgetOverview.overall.enabled ? 'Потрачено от общего лимита' : 'Под контролем категорий'}</p>
+                    <p className="text-sm text-[var(--app-muted)]">{budgetOverview.overall.enabled ? 'РџРѕС‚СЂР°С‡РµРЅРѕ РѕС‚ РѕР±С‰РµРіРѕ Р»РёРјРёС‚Р°' : 'РџРѕРґ РєРѕРЅС‚СЂРѕР»РµРј РєР°С‚РµРіРѕСЂРёР№'}</p>
                     <p className="mt-2 text-[30px] font-semibold tracking-[-0.04em] text-white">
                       {budgetOverview.overall.enabled ? formatMoney(budgetOverview.overall.spent) : `${budgetOverview.categories.length}`}
                     </p>
@@ -276,10 +276,10 @@ export function DashboardPage() {
                 <div className="mt-3 flex items-center justify-between gap-3 text-sm text-[var(--app-muted)]">
                   <span>
                     {budgetOverview.overall.enabled && budgetOverview.overall.limit
-                      ? `Лимит ${formatMoney(budgetOverview.overall.limit)}`
-                      : `${budgetOverview.categories.length} категорий с лимитами`}
+                      ? `Р›РёРјРёС‚ ${formatMoney(budgetOverview.overall.limit)}`
+                      : `${budgetOverview.categories.length} РєР°С‚РµРіРѕСЂРёР№ СЃ Р»РёРјРёС‚Р°РјРё`}
                   </span>
-                  <span>{budgetOverview.exceeded_count > 0 ? `${budgetOverview.exceeded_count} в красной зоне` : `${budgetOverview.warning_count} близко к лимиту`}</span>
+                  <span>{budgetOverview.exceeded_count > 0 ? `${budgetOverview.exceeded_count} РІ РєСЂР°СЃРЅРѕР№ Р·РѕРЅРµ` : `${budgetOverview.warning_count} Р±Р»РёР·РєРѕ Рє Р»РёРјРёС‚Сѓ`}</span>
                 </div>
 
                 {budgetOverview.highlighted.length > 0 ? (
@@ -295,7 +295,7 @@ export function DashboardPage() {
                             </span>
                           </div>
                           <p className="mt-3 text-sm font-semibold text-white">{formatCompactMoney(item.spent)}</p>
-                          <p className="mt-1 text-xs text-[var(--app-muted)]">из {formatCompactMoney(item.limit ?? 0)}</p>
+                          <p className="mt-1 text-xs text-[var(--app-muted)]">РёР· {formatCompactMoney(item.limit ?? 0)}</p>
                         </div>
                       );
                     })}
@@ -313,26 +313,26 @@ export function DashboardPage() {
         ) : (
           <>
             <div className="metric-tile">
-              <p className="text-sm text-[var(--app-muted)]">Недельный тренд</p>
+              <p className="text-sm text-[var(--app-muted)]">РќРµРґРµР»СЊРЅС‹Р№ С‚СЂРµРЅРґ</p>
               <p className={clsx('mt-2 text-[28px] font-semibold tracking-[-0.04em]', derived.trend >= 0 ? 'text-[var(--app-success)]' : 'text-[var(--app-danger)]')}>
                 {formatSignedPercent(derived.trend)}
               </p>
-              <p className="mt-2 text-xs text-[var(--app-muted)]">Сравнение с предыдущими 7 днями</p>
+              <p className="mt-2 text-xs text-[var(--app-muted)]">РЎСЂР°РІРЅРµРЅРёРµ СЃ РїСЂРµРґС‹РґСѓС‰РёРјРё 7 РґРЅСЏРјРё</p>
             </div>
             <div className="metric-tile">
-              <p className="text-sm text-[var(--app-muted)]">Последняя покупка</p>
+              <p className="text-sm text-[var(--app-muted)]">РџРѕСЃР»РµРґРЅСЏСЏ РїРѕРєСѓРїРєР°</p>
               <p className="mt-2 text-[28px] font-semibold tracking-[-0.04em] text-[var(--app-danger)]">-{formatCompactMoney(derived.latestExpense?.amount ?? 0)}</p>
-              <p className="mt-2 text-xs text-[var(--app-muted)]">{derived.latestExpense?.merchant || derived.latestExpense?.category?.name || 'Нет данных'}</p>
+              <p className="mt-2 text-xs text-[var(--app-muted)]">{derived.latestExpense?.merchant || derived.latestExpense?.category?.name || 'РќРµС‚ РґР°РЅРЅС‹С…'}</p>
             </div>
             <div className="metric-tile">
-              <p className="text-sm text-[var(--app-muted)]">Средний чек</p>
+              <p className="text-sm text-[var(--app-muted)]">РЎСЂРµРґРЅРёР№ С‡РµРє</p>
               <p className="mt-2 text-[28px] font-semibold tracking-[-0.04em] text-white">{formatCompactMoney(derived.avgTicket)}</p>
-              <p className="mt-2 text-xs text-[var(--app-muted)]">По последним операциям месяца</p>
+              <p className="mt-2 text-xs text-[var(--app-muted)]">РџРѕ РїРѕСЃР»РµРґРЅРёРј РѕРїРµСЂР°С†РёСЏРј РјРµСЃСЏС†Р°</p>
             </div>
             <div className="metric-tile">
-              <p className="text-sm text-[var(--app-muted)]">Дневной ритм</p>
+              <p className="text-sm text-[var(--app-muted)]">Р”РЅРµРІРЅРѕР№ СЂРёС‚Рј</p>
               <p className="mt-2 text-[28px] font-semibold tracking-[-0.04em] text-[var(--app-accent)]">{formatCompactMoney(derived.dayBudget)}</p>
-              <p className="mt-2 text-xs text-[var(--app-muted)]">Чтобы удержать текущий баланс</p>
+              <p className="mt-2 text-xs text-[var(--app-muted)]">Р§С‚РѕР±С‹ СѓРґРµСЂР¶Р°С‚СЊ С‚РµРєСѓС‰РёР№ Р±Р°Р»Р°РЅСЃ</p>
             </div>
           </>
         )}
@@ -342,10 +342,10 @@ export function DashboardPage() {
         <div className="mb-4 flex items-center justify-between">
           <div>
             <p className="soft-kicker">Quick patterns</p>
-            <h2 className="mt-1 text-xl font-semibold text-white">Частые платежи</h2>
+            <h2 className="mt-1 text-xl font-semibold text-white">Р§Р°СЃС‚С‹Рµ РїР»Р°С‚РµР¶Рё</h2>
           </div>
           <button className="text-sm text-[var(--app-accent)]" onClick={() => openSheet('add')} type="button">
-            Добавить
+            Р”РѕР±Р°РІРёС‚СЊ
           </button>
         </div>
 
@@ -354,7 +354,7 @@ export function DashboardPage() {
             {Array.from({ length: 3 }).map((_, index) => <Skeleton key={index} className="h-24 w-full rounded-[20px]" />)}
           </div>
         ) : derived.recurring.length === 0 ? (
-          <div className="empty-card">Пока нет частых операций. Добавь несколько покупок — и здесь появятся быстрые паттерны.</div>
+          <div className="empty-card">РџРѕРєР° РЅРµС‚ С‡Р°СЃС‚С‹С… РѕРїРµСЂР°С†РёР№. Р”РѕР±Р°РІСЊ РЅРµСЃРєРѕР»СЊРєРѕ РїРѕРєСѓРїРѕРє вЂ” Рё Р·РґРµСЃСЊ РїРѕСЏРІСЏС‚СЃСЏ Р±С‹СЃС‚СЂС‹Рµ РїР°С‚С‚РµСЂРЅС‹.</div>
         ) : (
           <div className="grid grid-cols-3 gap-3">
             {derived.recurring.map((item) => (
@@ -375,11 +375,11 @@ export function DashboardPage() {
         <div className="mb-4 flex items-center justify-between">
           <div>
             <p className="soft-kicker">Recent activity</p>
-            <h2 className="mt-1 text-xl font-semibold text-white">Последние операции</h2>
+            <h2 className="mt-1 text-xl font-semibold text-white">РџРѕСЃР»РµРґРЅРёРµ РѕРїРµСЂР°С†РёРё</h2>
           </div>
           <button className="inline-flex items-center gap-2 text-sm text-[var(--app-accent)]" onClick={() => openSheet('add')} type="button">
             <SparklesIcon size={14} />
-            Быстрый ввод
+            Р‘С‹СЃС‚СЂС‹Р№ РІРІРѕРґ
           </button>
         </div>
 
@@ -390,7 +390,7 @@ export function DashboardPage() {
             <Skeleton className="h-20 w-full rounded-[22px]" />
           </div>
         ) : transactions.length === 0 ? (
-          <div className="empty-card">Сохрани первую операцию, чтобы главная начала выглядеть как в референсе — живой и полезной.</div>
+          <div className="empty-card">РЎРѕС…СЂР°РЅРё РїРµСЂРІСѓСЋ РѕРїРµСЂР°С†РёСЋ, С‡С‚РѕР±С‹ РіР»Р°РІРЅР°СЏ РЅР°С‡Р°Р»Р° РІС‹РіР»СЏРґРµС‚СЊ РєР°Рє РІ СЂРµС„РµСЂРµРЅСЃРµ вЂ” Р¶РёРІРѕР№ Рё РїРѕР»РµР·РЅРѕР№.</div>
         ) : (
           <div className="space-y-3">
             {transactions.slice(0, 3).map((transaction) => {
@@ -413,8 +413,8 @@ export function DashboardPage() {
                       {isExpense ? <ActivityIcon size={18} /> : <SparklesIcon size={18} />}
                     </div>
                     <div>
-                      <p className="font-medium text-white">{transaction.merchant || transaction.description || 'Без названия'}</p>
-                      <p className="mt-1 text-sm text-[var(--app-muted)]">{transaction.category?.name ?? 'Автокатегория'}</p>
+                      <p className="font-medium text-white">{transaction.merchant || transaction.description || 'Р‘РµР· РЅР°Р·РІР°РЅРёСЏ'}</p>
+                      <p className="mt-1 text-sm text-[var(--app-muted)]">{transaction.category?.name ?? 'РђРІС‚РѕРєР°С‚РµРіРѕСЂРёСЏ'}</p>
                     </div>
                   </div>
                   <div className="text-right">

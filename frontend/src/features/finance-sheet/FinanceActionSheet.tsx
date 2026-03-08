@@ -161,7 +161,7 @@ export function FinanceActionSheet() {
       ...current,
       amount: receipt.extracted_total ? String(receipt.extracted_total) : current.amount,
       merchant: receipt.extracted_merchant ?? current.merchant,
-      description: current.description || 'Добавлено из OCR чека',
+      description: current.description || 'Р”РѕР±Р°РІР»РµРЅРѕ РёР· OCR С‡РµРєР°',
       source: 'ocr',
       receipt_id: receipt.id,
     }));
@@ -171,8 +171,8 @@ export function FinanceActionSheet() {
 
   const isBusy = createMutation.isPending || updateMutation.isPending;
   const canSubmit = Number(form.amount) > 0 && isTransactionMode;
-  const headerTitle = mode === 'edit' ? 'Редактировать операцию' : mode === 'ocr' ? 'Добавить по чеку' : 'Быстрое добавление';
-  const headerSubtitle = mode === 'edit' ? 'Измените сумму, категорию и детали' : mode === 'ocr' ? 'Сначала загрузите чек, потом подтвердите данные' : 'Сумма, категория и одно нажатие на сохранение';
+  const headerTitle = mode === 'edit' ? 'Р РµРґР°РєС‚РёСЂРѕРІР°С‚СЊ РѕРїРµСЂР°С†РёСЋ' : mode === 'ocr' ? 'Р”РѕР±Р°РІРёС‚СЊ РїРѕ С‡РµРєСѓ' : 'Р‘С‹СЃС‚СЂРѕРµ РґРѕР±Р°РІР»РµРЅРёРµ';
+  const headerSubtitle = mode === 'edit' ? 'РР·РјРµРЅРёС‚Рµ СЃСѓРјРјСѓ, РєР°С‚РµРіРѕСЂРёСЋ Рё РґРµС‚Р°Р»Рё' : mode === 'ocr' ? 'РЎРЅР°С‡Р°Р»Р° Р·Р°РіСЂСѓР·РёС‚Рµ С‡РµРє, РїРѕС‚РѕРј РїРѕРґС‚РІРµСЂРґРёС‚Рµ РґР°РЅРЅС‹Рµ' : 'РЎСѓРјРјР°, РєР°С‚РµРіРѕСЂРёСЏ Рё РѕРґРЅРѕ РЅР°Р¶Р°С‚РёРµ РЅР° СЃРѕС…СЂР°РЅРµРЅРёРµ';
 
   const topCategories = useMemo(() => categories.slice(0, 6), [categories]);
 
@@ -264,7 +264,7 @@ export function FinanceActionSheet() {
             <div className="flex items-center justify-between gap-3">
               <div>
                 <p className="text-sm font-medium text-white">OCR receipt</p>
-                <p className="mt-1 text-sm text-[var(--app-muted)]">Фото чека подтянет сумму и мерчанта в форму ниже.</p>
+                <p className="mt-1 text-sm text-[var(--app-muted)]">Р¤РѕС‚Рѕ С‡РµРєР° РїРѕРґС‚СЏРЅРµС‚ СЃСѓРјРјСѓ Рё РјРµСЂС‡Р°РЅС‚Р° РІ С„РѕСЂРјСѓ РЅРёР¶Рµ.</p>
               </div>
               <button className="icon-circle-button" onClick={() => inputRef.current?.click()} type="button">
                 <UploadIcon size={18} />
@@ -274,18 +274,18 @@ export function FinanceActionSheet() {
             {uploadMutation.isPending ? <Skeleton className="h-28 w-full rounded-[22px]" /> : null}
             {receipt?.status === 'pending' ? (
               <div className="rounded-[24px] border border-[var(--app-stroke)] bg-white/[0.03] p-4 text-sm text-[var(--app-muted)]">
-                Обрабатываем чек через OCR-воркер…
+                РћР±СЂР°Р±Р°С‚С‹РІР°РµРј С‡РµРє С‡РµСЂРµР· OCR-РІРѕСЂРєРµСЂвЂ¦
               </div>
             ) : null}
             {receipt?.status === 'processed' ? (
               <div className="rounded-[24px] border border-emerald-400/20 bg-emerald-400/5 p-4">
                 <div className="flex items-center justify-between gap-3">
                   <div>
-                    <p className="text-sm text-[var(--app-muted)]">Распознано</p>
-                    <p className="mt-1 text-lg font-semibold text-white">{receipt.extracted_merchant || 'Без названия'}</p>
+                    <p className="text-sm text-[var(--app-muted)]">Р Р°СЃРїРѕР·РЅР°РЅРѕ</p>
+                    <p className="mt-1 text-lg font-semibold text-white">{receipt.extracted_merchant || 'Р‘РµР· РЅР°Р·РІР°РЅРёСЏ'}</p>
                   </div>
                   <div className="text-right">
-                    <p className="text-sm text-[var(--app-muted)]">Сумма</p>
+                    <p className="text-sm text-[var(--app-muted)]">РЎСѓРјРјР°</p>
                     <p className="mt-1 text-lg font-semibold text-white">{formatMoney(receipt.extracted_total ?? 0)}</p>
                   </div>
                 </div>
@@ -293,7 +293,7 @@ export function FinanceActionSheet() {
             ) : null}
             {receipt?.status === 'failed' ? (
               <div className="rounded-[24px] border border-[var(--app-danger)]/20 bg-[var(--app-danger)]/10 p-4 text-sm text-[var(--app-danger)]">
-                {receipt.error || 'Не удалось обработать чек.'}
+                {receipt.error || 'РќРµ СѓРґР°Р»РѕСЃСЊ РѕР±СЂР°Р±РѕС‚Р°С‚СЊ С‡РµРє.'}
               </div>
             ) : null}
           </div>
@@ -362,7 +362,7 @@ export function FinanceActionSheet() {
               type="button"
             >
               <SparklesIcon size={16} />
-              {detailsOpen ? 'Скрыть детали' : 'Добавить детали'}
+              {detailsOpen ? 'РЎРєСЂС‹С‚СЊ РґРµС‚Р°Р»Рё' : 'Р”РѕР±Р°РІРёС‚СЊ РґРµС‚Р°Р»Рё'}
             </button>
 
             {detailsOpen ? (
@@ -370,13 +370,13 @@ export function FinanceActionSheet() {
                 <input
                   className="sheet-input"
                   onChange={(event) => handleChange('merchant', event.target.value)}
-                  placeholder="Магазин или контрагент"
+                  placeholder="РњР°РіР°Р·РёРЅ РёР»Рё РєРѕРЅС‚СЂР°РіРµРЅС‚"
                   value={form.merchant}
                 />
                 <textarea
                   className="sheet-input min-h-24 resize-none"
                   onChange={(event) => handleChange('description', event.target.value)}
-                  placeholder="Описание операции"
+                  placeholder="РћРїРёСЃР°РЅРёРµ РѕРїРµСЂР°С†РёРё"
                   value={form.description}
                 />
                 <select
@@ -384,7 +384,7 @@ export function FinanceActionSheet() {
                   onChange={(event) => handleChange('category_id', event.target.value)}
                   value={form.category_id}
                 >
-                  <option value="">Автокатегория</option>
+                  <option value="">РђРІС‚РѕРєР°С‚РµРіРѕСЂРёСЏ</option>
                   {categories.map((category) => (
                     <option key={category.id} value={category.id}>
                       {category.name}
@@ -394,7 +394,7 @@ export function FinanceActionSheet() {
                 {form.receipt_id ? (
                   <div className="flex items-center gap-2 rounded-[18px] border border-[var(--app-stroke)] bg-white/[0.03] px-4 py-3 text-sm text-[var(--app-muted)]">
                     <ReceiptIcon size={16} />
-                    Связан чек {form.receipt_id.slice(0, 8)}…
+                    РЎРІСЏР·Р°РЅ С‡РµРє {form.receipt_id.slice(0, 8)}вЂ¦
                   </div>
                 ) : null}
               </div>
@@ -404,10 +404,10 @@ export function FinanceActionSheet() {
 
         <div className="mt-6 flex gap-3">
           <button className="sheet-secondary-button" onClick={handleClose} type="button">
-            Отмена
+            РћС‚РјРµРЅР°
           </button>
           <button className="sheet-primary-button" disabled={!canSubmit || isBusy} onClick={() => void handleSubmit()} type="button">
-            {isBusy ? 'Сохраняем…' : mode === 'edit' ? 'Обновить' : 'Сохранить'}
+            {isBusy ? 'РЎРѕС…СЂР°РЅСЏРµРјвЂ¦' : mode === 'edit' ? 'РћР±РЅРѕРІРёС‚СЊ' : 'РЎРѕС…СЂР°РЅРёС‚СЊ'}
           </button>
         </div>
       </div>
