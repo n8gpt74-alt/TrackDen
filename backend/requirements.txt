@@ -1,0 +1,14 @@
+alembic==1.18.4
+asyncpg==0.31.0
+fastapi==0.135.1
+greenlet==3.2.4
+httpx==0.28.1
+orjson==3.11.4
+psycopg[binary]==3.2.12
+pydantic==2.12.5
+pydantic-settings==2.11.0
+python-multipart==0.0.20
+redis==7.3.0
+sqlalchemy==2.0.48
+structlog==25.5.0
+uvicorn[standard]==0.41.0
