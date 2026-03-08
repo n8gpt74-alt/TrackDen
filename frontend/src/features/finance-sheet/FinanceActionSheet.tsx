@@ -1,4 +1,4 @@
-import clsx from 'clsx';
+﻿import clsx from 'clsx';
 import { useQueryClient } from '@tanstack/react-query';
 import { type ChangeEvent, useEffect, useMemo, useRef, useState } from 'react';
 
@@ -172,7 +172,11 @@ export function FinanceActionSheet() {
   const isBusy = createMutation.isPending || updateMutation.isPending;
   const canSubmit = Number(form.amount) > 0 && isTransactionMode;
   const headerTitle = mode === 'edit' ? 'Редактировать операцию' : mode === 'ocr' ? 'Добавить по чеку' : 'Быстрое добавление';
-  const headerSubtitle = mode === 'edit' ? 'Измените сумму, категорию и детали' : mode === 'ocr' ? 'Сначала загрузите чек, потом подтвердите данные' : 'Сумма, категория и одно нажатие на сохранение';
+  const headerSubtitle = mode === 'edit'
+    ? 'Измени сумму, категорию и детали без лишних экранов.'
+    : mode === 'ocr'
+      ? 'Сначала загрузи чек, затем подтверди распознанные данные.'
+      : 'Сумма, категория и одно нажатие на сохранение.';
 
   const topCategories = useMemo(() => categories.slice(0, 6), [categories]);
 
@@ -186,6 +190,7 @@ export function FinanceActionSheet() {
       queryClient.invalidateQueries({ queryKey: ['analytics'] }),
       queryClient.invalidateQueries({ queryKey: ['transaction'] }),
       queryClient.invalidateQueries({ queryKey: ['budgets'] }),
+      queryClient.invalidateQueries({ queryKey: ['subscriptions'] }),
     ]);
   };
 
@@ -274,7 +279,7 @@ export function FinanceActionSheet() {
             {uploadMutation.isPending ? <Skeleton className="h-28 w-full rounded-[22px]" /> : null}
             {receipt?.status === 'pending' ? (
               <div className="rounded-[24px] border border-[var(--app-stroke)] bg-white/[0.03] p-4 text-sm text-[var(--app-muted)]">
-                Обрабатываем чек через OCR-воркер…
+                Обрабатываем чек через OCR-движок…
               </div>
             ) : null}
             {receipt?.status === 'processed' ? (

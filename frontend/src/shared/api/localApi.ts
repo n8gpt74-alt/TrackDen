@@ -2,9 +2,16 @@
 
 import type { AnalyticsOverviewResponse, CategorySpendPoint, DailySpendPoint } from '../../features/analytics/api';
 import type { Category, SessionResponse, UserSession } from '../../features/auth/api';
+import { createEmptyBudgetConfig, normalizeBudgetConfig, type BudgetConfig } from '../../features/budgets/model';
 import type { Receipt } from '../../features/receipts/api';
+import { synchronizeSubscriptionState } from '../../features/subscriptions/engine';
+import {
+  SUBSCRIPTION_WORKSPACE_VERSION,
+  createEmptySubscriptionState,
+  normalizeSubscriptionState,
+  type SubscriptionWorkspaceState,
+} from '../../features/subscriptions/model';
 import type { Transaction, TransactionPayload, TransactionType } from '../../features/transactions/api';
-import { BUDGET_WORKSPACE_VERSION, createEmptyBudgetConfig, normalizeBudgetConfig, type BudgetConfig } from '../../features/budgets/model';
 
 type RequestOptions = {
   body?: BodyInit | FormData | Record<string, unknown> | null;
@@ -16,7 +23,7 @@ export type StoredTransaction = Omit<Transaction, 'category'> & {
   category_id?: string | null;
 };
 
-export type WorkspaceState = {
+export type WorkspaceState = SubscriptionWorkspaceState & {
   version: number;
   categories: Category[];
   receipts: Receipt[];
@@ -138,11 +145,12 @@ function normalizeCategories(categories: Category[] | undefined) {
 
 function defaultWorkspace(): WorkspaceState {
   return {
-    version: BUDGET_WORKSPACE_VERSION,
+    version: SUBSCRIPTION_WORKSPACE_VERSION,
     categories: normalizeCategories(undefined),
     receipts: [],
     transactions: [],
     budgets: createEmptyBudgetConfig(),
+    ...createEmptySubscriptionState(),
   };
 }
 
@@ -152,12 +160,32 @@ function workspaceKey(scopeId: string) {
 
 function sanitizeWorkspace(workspace: Partial<WorkspaceState> | WorkspaceState): WorkspaceState {
   const categories = normalizeCategories(workspace.categories);
+  const subscriptionState = normalizeSubscriptionState(workspace, categories);
+
   return {
-    version: BUDGET_WORKSPACE_VERSION,
+    version: SUBSCRIPTION_WORKSPACE_VERSION,
     categories,
     receipts: Array.isArray(workspace.receipts) ? workspace.receipts : [],
     transactions: Array.isArray(workspace.transactions) ? workspace.transactions : [],
     budgets: normalizeBudgetConfig(workspace.budgets, categories),
+    subscriptions: subscriptionState.subscriptions,
+    dismissed_recurring_keys: subscriptionState.dismissed_recurring_keys,
+  };
+}
+
+function synchronizeWorkspace(workspace: WorkspaceState): WorkspaceState {
+  const synchronizedSubscriptions = synchronizeSubscriptionState({
+    categories: workspace.categories,
+    transactions: workspace.transactions,
+    subscriptions: workspace.subscriptions,
+    dismissed_recurring_keys: workspace.dismissed_recurring_keys,
+  });
+
+  return {
+    ...workspace,
+    version: SUBSCRIPTION_WORKSPACE_VERSION,
+    subscriptions: synchronizedSubscriptions.subscriptions,
+    dismissed_recurring_keys: synchronizedSubscriptions.dismissed_recurring_keys,
   };
 }
 
@@ -180,7 +208,7 @@ function readWorkspace(scopeId: string) {
 }
 
 export function writeWorkspace(scopeId: string, workspace: Partial<WorkspaceState> | WorkspaceState) {
-  const normalized = sanitizeWorkspace(workspace);
+  const normalized = synchronizeWorkspace(sanitizeWorkspace(workspace));
   writeRawValue(workspaceKey(scopeId), JSON.stringify(normalized));
   return normalized;
 }
@@ -592,8 +620,7 @@ function buildOverview(workspace: WorkspaceState, month: string): AnalyticsOverv
 }
 
 async function handleSession(principal: LocalPrincipal) {
-  const workspace = readWorkspace(principal.scopeId);
-  writeWorkspace(principal.scopeId, workspace);
+  const workspace = writeWorkspace(principal.scopeId, readWorkspace(principal.scopeId));
 
   return {
     auth_source: principal.authSource,
@@ -736,8 +763,3 @@ export async function localApiRequest<T>(path: string, options: RequestOptions =
     message: 'Маршрут не найден.',
   });
 }
-
-
-
-
-

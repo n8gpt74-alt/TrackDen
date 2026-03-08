@@ -4,7 +4,13 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 
 import { useFinanceSheet } from '../features/finance-sheet/useFinanceSheet';
+import {
+  useConfirmRecurringCandidateMutation,
+  useDismissRecurringCandidateMutation,
+  useSubscriptionManagerQuery,
+} from '../features/subscriptions/api';
 import { type TransactionType, useDeleteTransactionMutation, useTransactionsQuery } from '../features/transactions/api';
+import { isLocalDataMode } from '../shared/api/mode';
 import { currentMonthKey, formatDateGroupLabel } from '../shared/lib/date';
 import { buildRecurringPreview, groupTransactionsByDate } from '../shared/lib/finance';
 import { formatCompactMoney, formatMoney } from '../shared/lib/money';
@@ -15,14 +21,28 @@ export function TransactionsPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const month = currentMonthKey();
+  const localMode = isLocalDataMode();
   const [segment, setSegment] = useState<TransactionType>('expense');
   const transactionsQuery = useTransactionsQuery(month, 80, segment);
+  const subscriptionManagerQuery = useSubscriptionManagerQuery();
   const deleteMutation = useDeleteTransactionMutation();
+  const confirmCandidateMutation = useConfirmRecurringCandidateMutation();
+  const dismissCandidateMutation = useDismissRecurringCandidateMutation();
   const { openSheet } = useFinanceSheet();
 
   const transactions = transactionsQuery.data?.items ?? [];
   const groupedTransactions = useMemo(() => groupTransactionsByDate(transactions), [transactions]);
   const recurring = useMemo(() => buildRecurringPreview(transactions, 3), [transactions]);
+  const candidates = localMode && segment === 'expense' ? (subscriptionManagerQuery.data?.candidates ?? []).slice(0, 3) : [];
+
+  const invalidateFinanceData = async () => {
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: ['transactions'] }),
+      queryClient.invalidateQueries({ queryKey: ['analytics'] }),
+      queryClient.invalidateQueries({ queryKey: ['budgets'] }),
+      queryClient.invalidateQueries({ queryKey: ['subscriptions'] }),
+    ]);
+  };
 
   const handleDelete = async (id: string) => {
     if (!window.confirm('Удалить эту операцию?')) {
@@ -30,11 +50,17 @@ export function TransactionsPage() {
     }
 
     await deleteMutation.mutateAsync(id);
-    await Promise.all([
-      queryClient.invalidateQueries({ queryKey: ['transactions'] }),
-      queryClient.invalidateQueries({ queryKey: ['analytics'] }),
-      queryClient.invalidateQueries({ queryKey: ['budgets'] }),
-    ]);
+    await invalidateFinanceData();
+  };
+
+  const handleCandidateConfirm = async (candidateId: string) => {
+    await confirmCandidateMutation.mutateAsync(candidateId);
+    await invalidateFinanceData();
+  };
+
+  const handleCandidateDismiss = async (candidateId: string) => {
+    await dismissCandidateMutation.mutateAsync(candidateId);
+    await invalidateFinanceData();
   };
 
   return (
@@ -43,7 +69,7 @@ export function TransactionsPage() {
         <button className="icon-circle-button" onClick={() => navigate('/dashboard')} type="button">
           <ChevronLeftIcon size={18} />
         </button>
-        <button className="icon-circle-button" type="button">
+        <button className="icon-circle-button" onClick={() => localMode ? openSheet('subscriptions') : openSheet('add')} type="button">
           <DotsIcon size={18} />
         </button>
       </header>
@@ -89,6 +115,59 @@ export function TransactionsPage() {
           </div>
         )}
       </section>
+
+      {localMode && segment === 'expense' ? (
+        <section>
+          <div className="mb-4 flex items-end justify-between gap-3">
+            <div>
+              <p className="soft-kicker">Suggested subscriptions</p>
+              <h2 className="mt-1 text-[22px] font-semibold text-white">Подтвердить из истории</h2>
+            </div>
+            <button className="text-sm text-[var(--app-accent)]" onClick={() => openSheet('subscriptions')} type="button">
+              Управлять
+            </button>
+          </div>
+
+          {subscriptionManagerQuery.isLoading ? (
+            <div className="space-y-3">
+              <Skeleton className="h-28 w-full rounded-[24px]" />
+              <Skeleton className="h-28 w-full rounded-[24px]" />
+            </div>
+          ) : candidates.length === 0 ? (
+            <div className="empty-card">Когда в истории накопятся похожие ежемесячные траты, TrackDen предложит их как подписки.</div>
+          ) : (
+            <div className="space-y-3">
+              {candidates.map((candidate) => (
+                <div key={candidate.id} className="premium-card rounded-[24px] p-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="text-base font-medium text-white">{candidate.merchant_label}</p>
+                      <p className="mt-1 text-sm text-[var(--app-muted)]">
+                        {candidate.match_count} совпадения · {Math.round(candidate.confidence * 100)}% уверенности
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-base font-semibold text-white">{formatMoney(candidate.expected_amount, candidate.currency)}</p>
+                      <p className="mt-1 text-sm text-[var(--app-muted)]">{candidate.expected_day} число</p>
+                    </div>
+                  </div>
+                  <div className="mt-4 flex gap-3">
+                    <button className="sheet-primary-button" onClick={() => void handleCandidateConfirm(candidate.id)} type="button">
+                      Подтвердить
+                    </button>
+                    <button className="sheet-secondary-button" onClick={() => void handleCandidateDismiss(candidate.id)} type="button">
+                      Не подписка
+                    </button>
+                    <button className="sheet-secondary-button" onClick={() => openSheet('subscriptions')} type="button">
+                      Позже
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
+      ) : null}
 
       <section>
         <div className="mb-4 flex items-end justify-between">
@@ -166,4 +245,3 @@ export function TransactionsPage() {
     </div>
   );
 }
-

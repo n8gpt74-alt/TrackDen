@@ -1,4 +1,4 @@
-import clsx from 'clsx';
+﻿import clsx from 'clsx';
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
@@ -6,6 +6,7 @@ import { useOverviewQuery } from '../features/analytics/api';
 import { useBudgetOverviewQuery } from '../features/budgets/api';
 import type { BudgetStatus } from '../features/budgets/model';
 import { useFinanceSheet } from '../features/finance-sheet/useFinanceSheet';
+import { useSubscriptionOverviewQuery } from '../features/subscriptions/api';
 import { useTransactionsQuery, type TransactionType } from '../features/transactions/api';
 import { isLocalDataMode } from '../shared/api/mode';
 import { currentMonthKey, formatMonthCaption } from '../shared/lib/date';
@@ -92,11 +93,13 @@ export function InsightsPage() {
   const [segment, setSegment] = useState<TransactionType>('expense');
   const overviewQuery = useOverviewQuery(month);
   const budgetOverviewQuery = useBudgetOverviewQuery(month);
+  const subscriptionOverviewQuery = useSubscriptionOverviewQuery(month);
   const transactionsQuery = useTransactionsQuery(month, 100);
   const { openSheet } = useFinanceSheet();
 
   const overview = overviewQuery.data;
   const budgetOverview = localMode ? budgetOverviewQuery.data : null;
+  const subscriptionOverview = localMode ? subscriptionOverviewQuery.data : null;
   const transactions = transactionsQuery.data?.items ?? [];
 
   const derived = useMemo(() => {
@@ -125,7 +128,7 @@ export function InsightsPage() {
         <button className="icon-circle-button" onClick={() => navigate('/dashboard')} type="button">
           <ChevronLeftIcon size={18} />
         </button>
-        <button className="icon-circle-button" onClick={() => openSheet('budget')} type="button">
+        <button className="icon-circle-button" onClick={() => openSheet(segment === 'expense' ? 'subscriptions' : 'add')} type="button">
           <DotsIcon size={18} />
         </button>
       </header>
@@ -145,7 +148,7 @@ export function InsightsPage() {
         <section className="premium-card rounded-[30px] p-5">
           <div className="flex items-start justify-between gap-3">
             <div>
-              <p className="text-sm text-[var(--app-muted)]">Total {segment === 'expense' ? 'expense' : 'income'}</p>
+              <p className="text-sm text-[var(--app-muted)]">{segment === 'expense' ? 'Общий расход' : 'Общий доход'}</p>
               <h1 className="mt-2 text-[40px] font-semibold tracking-[-0.05em] text-white">{formatMoney(derived.total)}</h1>
             </div>
             <button className="rounded-full border border-[var(--app-stroke)] bg-white/[0.03] px-3 py-2 text-xs font-medium uppercase tracking-[0.18em] text-[var(--app-muted)]" type="button">
@@ -284,6 +287,66 @@ export function InsightsPage() {
                   );
                 })
               )}
+            </div>
+          )}
+        </section>
+      ) : null}
+
+      {localMode && segment === 'expense' ? (
+        <section>
+          <div className="mb-3 flex items-center justify-between gap-3">
+            <div>
+              <p className="soft-kicker">Fixed vs flexible</p>
+              <h2 className="mt-1 text-xl font-semibold text-white">Фиксированные и гибкие траты</h2>
+            </div>
+            <button className="text-sm text-[var(--app-accent)]" onClick={() => openSheet('subscriptions')} type="button">
+              Управлять
+            </button>
+          </div>
+
+          {subscriptionOverviewQuery.isLoading ? (
+            <div className="space-y-3">
+              <Skeleton className="h-28 w-full rounded-[24px]" />
+              <Skeleton className="h-24 w-full rounded-[24px]" />
+            </div>
+          ) : !subscriptionOverview ? (
+            <div className="empty-card">Раздел загрузится, как только local-first данные будут готовы.</div>
+          ) : (
+            <div className="space-y-3">
+              <div className="premium-card rounded-[26px] p-4">
+                <div className="grid grid-cols-3 gap-3">
+                  <div>
+                    <p className="text-sm text-[var(--app-muted)]">Фиксированные</p>
+                    <p className="mt-2 text-2xl font-semibold tracking-[-0.04em] text-white">{formatMoney(subscriptionOverview.fixed_spent)}</p>
+                    <p className="mt-2 text-xs text-[var(--app-muted)]">{subscriptionOverview.matched_this_month} совпадений в этом месяце</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-[var(--app-muted)]">Гибкие</p>
+                    <p className="mt-2 text-2xl font-semibold tracking-[-0.04em] text-white">{formatMoney(subscriptionOverview.flexible_spent)}</p>
+                    <p className="mt-2 text-xs text-[var(--app-muted)]">Все остальные расходные операции</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-[var(--app-muted)]">До конца месяца</p>
+                    <p className="mt-2 text-2xl font-semibold tracking-[-0.04em] text-white">{formatMoney(subscriptionOverview.upcoming_total)}</p>
+                    <p className="mt-2 text-xs text-[var(--app-muted)]">Обязательных списаний ещё впереди</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="rounded-[24px] border border-[var(--app-stroke)] bg-white/[0.03] p-4">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <p className="text-sm text-[var(--app-muted)]">Прогноз фиксированных трат</p>
+                    <p className="mt-2 text-2xl font-semibold tracking-[-0.04em] text-white">{formatMoney(subscriptionOverview.forecast_total)}</p>
+                  </div>
+                  <div className="rounded-full border border-emerald-400/20 bg-emerald-400/10 px-3 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-emerald-100">
+                    {subscriptionOverview.active_count} active
+                  </div>
+                </div>
+                <p className="mt-3 text-sm leading-6 text-[var(--app-muted)]">
+                  TrackDen складывает уже прошедшие совпадения и ближайшие активные подписки, чтобы показать обязательный минимум месяца.
+                </p>
+              </div>
             </div>
           )}
         </section>

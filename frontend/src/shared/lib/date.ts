@@ -1,4 +1,4 @@
-export function currentMonthKey() {
+﻿export function currentMonthKey() {
   const date = new Date();
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -8,6 +8,13 @@ export function currentMonthKey() {
 export function formatDayLabel(value: string) {
   return new Intl.DateTimeFormat('ru-RU', {
     day: '2-digit',
+    month: 'short',
+  }).format(new Date(value));
+}
+
+export function formatShortDateLabel(value: string) {
+  return new Intl.DateTimeFormat('ru-RU', {
+    day: 'numeric',
     month: 'short',
   }).format(new Date(value));
 }
@@ -52,4 +59,3 @@ export function formatDateTimeLabel(value: string) {
     minute: '2-digit',
   }).format(new Date(value));
 }
-

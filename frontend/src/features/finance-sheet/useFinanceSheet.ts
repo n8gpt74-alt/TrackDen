@@ -1,8 +1,14 @@
-import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
+﻿import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 
-export type FinanceSheetMode = 'add' | 'ocr' | 'edit' | 'budget';
+export type FinanceSheetMode = 'add' | 'ocr' | 'edit' | 'budget' | 'subscriptions' | 'subscription-edit';
 
-const SHEET_MODES = new Set<FinanceSheetMode>(['add', 'ocr', 'edit', 'budget']);
+const SHEET_MODES = new Set<FinanceSheetMode>(['add', 'ocr', 'edit', 'budget', 'subscriptions', 'subscription-edit']);
+
+type OpenSheetOptions = {
+  pathname?: string;
+  subscriptionId?: string | null;
+  transactionId?: string | null;
+};
 
 export function useFinanceSheet() {
   const location = useLocation();
@@ -12,8 +18,9 @@ export function useFinanceSheet() {
   const rawMode = searchParams.get('sheet');
   const mode = rawMode && SHEET_MODES.has(rawMode as FinanceSheetMode) ? (rawMode as FinanceSheetMode) : null;
   const transactionId = searchParams.get('transactionId');
+  const subscriptionId = searchParams.get('subscriptionId');
 
-  const openSheet = (nextMode: FinanceSheetMode, options?: { transactionId?: string | null; pathname?: string }) => {
+  const openSheet = (nextMode: FinanceSheetMode, options?: OpenSheetOptions) => {
     const params = new URLSearchParams(searchParams);
     params.set('sheet', nextMode);
 
@@ -21,6 +28,12 @@ export function useFinanceSheet() {
       params.set('transactionId', options.transactionId);
     } else {
       params.delete('transactionId');
+    }
+
+    if (options?.subscriptionId) {
+      params.set('subscriptionId', options.subscriptionId);
+    } else {
+      params.delete('subscriptionId');
     }
 
     navigate({
@@ -33,6 +46,7 @@ export function useFinanceSheet() {
     const params = new URLSearchParams(searchParams);
     params.delete('sheet');
     params.delete('transactionId');
+    params.delete('subscriptionId');
 
     navigate(
       {
@@ -47,6 +61,7 @@ export function useFinanceSheet() {
     isOpen: mode !== null,
     mode,
     transactionId,
+    subscriptionId,
     openSheet,
     closeSheet,
   };

@@ -1,10 +1,11 @@
-import clsx from 'clsx';
+﻿import clsx from 'clsx';
 import { App as KonstaApp, KonstaProvider } from 'konsta/react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 
 import { BudgetActionSheet } from '../../features/budgets/BudgetActionSheet';
 import { FinanceActionSheet } from '../../features/finance-sheet/FinanceActionSheet';
 import { useFinanceSheet } from '../../features/finance-sheet/useFinanceSheet';
+import { SubscriptionActionSheet } from '../../features/subscriptions/SubscriptionActionSheet';
 import { ActivityIcon, ChartIcon, HomeIcon, PlusIcon } from '../../shared/ui/premium';
 
 const NAV_ITEMS = [
@@ -51,6 +52,7 @@ export function Shell() {
 
         <FinanceActionSheet />
         <BudgetActionSheet />
+        <SubscriptionActionSheet />
       </KonstaApp>
     </KonstaProvider>
   );

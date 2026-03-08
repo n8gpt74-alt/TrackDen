@@ -1,4 +1,4 @@
-import clsx from 'clsx';
+﻿import clsx from 'clsx';
 import { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 
@@ -7,9 +7,10 @@ import { useSessionQuery } from '../features/auth/api';
 import { useBudgetOverviewQuery } from '../features/budgets/api';
 import type { BudgetOverview, BudgetStatus } from '../features/budgets/model';
 import { useFinanceSheet } from '../features/finance-sheet/useFinanceSheet';
+import { useSubscriptionManagerQuery } from '../features/subscriptions/api';
 import { useTransactionsQuery } from '../features/transactions/api';
 import { isLocalDataMode } from '../shared/api/mode';
-import { currentMonthKey } from '../shared/lib/date';
+import { currentMonthKey, formatShortDateLabel } from '../shared/lib/date';
 import { buildRecurringPreview, calculateAverageTicket, calculateRecentTrend } from '../shared/lib/finance';
 import { formatCompactMoney, formatMoney, formatSignedPercent } from '../shared/lib/money';
 import {
@@ -106,11 +107,13 @@ export function DashboardPage() {
   const sessionQuery = useSessionQuery();
   const overviewQuery = useOverviewQuery(month);
   const budgetOverviewQuery = useBudgetOverviewQuery(month);
+  const subscriptionManagerQuery = useSubscriptionManagerQuery();
   const transactionsQuery = useTransactionsQuery(month, 12);
   const { openSheet } = useFinanceSheet();
 
   const overview = overviewQuery.data;
   const budgetOverview = localMode ? budgetOverviewQuery.data : null;
+  const subscriptionManager = localMode ? subscriptionManagerQuery.data : null;
   const transactions = transactionsQuery.data?.items ?? [];
   const user = sessionQuery.data?.user;
 
@@ -131,9 +134,7 @@ export function DashboardPage() {
       latestExpense,
       avgTicket,
       recurring,
-      target,
       available,
-      daysLeft,
       dayBudget: available / daysLeft,
     };
   }, [overview, transactions]);
@@ -176,7 +177,9 @@ export function DashboardPage() {
 
       <section>
         <p className="text-[34px] font-semibold leading-[1.02] tracking-[-0.04em] text-white">Привет, {firstName}</p>
-        <p className="mt-2 max-w-[280px] text-[15px] leading-6 text-[var(--app-muted)]">Вот краткий обзор движения денег и самых важных трат за текущий месяц.</p>
+        <p className="mt-2 max-w-[280px] text-[15px] leading-6 text-[var(--app-muted)]">
+          Вот короткий обзор движения денег и обязательных трат за текущий месяц.
+        </p>
       </section>
 
       {overviewQuery.isLoading ? (
@@ -187,7 +190,9 @@ export function DashboardPage() {
           <div className="glow-dot bottom-[-28px] right-[-20px] h-24 w-24 bg-[var(--app-glow-b)]" />
           <div className="relative">
             <p className="text-[15px] font-medium text-[var(--app-muted-strong)]">Финансовый ритм месяца</p>
-            <p className="mt-1 max-w-[250px] text-sm leading-6 text-[var(--app-muted)]">Следи за темпом расходов и добавляй операции, не выпадая из потока.</p>
+            <p className="mt-1 max-w-[250px] text-sm leading-6 text-[var(--app-muted)]">
+              Следи за темпом расходов и добавляй операции, не выпадая из потока.
+            </p>
 
             <div className="bar-strip mt-6">
               {derived.bars.map((bar, index) => (
@@ -242,7 +247,9 @@ export function DashboardPage() {
             {!budgetOverview || budgetOverview.configured_count === 0 ? (
               <div className="mt-4 rounded-[24px] border border-dashed border-[var(--app-stroke)] bg-white/[0.02] p-4">
                 <p className="text-base font-medium text-white">Пока без лимитов</p>
-                <p className="mt-2 text-sm leading-6 text-[var(--app-muted)]">Задай общий бюджет или потолки по категориям — и мы сразу покажем, где появляется давление на месяц.</p>
+                <p className="mt-2 text-sm leading-6 text-[var(--app-muted)]">
+                  Задай общий бюджет или потолки по категориям — и мы сразу покажем, где появляется давление на месяц.
+                </p>
                 <button className="sheet-primary-button mt-4 w-full" onClick={() => openSheet('budget')} type="button">
                   Настроить бюджеты
                 </button>
@@ -301,6 +308,71 @@ export function DashboardPage() {
                     })}
                   </div>
                 ) : null}
+              </>
+            )}
+          </section>
+        )
+      ) : null}
+
+      {localMode ? (
+        subscriptionManagerQuery.isLoading ? (
+          <Skeleton className="h-[210px] w-full rounded-[28px]" />
+        ) : (
+          <section className="premium-card rounded-[28px] p-5">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="soft-kicker">Fixed monthly charges</p>
+                <h2 className="mt-1 text-xl font-semibold text-white">Фиксированные списания</h2>
+              </div>
+              <button className="rounded-full border border-[var(--app-stroke)] bg-white/[0.03] px-3 py-2 text-xs font-medium uppercase tracking-[0.18em] text-[var(--app-muted)]" onClick={() => openSheet('subscriptions')} type="button">
+                Управлять
+              </button>
+            </div>
+
+            {!subscriptionManager || (subscriptionManager.active_count === 0 && subscriptionManager.candidate_count === 0) ? (
+              <div className="mt-4 rounded-[24px] border border-dashed border-[var(--app-stroke)] bg-white/[0.02] p-4">
+                <p className="text-base font-medium text-white">Пока без подписок</p>
+                <p className="mt-2 text-sm leading-6 text-[var(--app-muted)]">
+                  Добавь несколько похожих ежемесячных списаний — и TrackDen предложит подтвердить подписку автоматически.
+                </p>
+                <button className="sheet-primary-button mt-4 w-full" onClick={() => openSheet('subscriptions')} type="button">
+                  Открыть менеджер
+                </button>
+              </div>
+            ) : (
+              <>
+                <div className="mt-4 flex items-start justify-between gap-4">
+                  <div>
+                    <p className="text-sm text-[var(--app-muted)]">В месяц по активным подпискам</p>
+                    <p className="mt-2 text-[30px] font-semibold tracking-[-0.04em] text-white">
+                      {formatMoney(subscriptionManager.monthly_total)}
+                    </p>
+                    <p className="mt-2 text-sm text-[var(--app-muted)]">
+                      {subscriptionManager.active_count} активных · {subscriptionManager.candidate_count} предложений из истории
+                    </p>
+                  </div>
+                  <div className="rounded-full border border-emerald-400/20 bg-emerald-400/10 px-3 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-emerald-100">
+                    Upcoming
+                  </div>
+                </div>
+
+                <div className="mt-4 grid grid-cols-3 gap-3">
+                  {subscriptionManager.upcoming.length > 0 ? (
+                    subscriptionManager.upcoming.map((subscription) => (
+                      <div key={subscription.id} className="rounded-[22px] border border-[var(--app-stroke)] bg-[#0c1018] p-3">
+                        <p className="truncate text-sm font-medium text-white">{subscription.merchant_label}</p>
+                        <p className="mt-1 text-xs text-[var(--app-muted)]">
+                          {subscription.next_charge_at ? formatShortDateLabel(subscription.next_charge_at) : 'Дата уточняется'}
+                        </p>
+                        <p className="mt-3 text-sm font-semibold text-white">{formatCompactMoney(subscription.expected_amount, subscription.currency)}</p>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="col-span-3 rounded-[22px] border border-[var(--app-stroke)] bg-white/[0.03] p-4 text-sm leading-6 text-[var(--app-muted)]">
+                      Все обязательные списания в этом месяце уже учтены. Новые совпадения появятся автоматически после следующих операций.
+                    </div>
+                  )}
+                </div>
               </>
             )}
           </section>
@@ -390,7 +462,7 @@ export function DashboardPage() {
             <Skeleton className="h-20 w-full rounded-[22px]" />
           </div>
         ) : transactions.length === 0 ? (
-          <div className="empty-card">Сохрани первую операцию, чтобы главная начала выглядеть как в референсе — живой и полезной.</div>
+          <div className="empty-card">Сохрани первую операцию, чтобы главная стала живой и полезной.</div>
         ) : (
           <div className="space-y-3">
             {transactions.slice(0, 3).map((transaction) => {

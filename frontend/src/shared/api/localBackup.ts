@@ -2,6 +2,11 @@
 import { normalizeBudgetConfig, type BudgetConfig } from '../../features/budgets/model';
 import { FINANCE_SHEET_DRAFT_STORAGE_KEY } from '../../features/finance-sheet/constants';
 import type { Receipt } from '../../features/receipts/api';
+import {
+  normalizeSubscriptionState,
+  type SubscriptionRecord,
+  type SubscriptionWorkspaceState,
+} from '../../features/subscriptions/model';
 import { ApiError } from './errors';
 import { getLocalWorkspaceContext, resetLocalWorkspace, type LocalPrincipal, type StoredTransaction, type WorkspaceState, writeWorkspace } from './localApi';
 
@@ -35,6 +40,7 @@ export type LocalWorkspaceSummary = {
   categories: number;
   custom_categories: number;
   budget_limits: number;
+  subscriptions: number;
 };
 
 function getStorage() {
@@ -259,6 +265,58 @@ function validateBudgetConfig(value: unknown, categories: Category[]): BudgetCon
   );
 }
 
+function validateSubscription(value: unknown): SubscriptionRecord {
+  const record = readObject(value, 'workspace.subscriptions[]');
+  const amount = readOptionalNumber(record.expected_amount, 'workspace.subscriptions[].expected_amount');
+  const day = readOptionalNumber(record.expected_day, 'workspace.subscriptions[].expected_day');
+  const confidence = readOptionalNumber(record.confidence, 'workspace.subscriptions[].confidence');
+
+  if (amount == null || amount <= 0) {
+    invalidBackup('Поле workspace.subscriptions[].expected_amount имеет неверный формат.');
+  }
+
+  if (day == null || day < 1 || day > 31) {
+    invalidBackup('Поле workspace.subscriptions[].expected_day имеет неверный формат.');
+  }
+
+  return {
+    id: readString(record.id, 'workspace.subscriptions[].id'),
+    merchant_label: readString(record.merchant_label, 'workspace.subscriptions[].merchant_label'),
+    normalized_key: readString(record.normalized_key, 'workspace.subscriptions[].normalized_key'),
+    expected_amount: amount,
+    currency: readString(record.currency, 'workspace.subscriptions[].currency'),
+    category_id: readOptionalString(record.category_id, 'workspace.subscriptions[].category_id'),
+    cadence: readEnum(record.cadence, 'workspace.subscriptions[].cadence', ['monthly'] as const),
+    expected_day: Math.round(day),
+    status: readEnum(record.status, 'workspace.subscriptions[].status', ['active', 'paused', 'cancelled'] as const),
+    source: readEnum(record.source, 'workspace.subscriptions[].source', ['auto', 'manual'] as const),
+    confidence: confidence ?? 1,
+    last_match_at: readOptionalString(record.last_match_at, 'workspace.subscriptions[].last_match_at'),
+    next_charge_at: readOptionalString(record.next_charge_at, 'workspace.subscriptions[].next_charge_at'),
+    created_at: readString(record.created_at, 'workspace.subscriptions[].created_at'),
+    updated_at: readString(record.updated_at, 'workspace.subscriptions[].updated_at'),
+  };
+}
+
+function validateSubscriptionWorkspace(value: unknown, categories: Category[]): SubscriptionWorkspaceState {
+  if (value == null) {
+    return normalizeSubscriptionState(null, categories);
+  }
+
+  const record = readObject(value, 'workspace');
+  const subscriptions = readArray(record.subscriptions ?? [], 'workspace.subscriptions').map(validateSubscription);
+  const dismissedKeys = readArray(record.dismissed_recurring_keys ?? [], 'workspace.dismissed_recurring_keys')
+    .map((item, index) => readString(item, `workspace.dismissed_recurring_keys[${index}]`));
+
+  return normalizeSubscriptionState(
+    {
+      subscriptions,
+      dismissed_recurring_keys: dismissedKeys,
+    },
+    categories,
+  );
+}
+
 function validateWorkspace(value: unknown): WorkspaceState {
   const record = readObject(value, 'workspace');
 
@@ -267,6 +325,7 @@ function validateWorkspace(value: unknown): WorkspaceState {
   }
 
   const categories = readArray(record.categories, 'workspace.categories').map(validateCategory);
+  const subscriptionState = validateSubscriptionWorkspace(record, categories);
 
   return {
     version: record.version,
@@ -274,6 +333,8 @@ function validateWorkspace(value: unknown): WorkspaceState {
     receipts: readArray(record.receipts, 'workspace.receipts').map(validateReceipt),
     transactions: readArray(record.transactions, 'workspace.transactions').map(validateStoredTransaction),
     budgets: validateBudgetConfig(record.budgets, categories),
+    subscriptions: subscriptionState.subscriptions,
+    dismissed_recurring_keys: subscriptionState.dismissed_recurring_keys,
   };
 }
 
@@ -302,6 +363,7 @@ export function summarizeWorkspace(workspace: WorkspaceState): LocalWorkspaceSum
     categories: workspace.categories.length,
     custom_categories: workspace.categories.filter((category) => !category.is_system).length,
     budget_limits: budgetLimits,
+    subscriptions: workspace.subscriptions.length,
   };
 }
 
@@ -405,5 +467,3 @@ export function clearWorkspace(initDataRaw?: string) {
     currentSummary: summarizeWorkspace(currentWorkspace),
   };
 }
-
-

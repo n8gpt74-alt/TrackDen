@@ -1,4 +1,4 @@
-import clsx from 'clsx';
+﻿import clsx from 'clsx';
 import { useQueryClient } from '@tanstack/react-query';
 import { type ChangeEvent, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -95,6 +95,7 @@ export function SettingsPage() {
       queryClient.invalidateQueries({ queryKey: ['receipt'] }),
       queryClient.invalidateQueries({ queryKey: ['analytics'] }),
       queryClient.invalidateQueries({ queryKey: ['budgets'] }),
+      queryClient.invalidateQueries({ queryKey: ['subscriptions'] }),
     ]);
   };
 
@@ -161,7 +162,7 @@ export function SettingsPage() {
       setClearArmed(false);
       setNotice({
         tone: 'success',
-        message: 'Локальные данные, OCR metadata и лимиты полностью восстановлены из backup.',
+        message: 'Локальные данные, OCR metadata, бюджеты и подписки полностью восстановлены из backup.',
       });
     } catch (error) {
       setNotice({
@@ -190,7 +191,7 @@ export function SettingsPage() {
       setClearArmed(false);
       setNotice({
         tone: 'success',
-        message: `Локальные данные очищены: ${result.deletedSummary.transactions} операций, ${result.deletedSummary.receipts} чеков и ${result.deletedSummary.budget_limits} лимитов удалено.`,
+        message: `Локальные данные очищены: ${result.deletedSummary.transactions} операций, ${result.deletedSummary.receipts} чеков, ${result.deletedSummary.budget_limits} лимитов и ${result.deletedSummary.subscriptions} подписок удалено.`,
       });
     } catch (error) {
       setNotice({
@@ -216,8 +217,8 @@ export function SettingsPage() {
       <section className="premium-card rounded-[30px] p-5">
         <p className="soft-kicker">Local vault</p>
         <h1 className="mt-2 text-[32px] font-semibold leading-[1.04] tracking-[-0.05em] text-white">Резервные копии и восстановление</h1>
-        <p className="mt-3 max-w-[310px] text-sm leading-6 text-[var(--app-muted)]">
-          TrackDen хранит данные локально на устройстве. Здесь можно экспортировать JSON backup, восстановить его или полностью очистить локальный профиль вместе с лимитами месяца.
+        <p className="mt-3 max-w-[320px] text-sm leading-6 text-[var(--app-muted)]">
+          TrackDen хранит данные локально на устройстве. Здесь можно экспортировать JSON backup, восстановить его или полностью очистить профиль вместе с бюджетами и подписками.
         </p>
 
         {!localMode ? (
@@ -226,10 +227,11 @@ export function SettingsPage() {
           </div>
         ) : (
           <>
-            <div className="mt-5 grid grid-cols-3 gap-3">
+            <div className="mt-5 grid grid-cols-2 gap-3">
               <MetricCard hint="Всего локально" label="Операции" value={String(summary?.transactions ?? 0)} />
               <MetricCard hint="OCR и metadata" label="Чеки" value={String(summary?.receipts ?? 0)} />
               <MetricCard hint="Активные лимиты" label="Бюджеты" value={String(summary?.budget_limits ?? 0)} />
+              <MetricCard hint="Manual и auto" label="Подписки" value={String(summary?.subscriptions ?? 0)} />
             </div>
 
             <div className="mt-4 rounded-[24px] border border-[var(--app-stroke)] bg-white/[0.03] p-4">
@@ -266,7 +268,7 @@ export function SettingsPage() {
           </div>
         </div>
         <p className="mt-3 text-sm leading-6 text-[var(--app-muted)]">
-          Файл содержит чувствительные финансовые данные: операции, категории, OCR metadata чеков и шаблоны месячных лимитов. Храни его там, где тебе комфортно.
+          Файл содержит чувствительные финансовые данные: операции, категории, OCR metadata чеков, бюджеты и подписки. Храни его там, где тебе комфортно.
         </p>
         <button className="sheet-primary-button mt-5 w-full" disabled={!localMode} onClick={handleExport} type="button">
           Экспортировать JSON
@@ -284,7 +286,7 @@ export function SettingsPage() {
           </div>
         </div>
         <p className="mt-3 text-sm leading-6 text-[var(--app-muted)]">
-          Импорт полностью заменит текущие локальные данные этого профиля. Перед подтверждением покажем владельца backup, объём данных и проверим совпадение Telegram-аккаунта.
+          Импорт полностью заменит текущие локальные данные этого профиля. Перед подтверждением покажем владельца backup и объём данных.
         </p>
 
         <input accept=".json,application/json" className="hidden" onChange={handleFilePick} ref={fileInputRef} type="file" />
@@ -315,10 +317,11 @@ export function SettingsPage() {
               </p>
             </div>
 
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-2 gap-3">
               <MetricCard hint="Будут заменены" label="Операции" value={String(previewSummary?.transactions ?? 0)} />
               <MetricCard hint="OCR metadata" label="Чеки" value={String(previewSummary?.receipts ?? 0)} />
               <MetricCard hint="Лимиты внутри backup" label="Бюджеты" value={String(previewSummary?.budget_limits ?? 0)} />
+              <MetricCard hint="Recurring manager" label="Подписки" value={String(previewSummary?.subscriptions ?? 0)} />
             </div>
 
             {ownerMismatch ? (
@@ -368,7 +371,7 @@ export function SettingsPage() {
         </div>
         <>
           <p className="mt-3 text-sm leading-6 text-[var(--app-muted)]">
-            Будут удалены {summary?.transactions ?? 0} операций, {summary?.receipts ?? 0} чеков, {summary?.budget_limits ?? 0} лимитов и {summary?.custom_categories ?? 0} пользовательских категорий. Системные категории останутся и создадутся заново.
+            Будут удалены {summary?.transactions ?? 0} операций, {summary?.receipts ?? 0} чеков, {summary?.budget_limits ?? 0} лимитов, {summary?.subscriptions ?? 0} подписок и {summary?.custom_categories ?? 0} пользовательских категорий. Системные категории останутся и создадутся заново.
           </p>
 
           {clearArmed ? (
