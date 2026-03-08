@@ -16,7 +16,8 @@ import {
 import { FINANCE_SHEET_DRAFT_STORAGE_KEY } from './constants';
 import { useFinanceSheet } from './useFinanceSheet';
 import { formatMoney } from '../../shared/lib/money';
-import { CloseIcon, ReceiptIcon, SegmentedControl, SparklesIcon, UploadIcon } from '../../shared/ui/premium';
+import { ReceiptIcon, SegmentedControl, SparklesIcon, UploadIcon } from '../../shared/ui/premium';
+import { BottomSheetScaffold, EmptyStateCard, SurfaceCard } from '../../shared/ui/premium-kit';
 import { Skeleton } from '../../shared/ui/Skeleton';
 
 type ComposerState = {
@@ -105,8 +106,7 @@ export function FinanceActionSheet() {
   const [receiptId, setReceiptId] = useState<string | null>(null);
   const [ocrHydrated, setOcrHydrated] = useState(false);
 
-  const receiptQuery = useReceiptQuery(receiptId);
-  const receipt = receiptQuery.data;
+  const receipt = useReceiptQuery(receiptId).data;
   const categories = sessionQuery.data?.categories ?? [];
 
   useEffect(() => {
@@ -145,11 +145,7 @@ export function FinanceActionSheet() {
       return;
     }
 
-    writeDraft({
-      form,
-      detailsOpen,
-      receiptId,
-    });
+    writeDraft({ form, detailsOpen, receiptId });
   }, [detailsOpen, form, isOpen, isTransactionMode, mode, receiptId]);
 
   useEffect(() => {
@@ -161,7 +157,7 @@ export function FinanceActionSheet() {
       ...current,
       amount: receipt.extracted_total ? String(receipt.extracted_total) : current.amount,
       merchant: receipt.extracted_merchant ?? current.merchant,
-      description: current.description || 'Добавлено из OCR чека',
+      description: current.description || 'Добавлено по фото чека',
       source: 'ocr',
       receipt_id: receipt.id,
     }));
@@ -173,9 +169,9 @@ export function FinanceActionSheet() {
   const canSubmit = Number(form.amount) > 0 && isTransactionMode;
   const headerTitle = mode === 'edit' ? 'Редактировать операцию' : mode === 'ocr' ? 'Добавить по чеку' : 'Быстрое добавление';
   const headerSubtitle = mode === 'edit'
-    ? 'Измени сумму, категорию и детали без лишних экранов.'
+    ? 'Меняй сумму, категорию и детали в единой спокойной шторке.'
     : mode === 'ocr'
-      ? 'Сначала загрузи чек, затем подтверди распознанные данные.'
+      ? 'Сначала загрузи чек, затем подтверди распознанные поля.'
       : 'Сумма, категория и одно нажатие на сохранение.';
 
   const topCategories = useMemo(() => categories.slice(0, 6), [categories]);
@@ -250,128 +246,125 @@ export function FinanceActionSheet() {
   }
 
   return (
-    <div className="sheet-backdrop" onClick={handleClose} role="presentation">
-      <div className="premium-sheet" onClick={(event) => event.stopPropagation()} role="dialog" aria-modal="true">
-        <div className="sheet-handle" />
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <p className="text-xs uppercase tracking-[0.28em] text-[var(--app-muted)]">Premium flow</p>
-            <h2 className="mt-2 text-[26px] font-semibold leading-tight text-[var(--app-text)]">{headerTitle}</h2>
-            <p className="mt-2 max-w-[280px] text-sm leading-6 text-[var(--app-muted)]">{headerSubtitle}</p>
-          </div>
-          <button className="icon-circle-button" onClick={handleClose} type="button">
-            <CloseIcon size={18} />
+    <BottomSheetScaffold
+      description={headerSubtitle}
+      eyebrow="Операции"
+      footer={(
+        <div className="flex gap-3">
+          <button className="sheet-secondary-button" onClick={handleClose} type="button">
+            Отмена
+          </button>
+          <button className="sheet-primary-button" disabled={!canSubmit || isBusy} onClick={() => void handleSubmit()} type="button">
+            {isBusy ? 'Сохраняем…' : mode === 'edit' ? 'Обновить' : 'Сохранить'}
           </button>
         </div>
-
-        {mode === 'ocr' ? (
-          <div className="premium-card mt-6 space-y-4 p-4">
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <p className="text-sm font-medium text-white">OCR receipt</p>
-                <p className="mt-1 text-sm text-[var(--app-muted)]">Фото чека подтянет сумму и мерчанта в форму ниже.</p>
-              </div>
-              <button className="icon-circle-button" onClick={() => inputRef.current?.click()} type="button">
-                <UploadIcon size={18} />
-              </button>
+      )}
+      onClose={handleClose}
+      title={headerTitle}
+    >
+      {mode === 'ocr' ? (
+        <SurfaceCard>
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <p className="text-sm font-medium text-white">Сканирование чека</p>
+              <p className="mt-1 text-sm text-[var(--app-muted)]">Фото чека подтянет сумму и магазин прямо в форму ниже.</p>
             </div>
-            <input ref={inputRef} accept="image/*" className="hidden" onChange={handleFilePick} type="file" />
-            {uploadMutation.isPending ? <Skeleton className="h-28 w-full rounded-[22px]" /> : null}
-            {receipt?.status === 'pending' ? (
-              <div className="rounded-[24px] border border-[var(--app-stroke)] bg-white/[0.03] p-4 text-sm text-[var(--app-muted)]">
-                Обрабатываем чек через OCR-движок…
-              </div>
-            ) : null}
-            {receipt?.status === 'processed' ? (
-              <div className="rounded-[24px] border border-emerald-400/20 bg-emerald-400/5 p-4">
-                <div className="flex items-center justify-between gap-3">
-                  <div>
-                    <p className="text-sm text-[var(--app-muted)]">Распознано</p>
-                    <p className="mt-1 text-lg font-semibold text-white">{receipt.extracted_merchant || 'Без названия'}</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-sm text-[var(--app-muted)]">Сумма</p>
-                    <p className="mt-1 text-lg font-semibold text-white">{formatMoney(receipt.extracted_total ?? 0)}</p>
-                  </div>
+            <button className="pill-button pill-button--ghost" onClick={() => inputRef.current?.click()} type="button">
+              <UploadIcon size={16} />
+              Загрузить
+            </button>
+          </div>
+          <input ref={inputRef} accept="image/*" className="hidden" onChange={handleFilePick} type="file" />
+          {uploadMutation.isPending ? <Skeleton className="mt-4 h-28 w-full rounded-[22px]" /> : null}
+          {receipt?.status === 'pending' ? (
+            <div className="mt-4 rounded-[24px] border border-[var(--app-stroke)] bg-white/[0.03] p-4 text-sm text-[var(--app-muted)]">
+              Чек обрабатывается — обычно это занимает пару секунд.
+            </div>
+          ) : null}
+          {receipt?.status === 'processed' ? (
+            <div className="mt-4 rounded-[24px] border border-emerald-400/20 bg-emerald-400/5 p-4">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-sm text-[var(--app-muted)]">Распознано</p>
+                  <p className="mt-1 text-lg font-semibold text-white">{receipt.extracted_merchant || 'Без названия'}</p>
+                </div>
+                <div className="text-right">
+                  <p className="text-sm text-[var(--app-muted)]">Сумма</p>
+                  <p className="mt-1 text-lg font-semibold text-white">{formatMoney(receipt.extracted_total ?? 0)}</p>
                 </div>
               </div>
-            ) : null}
-            {receipt?.status === 'failed' ? (
-              <div className="rounded-[24px] border border-[var(--app-danger)]/20 bg-[var(--app-danger)]/10 p-4 text-sm text-[var(--app-danger)]">
-                {receipt.error || 'Не удалось обработать чек.'}
-              </div>
-            ) : null}
-          </div>
-        ) : null}
-
-        {mode === 'edit' && transactionQuery.isLoading ? (
-          <div className="mt-6 space-y-3">
-            <Skeleton className="h-24 w-full rounded-[22px]" />
-            <Skeleton className="h-24 w-full rounded-[22px]" />
-          </div>
-        ) : (
-          <>
-            <SegmentedControl
-              className="mt-6"
-              onChange={(value) => handleChange('type', value)}
-              options={[
-                { label: 'Income', value: 'income' },
-                { label: 'Expenses', value: 'expense' },
-              ]}
-              value={form.type}
-            />
-
-            <div className="mt-5 premium-card p-4">
-              <p className="text-xs uppercase tracking-[0.24em] text-[var(--app-muted)]">Amount</p>
-              <div className="mt-3 flex items-end justify-between gap-3">
-                <input
-                  className="min-w-0 flex-1 bg-transparent text-[40px] font-semibold tracking-tight text-white outline-none"
-                  inputMode="decimal"
-                  min="0"
-                  onChange={(event) => handleChange('amount', event.target.value)}
-                  placeholder="0.00"
-                  step="0.01"
-                  type="number"
-                  value={form.amount}
-                />
-                <input
-                  className="w-20 rounded-[18px] border border-[var(--app-stroke)] bg-white/[0.04] px-3 py-3 text-center text-sm font-semibold uppercase text-white outline-none"
-                  maxLength={3}
-                  onChange={(event) => handleChange('currency', event.target.value.toUpperCase())}
-                  value={form.currency}
-                />
-              </div>
             </div>
-
-            <div className="mt-4 flex flex-wrap gap-2.5">
-              {topCategories.map((category) => (
-                <button
-                  key={category.id}
-                  className={clsx(
-                    'rounded-[18px] border px-4 py-2.5 text-sm font-medium transition',
-                    form.category_id === category.id
-                      ? 'border-transparent bg-white text-[#070b12]'
-                      : 'border-[var(--app-stroke)] bg-white/[0.03] text-[var(--app-muted-strong)]',
-                  )}
-                  onClick={() => handleChange('category_id', form.category_id === category.id ? '' : category.id)}
-                  type="button"
-                >
-                  {category.name}
-                </button>
-              ))}
+          ) : null}
+          {receipt?.status === 'failed' ? (
+            <div className="mt-4 rounded-[24px] border border-[var(--app-danger)]/20 bg-[var(--app-danger)]/10 p-4 text-sm text-[var(--app-danger)]">
+              {receipt.error || 'Не удалось обработать чек.'}
             </div>
+          ) : null}
+        </SurfaceCard>
+      ) : null}
 
-            <button
-              className="mt-4 inline-flex items-center gap-2 text-sm font-medium text-[var(--app-accent)]"
-              onClick={() => setDetailsOpen((current) => !current)}
-              type="button"
-            >
-              <SparklesIcon size={16} />
-              {detailsOpen ? 'Скрыть детали' : 'Добавить детали'}
-            </button>
+      {mode === 'edit' && transactionQuery.isLoading ? (
+        <div className="space-y-3">
+          <Skeleton className="h-24 w-full rounded-[22px]" />
+          <Skeleton className="h-24 w-full rounded-[22px]" />
+        </div>
+      ) : (
+        <>
+          <SegmentedControl
+            onChange={(value) => handleChange('type', value)}
+            options={[
+              { label: 'Доходы', value: 'income' },
+              { label: 'Расходы', value: 'expense' },
+            ]}
+            value={form.type}
+          />
 
-            {detailsOpen ? (
-              <div className="mt-4 space-y-3 premium-card p-4">
+          <SurfaceCard>
+            <p className="soft-kicker">Сумма</p>
+            <div className="mt-3 flex items-end justify-between gap-3">
+              <input
+                className="min-w-0 flex-1 bg-transparent text-[40px] font-semibold tracking-tight text-white outline-none"
+                inputMode="decimal"
+                min="0"
+                onChange={(event) => handleChange('amount', event.target.value)}
+                placeholder="0.00"
+                step="0.01"
+                type="number"
+                value={form.amount}
+              />
+              <input
+                className="w-20 rounded-[18px] border border-[var(--app-stroke)] bg-white/[0.04] px-3 py-3 text-center text-sm font-semibold uppercase text-white outline-none"
+                maxLength={3}
+                onChange={(event) => handleChange('currency', event.target.value.toUpperCase())}
+                value={form.currency}
+              />
+            </div>
+          </SurfaceCard>
+
+          <div className="flex flex-wrap gap-2.5">
+            {topCategories.map((category) => (
+              <button
+                key={category.id}
+                className={clsx(
+                  'pill-button',
+                  form.category_id === category.id ? 'pill-button--primary' : 'pill-button--ghost',
+                )}
+                onClick={() => handleChange('category_id', form.category_id === category.id ? '' : category.id)}
+                type="button"
+              >
+                {category.name}
+              </button>
+            ))}
+          </div>
+
+          <button className="pill-button pill-button--ghost w-fit" onClick={() => setDetailsOpen((current) => !current)} type="button">
+            <SparklesIcon size={16} />
+            {detailsOpen ? 'Скрыть детали' : 'Добавить детали'}
+          </button>
+
+          {detailsOpen ? (
+            <SurfaceCard>
+              <div className="space-y-3">
                 <input
                   className="sheet-input"
                   onChange={(event) => handleChange('merchant', event.target.value)}
@@ -381,7 +374,7 @@ export function FinanceActionSheet() {
                 <textarea
                   className="sheet-input min-h-24 resize-none"
                   onChange={(event) => handleChange('description', event.target.value)}
-                  placeholder="Описание операции"
+                  placeholder="Короткое описание операции"
                   value={form.description}
                 />
                 <select
@@ -403,19 +396,16 @@ export function FinanceActionSheet() {
                   </div>
                 ) : null}
               </div>
-            ) : null}
-          </>
-        )}
+            </SurfaceCard>
+          ) : null}
 
-        <div className="mt-6 flex gap-3">
-          <button className="sheet-secondary-button" onClick={handleClose} type="button">
-            Отмена
-          </button>
-          <button className="sheet-primary-button" disabled={!canSubmit || isBusy} onClick={() => void handleSubmit()} type="button">
-            {isBusy ? 'Сохраняем…' : mode === 'edit' ? 'Обновить' : 'Сохранить'}
-          </button>
-        </div>
-      </div>
-    </div>
+          {!detailsOpen && mode !== 'ocr' && !receipt ? (
+            <EmptyStateCard title="Минимум действий" description="Сумма и категория уже достаточно, чтобы сохранить операцию буквально за несколько секунд." />
+          ) : null}
+        </>
+      )}
+    </BottomSheetScaffold>
   );
 }
+
+

@@ -1,7 +1,6 @@
 ﻿import clsx from 'clsx';
 import { useMemo, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { useNavigate } from 'react-router-dom';
 
 import { useFinanceSheet } from '../features/finance-sheet/useFinanceSheet';
 import {
@@ -14,11 +13,19 @@ import { isLocalDataMode } from '../shared/api/mode';
 import { currentMonthKey, formatDateGroupLabel } from '../shared/lib/date';
 import { buildRecurringPreview, groupTransactionsByDate } from '../shared/lib/finance';
 import { formatCompactMoney, formatMoney } from '../shared/lib/money';
-import { ActivityIcon, ChevronLeftIcon, DotsIcon, PencilIcon, SegmentedControl, TrashIcon } from '../shared/ui/premium';
+import {
+  EmptyStateCard,
+  ListCard,
+  ListRow,
+  ScreenHeader,
+  SectionHeader,
+  StatusBadge,
+  SurfaceCard,
+} from '../shared/ui/premium-kit';
+import { ActivityIcon, IconCircleButton, PencilIcon, SegmentedControl, TrashIcon } from '../shared/ui/premium';
 import { Skeleton } from '../shared/ui/Skeleton';
 
 export function TransactionsPage() {
-  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const month = currentMonthKey();
   const localMode = isLocalDataMode();
@@ -33,7 +40,7 @@ export function TransactionsPage() {
   const transactions = transactionsQuery.data?.items ?? [];
   const groupedTransactions = useMemo(() => groupTransactionsByDate(transactions), [transactions]);
   const recurring = useMemo(() => buildRecurringPreview(transactions, 3), [transactions]);
-  const candidates = localMode && segment === 'expense' ? (subscriptionManagerQuery.data?.candidates ?? []).slice(0, 3) : [];
+  const candidates = localMode && segment === 'expense' ? (subscriptionManagerQuery.data?.candidates ?? []).slice(0, 2) : [];
 
   const invalidateFinanceData = async () => {
     await Promise.all([
@@ -64,69 +71,68 @@ export function TransactionsPage() {
   };
 
   return (
-    <div className="space-y-5">
-      <header className="page-topbar">
-        <button className="icon-circle-button" onClick={() => navigate('/dashboard')} type="button">
-          <ChevronLeftIcon size={18} />
-        </button>
-        <button className="icon-circle-button" onClick={() => localMode ? openSheet('subscriptions') : openSheet('add')} type="button">
-          <DotsIcon size={18} />
-        </button>
-      </header>
+    <div className="space-y-6">
+      <ScreenHeader
+        eyebrow="История"
+        title="Операционный экран"
+        description="Все транзакции месяца, частые сценарии и предложения по регулярным списаниям в одном ритме."
+        actions={
+          localMode ? (
+            <button className="pill-button pill-button--ghost" onClick={() => openSheet('subscriptions')} type="button">
+              Подписки
+            </button>
+          ) : undefined
+        }
+      />
 
       <SegmentedControl
         onChange={setSegment}
         options={[
-          { label: 'Income', value: 'income' },
-          { label: 'Expenses', value: 'expense' },
+          { label: 'Доходы', value: 'income' },
+          { label: 'Расходы', value: 'expense' },
         ]}
         value={segment}
       />
 
-      <section>
-        <div className="mb-4 flex items-end justify-between">
-          <div>
-            <p className="soft-kicker">Pinned shortcuts</p>
-            <h2 className="mt-1 text-[22px] font-semibold text-white">Частые операции</h2>
-          </div>
-          <button className="rounded-full border border-[var(--app-stroke)] bg-white/[0.03] px-3 py-2 text-xs font-medium uppercase tracking-[0.18em] text-[var(--app-muted)]" type="button">
-            Month
-          </button>
-        </div>
+      <section className="space-y-4">
+        <SectionHeader
+          eyebrow="Паттерны"
+          title="Частые операции"
+          description="Быстрые сценарии, которые чаще всего встречаются в этом месяце."
+        />
 
         {transactionsQuery.isLoading ? (
           <div className="grid grid-cols-3 gap-3">
-            {Array.from({ length: 3 }).map((_, index) => <Skeleton key={index} className="h-24 w-full rounded-[22px]" />)}
+            {Array.from({ length: 3 }).map((_, index) => <Skeleton key={index} className="h-28 w-full rounded-[22px]" />)}
           </div>
         ) : recurring.length === 0 ? (
-          <div className="empty-card">Когда появятся операции этого типа, сюда вынесем самые частые сценарии.</div>
+          <EmptyStateCard title="Паттерны ещё не появились" description="Когда операций станет больше, здесь появятся самые частые сценарии для быстрого ввода." />
         ) : (
           <div className="grid grid-cols-3 gap-3">
             {recurring.map((item) => (
-              <button key={item.title} className="premium-card rounded-[22px] p-3 text-left" onClick={() => openSheet('add')} type="button">
-                <div className="transaction-avatar h-11 w-11 rounded-[16px] text-sm" style={{ background: `${item.color}22`, color: item.color }}>
-                  {item.title.slice(0, 1).toUpperCase()}
-                </div>
-                <p className="mt-3 truncate text-sm font-medium text-white">{item.title}</p>
-                <p className="mt-1 truncate text-xs text-[var(--app-muted)]">{item.subtitle}</p>
-                <p className="mt-2 text-sm font-semibold text-white">{formatCompactMoney(item.amount)}</p>
-              </button>
+              <SurfaceCard key={item.title} className="p-3" tone="soft">
+                <button className="w-full text-left" onClick={() => openSheet('add')} type="button">
+                  <div className="transaction-avatar h-11 w-11 rounded-[16px] text-sm" style={{ background: `${item.color}22`, color: item.color }}>
+                    {item.title.slice(0, 1).toUpperCase()}
+                  </div>
+                  <p className="mt-3 truncate text-sm font-medium text-white">{item.title}</p>
+                  <p className="mt-1 truncate text-xs text-[var(--app-muted)]">{item.subtitle}</p>
+                  <p className="mt-2 text-sm font-semibold text-white">{formatCompactMoney(item.amount)}</p>
+                </button>
+              </SurfaceCard>
             ))}
           </div>
         )}
       </section>
 
       {localMode && segment === 'expense' ? (
-        <section>
-          <div className="mb-4 flex items-end justify-between gap-3">
-            <div>
-              <p className="soft-kicker">Suggested subscriptions</p>
-              <h2 className="mt-1 text-[22px] font-semibold text-white">Подтвердить из истории</h2>
-            </div>
-            <button className="text-sm text-[var(--app-accent)]" onClick={() => openSheet('subscriptions')} type="button">
-              Управлять
-            </button>
-          </div>
+        <section className="space-y-4">
+          <SectionHeader
+            eyebrow="Предложения"
+            title="Подписки из истории"
+            description="Лёгкий слой подтверждения: TrackDen показывает только действительно похожие ежемесячные списания."
+            action={<StatusBadge tone="accent">{subscriptionManagerQuery.data?.candidate_count ?? 0} кандидатов</StatusBadge>}
+          />
 
           {subscriptionManagerQuery.isLoading ? (
             <div className="space-y-3">
@@ -134,11 +140,11 @@ export function TransactionsPage() {
               <Skeleton className="h-28 w-full rounded-[24px]" />
             </div>
           ) : candidates.length === 0 ? (
-            <div className="empty-card">Когда в истории накопятся похожие ежемесячные траты, TrackDen предложит их как подписки.</div>
+            <EmptyStateCard title="Пока без кандидатов" description="Когда в истории накопятся похожие ежемесячные списания, здесь появится предложение подтвердить подписку." />
           ) : (
             <div className="space-y-3">
               {candidates.map((candidate) => (
-                <div key={candidate.id} className="premium-card rounded-[24px] p-4">
+                <SurfaceCard key={candidate.id}>
                   <div className="flex items-start justify-between gap-3">
                     <div>
                       <p className="text-base font-medium text-white">{candidate.merchant_label}</p>
@@ -151,34 +157,31 @@ export function TransactionsPage() {
                       <p className="mt-1 text-sm text-[var(--app-muted)]">{candidate.expected_day} число</p>
                     </div>
                   </div>
-                  <div className="mt-4 flex gap-3">
-                    <button className="sheet-primary-button" onClick={() => void handleCandidateConfirm(candidate.id)} type="button">
+                  <div className="mt-4 flex flex-wrap gap-3">
+                    <button className="pill-button pill-button--primary" onClick={() => void handleCandidateConfirm(candidate.id)} type="button">
                       Подтвердить
                     </button>
-                    <button className="sheet-secondary-button" onClick={() => void handleCandidateDismiss(candidate.id)} type="button">
+                    <button className="pill-button" onClick={() => void handleCandidateDismiss(candidate.id)} type="button">
                       Не подписка
                     </button>
-                    <button className="sheet-secondary-button" onClick={() => openSheet('subscriptions')} type="button">
+                    <button className="pill-button" onClick={() => openSheet('subscriptions')} type="button">
                       Позже
                     </button>
                   </div>
-                </div>
+                </SurfaceCard>
               ))}
             </div>
           )}
         </section>
       ) : null}
 
-      <section>
-        <div className="mb-4 flex items-end justify-between">
-          <div>
-            <p className="soft-kicker">Activity</p>
-            <h2 className="mt-1 text-[22px] font-semibold text-white">Все транзакции</h2>
-          </div>
-          <button className="rounded-full border border-[var(--app-stroke)] bg-white/[0.03] px-3 py-2 text-xs font-medium uppercase tracking-[0.18em] text-[var(--app-muted)]" onClick={() => openSheet('add')} type="button">
-            Add
-          </button>
-        </div>
+      <section className="space-y-4">
+        <SectionHeader
+          eyebrow="Лента"
+          title="Все транзакции"
+          description="Чистая группировка по датам и аккуратные действия редактирования без визуального шума."
+          action={<button className="pill-button pill-button--primary" onClick={() => openSheet('add')} type="button">Добавить</button>}
+        />
 
         {transactionsQuery.isLoading ? (
           <div className="space-y-3">
@@ -187,56 +190,59 @@ export function TransactionsPage() {
             <Skeleton className="h-24 w-full rounded-[24px]" />
           </div>
         ) : groupedTransactions.length === 0 ? (
-          <div className="empty-card">Транзакций за этот месяц пока нет.</div>
+          <EmptyStateCard title="Транзакций за этот месяц пока нет" description="Добавь первую операцию, и здесь появится аккуратная лента по датам и категориям." />
         ) : (
           <div className="space-y-5">
             {groupedTransactions.map((group) => (
               <div key={group.label} className="space-y-3">
                 <div className="flex items-center justify-between px-1">
-                  <p className="text-sm font-medium text-[var(--app-muted)]">{formatDateGroupLabel(group.label)}</p>
+                  <p className="soft-kicker">{formatDateGroupLabel(group.label)}</p>
                 </div>
-                {group.items.map((transaction) => {
-                  const isExpense = transaction.type === 'expense';
-                  return (
-                    <div key={transaction.id} className="transaction-row">
-                      <div className="flex items-center gap-3">
-                        <div
-                          className="transaction-avatar"
-                          style={{
-                            background: `${transaction.category?.color ?? (isExpense ? '#ff7d7d' : '#2fd39a')}22`,
-                            color: transaction.category?.color ?? (isExpense ? '#ff7d7d' : '#2fd39a'),
-                          }}
-                        >
-                          <ActivityIcon size={18} />
+                <div className="space-y-3">
+                  {group.items.map((transaction) => {
+                    const isExpense = transaction.type === 'expense';
+                    return (
+                      <ListCard key={transaction.id}>
+                        <div className="list-row">
+                          <div className="list-row__leading">
+                            <div
+                              className="transaction-avatar"
+                              style={{
+                                background: `${transaction.category?.color ?? (isExpense ? '#ff7d7d' : '#2fd39a')}22`,
+                                color: transaction.category?.color ?? (isExpense ? '#ff7d7d' : '#2fd39a'),
+                              }}
+                            >
+                              <ActivityIcon size={18} />
+                            </div>
+                          </div>
+                          <div className="list-row__content">
+                            <p className="list-row__title">{transaction.merchant || transaction.description || 'Без названия'}</p>
+                            <p className="list-row__subtitle">{transaction.category?.name ?? 'Автокатегория'}</p>
+                          </div>
+                          <div className="list-row__trailing flex items-center gap-3">
+                            <div className="text-right">
+                              <p className={clsx('text-base font-semibold', isExpense ? 'text-[var(--app-danger)]' : 'text-[var(--app-success)]')}>
+                                {isExpense ? '-' : '+'}
+                                {formatMoney(transaction.amount, transaction.currency)}
+                              </p>
+                              {transaction.ai_confidence ? (
+                                <p className="mt-1 text-xs text-[var(--app-muted)]">AI {Math.round(transaction.ai_confidence * 100)}%</p>
+                              ) : null}
+                            </div>
+                            <div className="flex gap-2">
+                              <IconCircleButton className="icon-circle-button--small" onClick={() => openSheet('edit', { transactionId: transaction.id })}>
+                                <PencilIcon size={15} />
+                              </IconCircleButton>
+                              <IconCircleButton className="icon-circle-button--small" onClick={() => void handleDelete(transaction.id)}>
+                                <TrashIcon size={15} />
+                              </IconCircleButton>
+                            </div>
+                          </div>
                         </div>
-                        <div>
-                          <p className="font-medium text-white">{transaction.merchant || transaction.description || 'Без названия'}</p>
-                          <p className="mt-1 text-sm text-[var(--app-muted)]">{transaction.category?.name ?? 'Автокатегория'}</p>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center gap-3">
-                        <div className="text-right">
-                          <p className={clsx('text-base font-semibold', isExpense ? 'text-[var(--app-danger)]' : 'text-[var(--app-success)]')}>
-                            {isExpense ? '-' : '+'}
-                            {formatMoney(transaction.amount, transaction.currency)}
-                          </p>
-                          {transaction.ai_confidence ? (
-                            <p className="mt-1 text-xs text-[var(--app-muted)]">AI {Math.round(transaction.ai_confidence * 100)}%</p>
-                          ) : null}
-                        </div>
-                        <div className="flex gap-2">
-                          <button className="icon-circle-button" onClick={() => openSheet('edit', { transactionId: transaction.id })} type="button">
-                            <PencilIcon size={16} />
-                          </button>
-                          <button className="icon-circle-button" onClick={() => void handleDelete(transaction.id)} type="button">
-                            <TrashIcon size={16} />
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
+                      </ListCard>
+                    );
+                  })}
+                </div>
               </div>
             ))}
           </div>

@@ -1,4 +1,4 @@
-import clsx from 'clsx';
+﻿import clsx from 'clsx';
 import { useQueryClient } from '@tanstack/react-query';
 import { useEffect, useMemo, useState } from 'react';
 
@@ -6,7 +6,7 @@ import { useSessionQuery } from '../auth/api';
 import { useFinanceSheet } from '../finance-sheet/useFinanceSheet';
 import { useBudgetConfigQuery, useSaveBudgetConfigMutation } from './api';
 import { type BudgetConfig, createEmptyBudgetConfig, listBudgetableCategories } from './model';
-import { CloseIcon } from '../../shared/ui/premium';
+import { BottomSheetScaffold, EmptyStateCard, SectionHeader, SurfaceCard } from '../../shared/ui/premium-kit';
 import { Skeleton } from '../../shared/ui/Skeleton';
 
 type CategoryBudgetFormState = {
@@ -124,78 +124,74 @@ export function BudgetActionSheet() {
   const isLoading = sessionQuery.isLoading || budgetConfigQuery.isLoading;
 
   return (
-    <div className="sheet-backdrop" onClick={closeSheet} role="presentation">
-      <div className="premium-sheet" onClick={(event) => event.stopPropagation()} role="dialog" aria-modal="true">
-        <div className="sheet-handle" />
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <p className="text-xs uppercase tracking-[0.28em] text-[var(--app-muted)]">Budget control</p>
-            <h2 className="mt-2 text-[26px] font-semibold leading-tight text-[var(--app-text)]">Месячные лимиты</h2>
-            <p className="mt-2 max-w-[280px] text-sm leading-6 text-[var(--app-muted)]">Настрой общий лимит и бюджеты по системным категориям. Предупреждения появятся прямо на главной и в аналитике.</p>
-          </div>
-          <button className="icon-circle-button" onClick={closeSheet} type="button">
-            <CloseIcon size={18} />
+    <BottomSheetScaffold
+      description="Общий лимит и лимиты по категориям собраны в одну спокойную шторку без лишних шагов."
+      eyebrow="Лимиты"
+      footer={(
+        <div className="flex gap-3">
+          <button className="sheet-secondary-button" onClick={handleReset} type="button">
+            Сбросить
+          </button>
+          <button className="sheet-primary-button" disabled={isLoading || invalidEnabledValue || saveBudgetMutation.isPending} onClick={() => void handleSave()} type="button">
+            {saveBudgetMutation.isPending ? 'Сохраняем…' : 'Сохранить лимиты'}
           </button>
         </div>
-
-        {isLoading ? (
-          <div className="mt-6 space-y-3">
-            <Skeleton className="h-24 w-full rounded-[22px]" />
-            <Skeleton className="h-24 w-full rounded-[22px]" />
-            <Skeleton className="h-24 w-full rounded-[22px]" />
-          </div>
-        ) : (
-          <>
-            <section className="premium-card mt-6 rounded-[24px] p-4">
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <p className="text-sm font-medium text-white">Общий лимит месяца</p>
-                  <p className="mt-1 text-sm leading-6 text-[var(--app-muted)]">Следим за общим расходом, независимо от категорий.</p>
-                </div>
-                <button
-                  className={clsx(
-                    'rounded-full border px-3 py-2 text-xs font-semibold uppercase tracking-[0.18em] transition',
-                    form.overall_enabled
-                      ? 'border-transparent bg-white text-[#070b12]'
-                      : 'border-[var(--app-stroke)] bg-white/[0.03] text-[var(--app-muted-strong)]',
-                  )}
-                  onClick={() => setForm((current) => ({ ...current, overall_enabled: !current.overall_enabled }))}
-                  type="button"
-                >
-                  {form.overall_enabled ? 'On' : 'Off'}
-                </button>
+      )}
+      onClose={closeSheet}
+      title="Месячные лимиты"
+    >
+      {isLoading ? (
+        <div className="space-y-3">
+          <Skeleton className="h-24 w-full rounded-[22px]" />
+          <Skeleton className="h-24 w-full rounded-[22px]" />
+          <Skeleton className="h-24 w-full rounded-[22px]" />
+        </div>
+      ) : (
+        <>
+          <SurfaceCard>
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="text-sm font-medium text-white">Общий лимит месяца</p>
+                <p className="mt-1 text-sm leading-6 text-[var(--app-muted)]">Единый потолок по расходам, независимо от категорий.</p>
               </div>
+              <button
+                className={clsx('pill-button', form.overall_enabled ? 'pill-button--primary' : 'pill-button--ghost')}
+                onClick={() => setForm((current) => ({ ...current, overall_enabled: !current.overall_enabled }))}
+                type="button"
+              >
+                {form.overall_enabled ? 'Включён' : 'Выключен'}
+              </button>
+            </div>
 
-              <div className="mt-4 flex items-center gap-3">
-                <input
-                  className="sheet-input flex-1"
-                  disabled={!form.overall_enabled}
-                  inputMode="decimal"
-                  min="0"
-                  onChange={(event) => setForm((current) => ({ ...current, overall_amount: event.target.value }))}
-                  placeholder="0.00"
-                  step="0.01"
-                  type="number"
-                  value={form.overall_amount}
-                />
-                <span className="text-xs uppercase tracking-[0.18em] text-[var(--app-muted)]">RUB / month</span>
-              </div>
-            </section>
+            <div className="mt-4 flex items-center gap-3">
+              <input
+                className="sheet-input flex-1"
+                disabled={!form.overall_enabled}
+                inputMode="decimal"
+                min="0"
+                onChange={(event) => setForm((current) => ({ ...current, overall_amount: event.target.value }))}
+                placeholder="0.00"
+                step="0.01"
+                type="number"
+                value={form.overall_amount}
+              />
+              <span className="text-xs uppercase tracking-[0.18em] text-[var(--app-muted)]">руб. в месяц</span>
+            </div>
+          </SurfaceCard>
 
-            <section className="mt-5 space-y-3">
-              <div className="flex items-center justify-between gap-3">
-                <div>
-                  <p className="soft-kicker">Categories</p>
-                  <h3 className="mt-1 text-lg font-semibold text-white">Лимиты по категориям</h3>
-                  <p className="mt-1 text-sm text-[var(--app-muted)]">Активно {enabledCategoryCount} из {categories.length}</p>
-                </div>
-                <button className="text-sm text-[var(--app-accent)]" onClick={handleReset} type="button">
-                  Сбросить всё
-                </button>
-              </div>
+          <section className="space-y-3">
+            <SectionHeader
+              eyebrow="Категории"
+              title="Лимиты по категориям"
+              description={`Активно ${enabledCategoryCount} из ${categories.length}`}
+              action={<button className="pill-button pill-button--ghost" onClick={handleReset} type="button">Очистить всё</button>}
+            />
 
-              {form.categories.map((category) => (
-                <div key={category.category_id} className="premium-card rounded-[22px] p-4">
+            {form.categories.length === 0 ? (
+              <EmptyStateCard title="Нет доступных категорий" description="Когда системные категории будут готовы, здесь появятся их лимиты." />
+            ) : (
+              form.categories.map((category) => (
+                <SurfaceCard key={category.category_id}>
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex items-center gap-3">
                       <div className="transaction-avatar h-11 w-11 rounded-[16px] text-sm" style={{ background: `${category.color ?? '#6f6bff'}22`, color: category.color ?? '#6f6bff' }}>
@@ -203,20 +199,15 @@ export function BudgetActionSheet() {
                       </div>
                       <div>
                         <p className="font-medium text-white">{category.name}</p>
-                        <p className="mt-1 text-sm text-[var(--app-muted)]">Месячный потолок по этой категории</p>
+                        <p className="mt-1 text-sm text-[var(--app-muted)]">Месячный потолок по этой категории.</p>
                       </div>
                     </div>
                     <button
-                      className={clsx(
-                        'rounded-full border px-3 py-2 text-xs font-semibold uppercase tracking-[0.18em] transition',
-                        category.enabled
-                          ? 'border-transparent bg-white text-[#070b12]'
-                          : 'border-[var(--app-stroke)] bg-white/[0.03] text-[var(--app-muted-strong)]',
-                      )}
+                      className={clsx('pill-button', category.enabled ? 'pill-button--primary' : 'pill-button--ghost')}
                       onClick={() => handleCategoryChange(category.category_id, { enabled: !category.enabled })}
                       type="button"
                     >
-                      {category.enabled ? 'On' : 'Off'}
+                      {category.enabled ? 'Включён' : 'Выключен'}
                     </button>
                   </div>
 
@@ -232,32 +223,23 @@ export function BudgetActionSheet() {
                       type="number"
                       value={category.amount}
                     />
-                    <span className="text-xs uppercase tracking-[0.18em] text-[var(--app-muted)]">RUB</span>
+                    <span className="text-xs uppercase tracking-[0.18em] text-[var(--app-muted)]">руб.</span>
                   </div>
-                </div>
-              ))}
-            </section>
+                </SurfaceCard>
+              ))
+            )}
+          </section>
 
-            {invalidEnabledValue ? (
-              <div className="mt-4 rounded-[20px] border border-amber-400/20 bg-amber-400/10 px-4 py-3 text-sm leading-6 text-amber-100">
-                Для включённых лимитов нужно указать сумму больше нуля.
-              </div>
-            ) : null}
-          </>
-        )}
-
-        <div className="mt-6 flex gap-3">
-          <button className="sheet-secondary-button" onClick={closeSheet} type="button">
-            Отмена
-          </button>
-          <button className="sheet-secondary-button" onClick={handleReset} type="button">
-            Очистить
-          </button>
-          <button className="sheet-primary-button" disabled={isLoading || invalidEnabledValue || saveBudgetMutation.isPending} onClick={() => void handleSave()} type="button">
-            {saveBudgetMutation.isPending ? 'Сохраняем…' : 'Сохранить лимиты'}
-          </button>
-        </div>
-      </div>
-    </div>
+          {invalidEnabledValue ? (
+            <div className="rounded-[20px] border border-amber-400/20 bg-amber-400/10 px-4 py-3 text-sm leading-6 text-amber-100">
+              Для включённых лимитов нужно указать сумму больше нуля.
+            </div>
+          ) : null}
+        </>
+      )}
+    </BottomSheetScaffold>
   );
 }
+
+
+

@@ -1,5 +1,4 @@
-﻿import clsx from 'clsx';
-import { useQueryClient } from '@tanstack/react-query';
+﻿import { useQueryClient } from '@tanstack/react-query';
 import { type ReactNode, useEffect, useMemo, useState } from 'react';
 
 import { useSessionQuery } from '../auth/api';
@@ -15,7 +14,17 @@ import { type SubscriptionRecord, type SubscriptionStatus } from './model';
 import { useFinanceSheet } from '../finance-sheet/useFinanceSheet';
 import { formatShortDateLabel } from '../../shared/lib/date';
 import { formatCompactMoney, formatMoney } from '../../shared/lib/money';
-import { ChevronLeftIcon, CloseIcon, SparklesIcon, TrashIcon } from '../../shared/ui/premium';
+import { ChevronLeftIcon, TrashIcon } from '../../shared/ui/premium';
+import {
+  BottomSheetScaffold,
+  EmptyStateCard,
+  ListCard,
+  ListRow,
+  PremiumStatTile,
+  SectionHeader,
+  StatusBadge,
+  SurfaceCard,
+} from '../../shared/ui/premium-kit';
 import { Skeleton } from '../../shared/ui/Skeleton';
 
 type SubscriptionFormState = {
@@ -48,38 +57,19 @@ function buildFormState(subscription?: SubscriptionRecord | null): SubscriptionF
   };
 }
 
-function getStatusLabel(status: SubscriptionStatus) {
+function getStatusMeta(status: SubscriptionStatus) {
   switch (status) {
     case 'paused':
-      return 'На паузе';
+      return { label: 'На паузе', tone: 'warning' } as const;
     case 'cancelled':
-      return 'Отменена';
+      return { label: 'Отменена', tone: 'danger' } as const;
     default:
-      return 'Активна';
+      return { label: 'Активна', tone: 'success' } as const;
   }
 }
 
-function getStatusClass(status: SubscriptionStatus) {
-  switch (status) {
-    case 'paused':
-      return 'border-amber-400/20 bg-amber-400/10 text-amber-100';
-    case 'cancelled':
-      return 'border-red-400/20 bg-red-400/10 text-red-100';
-    default:
-      return 'border-emerald-400/20 bg-emerald-400/10 text-emerald-100';
-  }
-}
-
-function SectionHeader({ title, hint, action }: { title: string; hint: string; action?: ReactNode }) {
-  return (
-    <div className="flex items-center justify-between gap-3">
-      <div>
-        <p className="soft-kicker">{hint}</p>
-        <h3 className="mt-1 text-lg font-semibold text-white">{title}</h3>
-      </div>
-      {action}
-    </div>
-  );
+function SectionTitle({ title, hint, action }: { title: string; hint: string; action?: ReactNode }) {
+  return <SectionHeader eyebrow={hint} title={title} action={action} />;
 }
 
 export function SubscriptionActionSheet() {
@@ -177,306 +167,269 @@ export function SubscriptionActionSheet() {
   }
 
   const isLoading = sessionQuery.isLoading || managerQuery.isLoading;
+  const selectedMeta = selectedSubscription ? getStatusMeta(selectedSubscription.status) : null;
 
-  return (
-    <div className="sheet-backdrop" onClick={closeSheet} role="presentation">
-      <div className="premium-sheet" onClick={(event) => event.stopPropagation()} role="dialog" aria-modal="true">
-        <div className="sheet-handle" />
-
-        {mode === 'subscription-edit' ? (
-          <>
-            <div className="flex items-start justify-between gap-4">
-              <div className="flex items-start gap-3">
-                <button className="icon-circle-button" onClick={() => openSheet('subscriptions')} type="button">
-                  <ChevronLeftIcon size={18} />
-                </button>
-                <div>
-                  <p className="text-xs uppercase tracking-[0.28em] text-[var(--app-muted)]">Recurring editor</p>
-                  <h2 className="mt-2 text-[26px] font-semibold leading-tight text-[var(--app-text)]">
-                    {selectedSubscription ? 'Редактировать подписку' : 'Новая подписка'}
-                  </h2>
-                  <p className="mt-2 max-w-[280px] text-sm leading-6 text-[var(--app-muted)]">
-                    Сохрани фиксированное списание, чтобы TrackDen учитывал его в прогнозе месяца.
-                  </p>
-                </div>
-              </div>
-              <button className="icon-circle-button" onClick={closeSheet} type="button">
-                <CloseIcon size={18} />
-              </button>
-            </div>
-
-            {isLoading ? (
-              <div className="mt-6 space-y-3">
-                <Skeleton className="h-24 w-full rounded-[22px]" />
-                <Skeleton className="h-24 w-full rounded-[22px]" />
-              </div>
-            ) : (
-              <>
-                {selectedSubscription ? (
-                  <div className="mt-6 flex items-center justify-between rounded-[22px] border border-[var(--app-stroke)] bg-white/[0.03] px-4 py-3">
-                    <div>
-                      <p className="text-sm text-[var(--app-muted)]">Источник</p>
-                      <p className="mt-1 text-sm font-medium text-white">
-                        {selectedSubscription.source === 'auto' ? 'Подтверждена из истории расходов' : 'Создана вручную'}
-                      </p>
-                    </div>
-                    <div className={clsx('rounded-full border px-3 py-2 text-xs font-semibold uppercase tracking-[0.18em]', getStatusClass(selectedSubscription.status))}>
-                      {getStatusLabel(selectedSubscription.status)}
-                    </div>
-                  </div>
-                ) : null}
-
-                <div className="mt-6 space-y-3 premium-card p-4">
-                  <input
-                    className="sheet-input"
-                    onChange={(event) => setForm((current) => ({ ...current, merchant_label: event.target.value }))}
-                    placeholder="Название сервиса или магазина"
-                    value={form.merchant_label}
-                  />
-                  <div className="grid grid-cols-[minmax(0,1fr)_88px] gap-3">
-                    <input
-                      className="sheet-input"
-                      inputMode="decimal"
-                      min="0"
-                      onChange={(event) => setForm((current) => ({ ...current, expected_amount: event.target.value }))}
-                      placeholder="Сумма в месяц"
-                      step="0.01"
-                      type="number"
-                      value={form.expected_amount}
-                    />
-                    <input
-                      className="sheet-input text-center uppercase"
-                      maxLength={3}
-                      onChange={(event) => setForm((current) => ({ ...current, currency: event.target.value.toUpperCase() }))}
-                      value={form.currency}
-                    />
-                  </div>
-                  <div className="grid grid-cols-[minmax(0,1fr)_110px] gap-3">
-                    <select
-                      className="sheet-input"
-                      onChange={(event) => setForm((current) => ({ ...current, category_id: event.target.value }))}
-                      value={form.category_id}
-                    >
-                      <option value="">Без категории</option>
-                      {categories
-                        .filter((category) => category.is_system)
-                        .map((category) => (
-                          <option key={category.id} value={category.id}>
-                            {category.name}
-                          </option>
-                        ))}
-                    </select>
-                    <input
-                      className="sheet-input text-center"
-                      inputMode="numeric"
-                      max="31"
-                      min="1"
-                      onChange={(event) => setForm((current) => ({ ...current, expected_day: event.target.value }))}
-                      placeholder="День"
-                      type="number"
-                      value={form.expected_day}
-                    />
-                  </div>
-                </div>
-
-                {selectedSubscription ? (
-                  <div className="mt-5 space-y-3">
-                    <SectionHeader hint="Status" title="Управление подпиской" />
-                    <div className="grid grid-cols-2 gap-3">
-                      {selectedSubscription.status === 'active' ? (
-                        <button className="sheet-secondary-button" onClick={() => void handleStatusChange('paused')} type="button">
-                          Поставить на паузу
-                        </button>
-                      ) : (
-                        <button className="sheet-secondary-button" onClick={() => void handleStatusChange('active')} type="button">
-                          Возобновить
-                        </button>
-                      )}
-                      {selectedSubscription.status !== 'cancelled' ? (
-                        <button className="sheet-secondary-button border-[var(--app-danger)]/25 text-[var(--app-danger)]" onClick={() => void handleStatusChange('cancelled')} type="button">
-                          Отменить подписку
-                        </button>
-                      ) : (
-                        <button className="sheet-secondary-button" onClick={() => void handleStatusChange('active')} type="button">
-                          Вернуть в активные
-                        </button>
-                      )}
-                    </div>
-                    {selectedSubscription.source === 'manual' ? (
-                      <button className="sheet-secondary-button w-full border-[var(--app-danger)]/25 text-[var(--app-danger)]" onClick={() => void handleDelete()} type="button">
-                        <span className="inline-flex items-center gap-2">
-                          <TrashIcon size={16} />
-                          Удалить запись
-                        </span>
-                      </button>
-                    ) : null}
-                  </div>
-                ) : null}
-              </>
-            )}
-
-            <div className="mt-6 flex gap-3">
-              <button className="sheet-secondary-button" onClick={() => openSheet('subscriptions')} type="button">
-                Назад
-              </button>
-              <button className="sheet-primary-button" disabled={!canSave || saveMutation.isPending} onClick={() => void handleSave()} type="button">
-                {saveMutation.isPending ? 'Сохраняем…' : selectedSubscription ? 'Сохранить изменения' : 'Создать подписку'}
-              </button>
-            </div>
-          </>
+  if (mode === 'subscription-edit') {
+    return (
+      <BottomSheetScaffold
+        description="Настрой сумму, день списания и статус без отдельного экрана редактирования."
+        eyebrow="Подписки"
+        footer={(
+          <div className="flex gap-3">
+            <button className="sheet-secondary-button" onClick={() => openSheet('subscriptions')} type="button">
+              Назад
+            </button>
+            <button className="sheet-primary-button" disabled={!canSave || saveMutation.isPending} onClick={() => void handleSave()} type="button">
+              {saveMutation.isPending ? 'Сохраняем…' : selectedSubscription ? 'Сохранить изменения' : 'Создать подписку'}
+            </button>
+          </div>
+        )}
+        leading={(
+          <button className="pill-button pill-button--ghost" onClick={() => openSheet('subscriptions')} type="button">
+            <ChevronLeftIcon size={16} />
+            Назад
+          </button>
+        )}
+        onClose={closeSheet}
+        title={selectedSubscription ? 'Редактировать подписку' : 'Новая подписка'}
+      >
+        {isLoading ? (
+          <div className="space-y-3">
+            <Skeleton className="h-24 w-full rounded-[22px]" />
+            <Skeleton className="h-24 w-full rounded-[22px]" />
+          </div>
         ) : (
           <>
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <p className="text-xs uppercase tracking-[0.28em] text-[var(--app-muted)]">Recurring control</p>
-                <h2 className="mt-2 text-[26px] font-semibold leading-tight text-[var(--app-text)]">Фиксированные списания</h2>
-                <p className="mt-2 max-w-[300px] text-sm leading-6 text-[var(--app-muted)]">
-                  TrackDen нашёл повторяющиеся траты и держит под рукой активные подписки, чтобы ты видел обязательные расходы заранее.
-                </p>
-              </div>
-              <button className="icon-circle-button" onClick={closeSheet} type="button">
-                <CloseIcon size={18} />
-              </button>
-            </div>
-
-            {isLoading ? (
-              <div className="mt-6 space-y-3">
-                <Skeleton className="h-24 w-full rounded-[22px]" />
-                <Skeleton className="h-24 w-full rounded-[22px]" />
-                <Skeleton className="h-24 w-full rounded-[22px]" />
-              </div>
-            ) : (
-              <>
-                <div className="mt-6 grid grid-cols-3 gap-3">
-                  <div className="metric-tile !p-4">
-                    <p className="text-sm text-[var(--app-muted)]">В месяц</p>
-                    <p className="mt-2 text-2xl font-semibold text-white">{formatCompactMoney(manager?.monthly_total ?? 0)}</p>
+            {selectedSubscription ? (
+              <SurfaceCard>
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <p className="text-sm text-[var(--app-muted)]">Источник</p>
+                    <p className="mt-1 text-sm font-medium text-white">
+                      {selectedSubscription.source === 'auto' ? 'Подтверждена из истории расходов' : 'Создана вручную'}
+                    </p>
                   </div>
-                  <div className="metric-tile !p-4">
-                    <p className="text-sm text-[var(--app-muted)]">Активных</p>
-                    <p className="mt-2 text-2xl font-semibold text-white">{manager?.active_count ?? 0}</p>
-                  </div>
-                  <div className="metric-tile !p-4">
-                    <p className="text-sm text-[var(--app-muted)]">Кандидаты</p>
-                    <p className="mt-2 text-2xl font-semibold text-white">{manager?.candidate_count ?? 0}</p>
-                  </div>
+                  {selectedMeta ? <StatusBadge tone={selectedMeta.tone}>{selectedMeta.label}</StatusBadge> : null}
                 </div>
+              </SurfaceCard>
+            ) : null}
 
-                <div className="mt-5 flex gap-3">
-                  <button className="sheet-primary-button" onClick={() => openSheet('subscription-edit')} type="button">
-                    Создать вручную
-                  </button>
-                  <button className="sheet-secondary-button" onClick={closeSheet} type="button">
-                    Закрыть
-                  </button>
+            <SurfaceCard>
+              <div className="space-y-3">
+                <input
+                  className="sheet-input"
+                  onChange={(event) => setForm((current) => ({ ...current, merchant_label: event.target.value }))}
+                  placeholder="Название сервиса или магазина"
+                  value={form.merchant_label}
+                />
+                <div className="grid grid-cols-[minmax(0,1fr)_88px] gap-3">
+                  <input
+                    className="sheet-input"
+                    inputMode="decimal"
+                    min="0"
+                    onChange={(event) => setForm((current) => ({ ...current, expected_amount: event.target.value }))}
+                    placeholder="Сумма в месяц"
+                    step="0.01"
+                    type="number"
+                    value={form.expected_amount}
+                  />
+                  <input
+                    className="sheet-input text-center uppercase"
+                    maxLength={3}
+                    onChange={(event) => setForm((current) => ({ ...current, currency: event.target.value.toUpperCase() }))}
+                    value={form.currency}
+                  />
                 </div>
+                <div className="grid grid-cols-[minmax(0,1fr)_112px] gap-3">
+                  <select
+                    className="sheet-input"
+                    onChange={(event) => setForm((current) => ({ ...current, category_id: event.target.value }))}
+                    value={form.category_id}
+                  >
+                    <option value="">Без категории</option>
+                    {categories
+                      .filter((category) => category.is_system)
+                      .map((category) => (
+                        <option key={category.id} value={category.id}>
+                          {category.name}
+                        </option>
+                      ))}
+                  </select>
+                  <input
+                    className="sheet-input text-center"
+                    inputMode="numeric"
+                    max="31"
+                    min="1"
+                    onChange={(event) => setForm((current) => ({ ...current, expected_day: event.target.value }))}
+                    placeholder="День"
+                    type="number"
+                    value={form.expected_day}
+                  />
+                </div>
+              </div>
+            </SurfaceCard>
 
-                {manager?.candidates.length ? (
-                  <section className="mt-6 space-y-3">
-                    <SectionHeader hint="Suggested recurring" title="Подтвердить из истории" />
-                    {manager.candidates.map((candidate) => (
-                      <div key={candidate.id} className="premium-card rounded-[24px] p-4">
-                        <div className="flex items-start justify-between gap-3">
-                          <div>
-                            <p className="text-base font-medium text-white">{candidate.merchant_label}</p>
-                            <p className="mt-1 text-sm text-[var(--app-muted)]">
-                              {candidate.match_count} совпадения · уверенность {Math.round(candidate.confidence * 100)}%
-                            </p>
-                          </div>
-                          <div className="text-right">
-                            <p className="text-base font-semibold text-white">{formatMoney(candidate.expected_amount, candidate.currency)}</p>
-                            <p className="mt-1 text-sm text-[var(--app-muted)]">{candidate.expected_day} число</p>
-                          </div>
-                        </div>
-                        <div className="mt-4 flex gap-3">
-                          <button className="sheet-primary-button" onClick={() => void handleCandidateConfirm(candidate.id)} type="button">
-                            Подтвердить
-                          </button>
-                          <button className="sheet-secondary-button" onClick={() => void handleCandidateDismiss(candidate.id)} type="button">
-                            Не подписка
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-                  </section>
-                ) : null}
-
-                <section className="mt-6 space-y-3">
-                  <SectionHeader hint="Active recurring" title="Активные подписки" />
-                  {manager?.active.length ? (
-                    manager.active.map((subscription) => (
-                      <button
-                        key={subscription.id}
-                        className="transaction-row w-full text-left"
-                        onClick={() => openSheet('subscription-edit', { subscriptionId: subscription.id })}
-                        type="button"
-                      >
-                        <div>
-                          <p className="font-medium text-white">{subscription.merchant_label}</p>
-                          <p className="mt-1 text-sm text-[var(--app-muted)]">
-                            Следующее списание {subscription.next_charge_at ? formatShortDateLabel(subscription.next_charge_at) : 'неизвестно'}
-                          </p>
-                        </div>
-                        <div className="text-right">
-                          <p className="text-base font-semibold text-white">{formatMoney(subscription.expected_amount, subscription.currency)}</p>
-                          <p className={clsx('mt-1 text-xs', getStatusClass(subscription.status))}>{getStatusLabel(subscription.status)}</p>
-                        </div>
-                      </button>
-                    ))
+            {selectedSubscription ? (
+              <section className="space-y-3">
+                <SectionTitle hint="Управление" title="Статус подписки" />
+                <div className="flex flex-wrap gap-3">
+                  {selectedSubscription.status === 'active' ? (
+                    <button className="pill-button" onClick={() => void handleStatusChange('paused')} type="button">
+                      Поставить на паузу
+                    </button>
                   ) : (
-                    <div className="empty-card">Активных подписок пока нет. Можно подтвердить кандидата из истории или создать запись вручную.</div>
+                    <button className="pill-button pill-button--success" onClick={() => void handleStatusChange('active')} type="button">
+                      Возобновить
+                    </button>
                   )}
-                </section>
-
-                {manager?.paused.length ? (
-                  <section className="mt-6 space-y-3">
-                    <SectionHeader hint="Paused recurring" title="На паузе" />
-                    {manager.paused.map((subscription) => (
-                      <button
-                        key={subscription.id}
-                        className="transaction-row w-full text-left"
-                        onClick={() => openSheet('subscription-edit', { subscriptionId: subscription.id })}
-                        type="button"
-                      >
-                        <div>
-                          <p className="font-medium text-white">{subscription.merchant_label}</p>
-                          <p className="mt-1 text-sm text-[var(--app-muted)]">Вернётся в прогноз после возобновления.</p>
-                        </div>
-                        <div className={clsx('rounded-full border px-3 py-2 text-xs font-semibold uppercase tracking-[0.18em]', getStatusClass(subscription.status))}>
-                          {getStatusLabel(subscription.status)}
-                        </div>
-                      </button>
-                    ))}
-                  </section>
-                ) : null}
-
-                {manager?.cancelled.length ? (
-                  <section className="mt-6 space-y-3">
-                    <SectionHeader hint="Archive" title="Архив подписок" />
-                    {manager.cancelled.map((subscription) => (
-                      <button
-                        key={subscription.id}
-                        className="transaction-row w-full text-left"
-                        onClick={() => openSheet('subscription-edit', { subscriptionId: subscription.id })}
-                        type="button"
-                      >
-                        <div>
-                          <p className="font-medium text-white">{subscription.merchant_label}</p>
-                          <p className="mt-1 text-sm text-[var(--app-muted)]">История сохранена, автоматический матчинг выключен.</p>
-                        </div>
-                        <div className={clsx('rounded-full border px-3 py-2 text-xs font-semibold uppercase tracking-[0.18em]', getStatusClass(subscription.status))}>
-                          {getStatusLabel(subscription.status)}
-                        </div>
-                      </button>
-                    ))}
-                  </section>
-                ) : null}
-              </>
-            )}
+                  {selectedSubscription.status !== 'cancelled' ? (
+                    <button className="pill-button pill-button--danger" onClick={() => void handleStatusChange('cancelled')} type="button">
+                      Отменить
+                    </button>
+                  ) : (
+                    <button className="pill-button pill-button--ghost" onClick={() => void handleStatusChange('active')} type="button">
+                      Вернуть в активные
+                    </button>
+                  )}
+                  {selectedSubscription.source === 'manual' ? (
+                    <button className="pill-button pill-button--danger" onClick={() => void handleDelete()} type="button">
+                      <TrashIcon size={16} />
+                      Удалить запись
+                    </button>
+                  ) : null}
+                </div>
+              </section>
+            ) : null}
           </>
         )}
-      </div>
-    </div>
+      </BottomSheetScaffold>
+    );
+  }
+
+  return (
+    <BottomSheetScaffold
+      description="Повторяющиеся траты, подтверждённые подписки и архив собраны в одной аккуратной шторке."
+      eyebrow="Подписки"
+      footer={(
+        <div className="flex gap-3">
+          <button className="sheet-primary-button" onClick={() => openSheet('subscription-edit')} type="button">
+            Создать вручную
+          </button>
+          <button className="sheet-secondary-button" onClick={closeSheet} type="button">
+            Закрыть
+          </button>
+        </div>
+      )}
+      onClose={closeSheet}
+      title="Фиксированные списания"
+    >
+      {isLoading ? (
+        <div className="space-y-3">
+          <Skeleton className="h-24 w-full rounded-[22px]" />
+          <Skeleton className="h-24 w-full rounded-[22px]" />
+          <Skeleton className="h-24 w-full rounded-[22px]" />
+        </div>
+      ) : (
+        <>
+          <div className="stat-grid">
+            <PremiumStatTile hint="По активным подпискам" label="В месяц" tone="accent" value={formatCompactMoney(manager?.monthly_total ?? 0)} />
+            <PremiumStatTile hint="Уже подтверждены" label="Активных" tone="success" value={manager?.active_count ?? 0} />
+            <PremiumStatTile hint="Можно разобрать сейчас" label="Кандидаты" tone="warning" value={manager?.candidate_count ?? 0} />
+            <PremiumStatTile hint="Временно скрыты" label="На паузе" tone="neutral" value={manager?.paused_count ?? 0} />
+          </div>
+
+          {manager?.candidates.length ? (
+            <section className="space-y-3">
+              <SectionTitle hint="Из истории" title="Подтвердить кандидатов" />
+              {manager.candidates.map((candidate) => (
+                <SurfaceCard key={candidate.id}>
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="text-base font-medium text-white">{candidate.merchant_label}</p>
+                      <p className="mt-1 text-sm text-[var(--app-muted)]">
+                        {candidate.match_count} совпадения · уверенность {Math.round(candidate.confidence * 100)}%
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-base font-semibold text-white">{formatMoney(candidate.expected_amount, candidate.currency)}</p>
+                      <p className="mt-1 text-sm text-[var(--app-muted)]">{candidate.expected_day} число</p>
+                    </div>
+                  </div>
+                  <div className="mt-4 flex flex-wrap gap-3">
+                    <button className="pill-button pill-button--primary" onClick={() => void handleCandidateConfirm(candidate.id)} type="button">
+                      Подтвердить
+                    </button>
+                    <button className="pill-button" onClick={() => void handleCandidateDismiss(candidate.id)} type="button">
+                      Не подписка
+                    </button>
+                  </div>
+                </SurfaceCard>
+              ))}
+            </section>
+          ) : null}
+
+          <section className="space-y-3">
+            <SectionTitle hint="Активные" title="Текущие подписки" />
+            {manager?.active.length ? (
+              manager.active.map((subscription) => {
+                const meta = getStatusMeta(subscription.status);
+                return (
+                  <ListCard key={subscription.id}>
+                    <ListRow
+                      leading={<div className="transaction-avatar" style={{ background: 'rgba(111,107,255,0.18)', color: '#cbc9ff' }}>{subscription.merchant_label.slice(0, 1).toUpperCase()}</div>}
+                      onClick={() => openSheet('subscription-edit', { subscriptionId: subscription.id })}
+                      subtitle={subscription.next_charge_at ? `Следующее списание ${formatShortDateLabel(subscription.next_charge_at)}` : 'Дата уточняется'}
+                      title={subscription.merchant_label}
+                      trailing={(
+                        <div className="text-right">
+                          <p className="text-base font-semibold text-white">{formatMoney(subscription.expected_amount, subscription.currency)}</p>
+                          <div className="mt-2"><StatusBadge tone={meta.tone}>{meta.label}</StatusBadge></div>
+                        </div>
+                      )}
+                    />
+                  </ListCard>
+                );
+              })
+            ) : (
+              <EmptyStateCard title="Активных подписок пока нет" description="Подтверди кандидата из истории или создай запись вручную — она сразу попадёт в прогноз месяца." />
+            )}
+          </section>
+
+          {manager?.paused.length ? (
+            <section className="space-y-3">
+              <SectionTitle hint="На паузе" title="Временно выключенные" />
+              {manager.paused.map((subscription) => (
+                <ListCard key={subscription.id}>
+                  <ListRow
+                    leading={<div className="transaction-avatar" style={{ background: 'rgba(245,158,11,0.14)', color: '#ffd48b' }}>{subscription.merchant_label.slice(0, 1).toUpperCase()}</div>}
+                    onClick={() => openSheet('subscription-edit', { subscriptionId: subscription.id })}
+                    subtitle="Вернётся в прогноз после возобновления."
+                    title={subscription.merchant_label}
+                    trailing={<StatusBadge tone="warning">На паузе</StatusBadge>}
+                  />
+                </ListCard>
+              ))}
+            </section>
+          ) : null}
+
+          {manager?.cancelled.length ? (
+            <section className="space-y-3">
+              <SectionTitle hint="Архив" title="Отменённые подписки" />
+              {manager.cancelled.map((subscription) => (
+                <ListCard key={subscription.id}>
+                  <ListRow
+                    leading={<div className="transaction-avatar" style={{ background: 'rgba(255,125,125,0.14)', color: '#ffc1c1' }}>{subscription.merchant_label.slice(0, 1).toUpperCase()}</div>}
+                    onClick={() => openSheet('subscription-edit', { subscriptionId: subscription.id })}
+                    subtitle="История сохранена, автоматический матчинг отключён."
+                    title={subscription.merchant_label}
+                    trailing={<StatusBadge tone="danger">Отменена</StatusBadge>}
+                  />
+                </ListCard>
+              ))}
+            </section>
+          ) : null}
+        </>
+      )}
+    </BottomSheetScaffold>
   );
 }
-
