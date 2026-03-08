@@ -101,7 +101,7 @@ In Telegram, the frontend sends real init data and the backend validates it agai
 ### Backend project
 
 - Create a second Vercel project with `backend/` as the Root Directory
-- The entrypoint for Vercel Functions is `backend/api/index.py`
+- The Vercel FastAPI entrypoint is `backend/app.py`
 - Required environment variables: `BACKEND_DATABASE_URL`, `BACKEND_SYNC_DATABASE_URL`, `BACKEND_CORS_ORIGINS`, `BACKEND_UPLOAD_DIR=/tmp/trackden-uploads`
 - Optional: `BACKEND_REDIS_URL`; if Redis is absent, mock OCR falls back to synchronous inline processing on upload
 - For production Telegram auth set `BACKEND_DEV_AUTH_ENABLED=false` and provide `BACKEND_TELEGRAM_BOT_TOKEN`
