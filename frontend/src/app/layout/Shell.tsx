@@ -5,6 +5,7 @@ import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { BudgetActionSheet } from '../../features/budgets/BudgetActionSheet';
 import { FinanceActionSheet } from '../../features/finance-sheet/FinanceActionSheet';
 import { useFinanceSheet } from '../../features/finance-sheet/useFinanceSheet';
+import { AutomationActionSheet } from '../../features/intelligence/AutomationActionSheet';
 import { SubscriptionActionSheet } from '../../features/subscriptions/SubscriptionActionSheet';
 import { ActivityIcon, ChartIcon, HomeIcon, PlusIcon } from '../../shared/ui/premium';
 
@@ -52,6 +53,7 @@ export function Shell() {
 
         <FinanceActionSheet />
         <BudgetActionSheet />
+        <AutomationActionSheet />
         <SubscriptionActionSheet />
       </KonstaApp>
     </KonstaProvider>

@@ -111,6 +111,7 @@ export function BudgetActionSheet() {
     await saveBudgetMutation.mutateAsync(nextConfig);
     await Promise.all([
       queryClient.invalidateQueries({ queryKey: ['budgets'] }),
+      queryClient.invalidateQueries({ queryKey: ['intelligence'] }),
       queryClient.invalidateQueries({ queryKey: ['analytics'] }),
       queryClient.invalidateQueries({ queryKey: ['transactions'] }),
     ]);

@@ -105,6 +105,7 @@ export function SubscriptionActionSheet() {
   const invalidateSubscriptionData = async () => {
     await Promise.all([
       queryClient.invalidateQueries({ queryKey: ['subscriptions'] }),
+      queryClient.invalidateQueries({ queryKey: ['intelligence'] }),
       queryClient.invalidateQueries({ queryKey: ['transactions'] }),
       queryClient.invalidateQueries({ queryKey: ['analytics'] }),
     ]);

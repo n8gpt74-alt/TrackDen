@@ -5,16 +5,19 @@ import { useOverviewQuery } from '../features/analytics/api';
 import { useBudgetOverviewQuery } from '../features/budgets/api';
 import type { BudgetStatus } from '../features/budgets/model';
 import { useFinanceSheet } from '../features/finance-sheet/useFinanceSheet';
+import { useForecastOverviewQuery, useMerchantInsightsQuery, useWeeklyReviewQuery } from '../features/intelligence/api';
 import { useSubscriptionOverviewQuery } from '../features/subscriptions/api';
 import { useTransactionsQuery, type TransactionType } from '../features/transactions/api';
 import { isLocalDataMode } from '../shared/api/mode';
-import { currentMonthKey, formatMonthCaption } from '../shared/lib/date';
+import { currentMonthKey, formatMonthCaption, formatShortDateLabel } from '../shared/lib/date';
 import { buildSourceBreakdown, buildWeeklyBuckets, calculateRecentTrend } from '../shared/lib/finance';
 import { formatCompactMoney, formatMoney, formatSignedPercent } from '../shared/lib/money';
 import { IconCircleButton, SettingsIcon } from '../shared/ui/premium';
 import {
   EmptyStateCard,
   HeroPanel,
+  ListCard,
+  ListRow,
   PremiumStatTile,
   ScreenHeader,
   SectionHeader,
@@ -54,26 +57,26 @@ function GaugeCard({ amount, label, percent }: { amount: number; label: string; 
 function getBudgetTone(status: BudgetStatus) {
   switch (status) {
     case 'exceeded':
-      return { badge: 'danger', fill: '#ff7d7d', label: 'Перелимит' } as const;
+      return { badge: 'danger', fill: '#ff7d7d', label: '?????????' } as const;
     case 'warning':
-      return { badge: 'warning', fill: '#f59e0b', label: 'На контроле' } as const;
+      return { badge: 'warning', fill: '#f59e0b', label: '?? ????????' } as const;
     case 'normal':
-      return { badge: 'success', fill: '#2fd39a', label: 'В норме' } as const;
+      return { badge: 'success', fill: '#2fd39a', label: '? ?????' } as const;
     default:
-      return { badge: 'neutral', fill: '#6f6bff', label: 'Не задано' } as const;
+      return { badge: 'neutral', fill: '#6f6bff', label: '?? ??????' } as const;
   }
 }
 
 function formatBudgetFooter(remaining: number | null) {
   if (remaining == null) {
-    return 'Лимит не задан';
+    return '????? ?? ?????';
   }
 
   if (remaining >= 0) {
-    return `Осталось ${formatMoney(remaining)}`;
+    return `???????? ${formatMoney(remaining)}`;
   }
 
-  return `Перерасход ${formatMoney(Math.abs(remaining))}`;
+  return `?????????? ${formatMoney(Math.abs(remaining))}`;
 }
 
 export function InsightsPage() {
@@ -83,12 +86,18 @@ export function InsightsPage() {
   const overviewQuery = useOverviewQuery(month);
   const budgetOverviewQuery = useBudgetOverviewQuery(month);
   const subscriptionOverviewQuery = useSubscriptionOverviewQuery(month);
+  const forecastQuery = useForecastOverviewQuery(month);
+  const weeklyReviewQuery = useWeeklyReviewQuery();
+  const merchantInsightsQuery = useMerchantInsightsQuery(month);
   const transactionsQuery = useTransactionsQuery(month, 100);
   const { openSheet } = useFinanceSheet();
 
   const overview = overviewQuery.data;
   const budgetOverview = localMode ? budgetOverviewQuery.data : null;
   const subscriptionOverview = localMode ? subscriptionOverviewQuery.data : null;
+  const forecast = localMode ? forecastQuery.data : null;
+  const weeklyReview = localMode ? weeklyReviewQuery.data : null;
+  const merchantInsights = localMode ? merchantInsightsQuery.data ?? [] : [];
   const transactions = transactionsQuery.data?.items ?? [];
 
   const derived = useMemo(() => {
@@ -114,17 +123,17 @@ export function InsightsPage() {
   return (
     <div className="space-y-6">
       <ScreenHeader
-        eyebrow="Аналитика"
-        title="Чёткая картина месяца"
-        description="Один главный график и несколько спокойных аналитических срезов без перегруза деталями."
+        eyebrow="?????????"
+        title="?????? ??????? ??????"
+        description="???? ??????? ?????? ? ????????? ????????? ????????????? ?????? ??? ????????? ????????."
         actions={(
           <>
             {segment === 'expense' ? (
               <button className="pill-button pill-button--ghost" onClick={() => openSheet('budget')} type="button">
-                Лимиты
+                ??????
               </button>
             ) : null}
-            <IconCircleButton onClick={() => openSheet(segment === 'expense' ? 'subscriptions' : 'add')}>
+            <IconCircleButton onClick={() => openSheet(segment === 'expense' ? 'automation' : 'add')}>
               <SettingsIcon size={18} />
             </IconCircleButton>
           </>
@@ -134,8 +143,8 @@ export function InsightsPage() {
       <SegmentedControl
         onChange={setSegment}
         options={[
-          { label: 'Доходы', value: 'income' },
-          { label: 'Расходы', value: 'expense' },
+          { label: '??????', value: 'income' },
+          { label: '???????', value: 'expense' },
         ]}
         value={segment}
       />
@@ -144,9 +153,9 @@ export function InsightsPage() {
         <Skeleton className="h-[320px] w-full rounded-[28px]" />
       ) : (
         <HeroPanel
-          eyebrow="Главный график"
+          eyebrow="??????? ??????"
           title={formatMoney(derived.total)}
-          description={`Помесячный срез за ${formatMonthCaption(month)} — фокус на том, как движется ${segment === 'expense' ? 'расход' : 'доход'} внутри месяца.`}
+          description={`?????????? ???? ?? ${formatMonthCaption(month)} ? ????? ?? ???, ??? ???????? ${segment === 'expense' ? '??????' : '?????'} ?????? ??????.`}
           actions={<StatusBadge tone={derived.trend >= 0 ? (segment === 'expense' ? 'danger' : 'success') : (segment === 'expense' ? 'success' : 'danger')}>{formatSignedPercent(derived.trend)}</StatusBadge>}
         >
           <div className="insights-bars mt-6">
@@ -165,11 +174,43 @@ export function InsightsPage() {
         </HeroPanel>
       )}
 
+      {localMode && segment === 'expense' ? (
+        <section className="space-y-4">
+          <SectionHeader
+            eyebrow="????? ?????"
+            title="??? ?????????? ????? ??????"
+            description="???????, ????? ?????? ? ??????? ?? ????????? ???????? ??????? ???????, ???? ?????? ???????? ???? ????????."
+          />
+
+          {forecastQuery.isLoading || weeklyReviewQuery.isLoading || merchantInsightsQuery.isLoading ? (
+            <div className="space-y-3">
+              <Skeleton className="h-28 w-full rounded-[24px]" />
+              <Skeleton className="h-24 w-full rounded-[24px]" />
+            </div>
+          ) : (
+            <>
+              <div className="stat-grid">
+                <PremiumStatTile hint="??????? ???????? ? ????? ??????" label="????? ??????" tone={forecast?.status === 'risk' ? 'danger' : forecast?.status === 'attention' ? 'warning' : 'success'} value={formatMoney(forecast?.projected_expense ?? 0)} />
+                <PremiumStatTile hint="????? ???????????? ????????" label="??????? ???????" tone={forecast && forecast.projected_balance < 0 ? 'danger' : 'accent'} value={formatMoney(forecast?.projected_balance ?? 0)} />
+                <PremiumStatTile hint="????????? ? ??????? ???????" label="????? ??????" tone={(weeklyReview?.delta_ratio ?? 0) > 10 ? 'danger' : (weeklyReview?.delta_ratio ?? 0) < -10 ? 'success' : 'neutral'} value={formatSignedPercent(weeklyReview?.delta_ratio ?? 0)} />
+                <PremiumStatTile hint="??????? ???????? ??????" label="???-?????????" tone="neutral" value={weeklyReview?.top_category_name ?? '??? ??????'} />
+              </div>
+
+              <SurfaceCard>
+                <p className="text-sm text-[var(--app-muted)]">????? ??????</p>
+                <p className="mt-2 text-base font-semibold text-white">{weeklyReview?.summary ?? '???? ???? ?????? ??? ??????.'}</p>
+                {forecast ? <p className="mt-3 text-sm text-[var(--app-muted)]">{forecast.summary}</p> : null}
+              </SurfaceCard>
+            </>
+          )}
+        </section>
+      ) : null}
+
       <section className="space-y-4">
         <SectionHeader
-          eyebrow="Состав"
-          title={segment === 'expense' ? 'Главные категории расходов' : 'Ключевые источники дохода'}
-          description="Верхние драйверы месяца, которые сильнее всего влияют на общую картину."
+          eyebrow="??????"
+          title={segment === 'expense' ? '??????? ????????? ????????' : '???????? ????????? ??????'}
+          description="??????? ???????? ??????, ??????? ??????? ????? ?????? ?? ????? ???????."
         />
 
         {overviewQuery.isLoading ? (
@@ -178,7 +219,7 @@ export function InsightsPage() {
             <Skeleton className="h-32 w-full rounded-[26px]" />
           </div>
         ) : derived.breakdown.length === 0 ? (
-          <EmptyStateCard title="Пока мало данных" description="Когда в месяце накопится больше операций, здесь появятся главные драйверы и срезы." />
+          <EmptyStateCard title="???? ???? ??????" description="????? ? ?????? ????????? ?????? ????????, ????? ???????? ??????? ???????? ? ?????." />
         ) : (
           <div className="space-y-3">
             {derived.breakdown.map((item) => (
@@ -196,10 +237,48 @@ export function InsightsPage() {
       {localMode && segment === 'expense' ? (
         <section className="space-y-4">
           <SectionHeader
-            eyebrow="Лимиты"
-            title="Лимиты и факт"
-            description="Управленческий слой: где всё спокойно, а где бюджет уже начал поджимать месяц."
-            action={<button className="pill-button pill-button--ghost" onClick={() => openSheet('budget')} type="button">Настроить</button>}
+            eyebrow="????????"
+            title="??????? ?? ?????????"
+            description="??? ??????? ????? ?????? ?? ???? ????? ? ???? ?????? ? ??? ??? ????? ???????????? ???????? ???????."
+          />
+
+          {merchantInsightsQuery.isLoading ? (
+            <div className="space-y-3">
+              <Skeleton className="h-24 w-full rounded-[24px]" />
+              <Skeleton className="h-24 w-full rounded-[24px]" />
+            </div>
+          ) : merchantInsights.length === 0 ? (
+            <EmptyStateCard title="???????? ??? ?? ??????????" description="?????? ? ????? ????????? ????????????? ???????, ? TrackDen ???????, ??? ??????? ????? ?????? ?? ???????? ??????." />
+          ) : (
+            <div className="space-y-3">
+              {merchantInsights.map((item) => (
+                <ListCard key={item.merchant_label}>
+                  <ListRow
+                    title={item.merchant_label}
+                    subtitle={`${item.transaction_count} ???????? ? ${item.category_name ?? '??? ?????????'} ? ????????? ???????? ${formatShortDateLabel(item.last_seen_at)}`}
+                    trailing={(
+                      <div className="text-right">
+                        <p className="text-base font-semibold text-white">{formatMoney(item.total_amount)}</p>
+                        <p className={clsx('mt-1 text-xs', item.delta_ratio == null ? 'text-[var(--app-muted)]' : item.delta_ratio > 0 ? 'text-[var(--app-danger)]' : 'text-[var(--app-success)]')}>
+                          {item.delta_ratio == null ? '????? ? ???? ??????' : `${item.delta_ratio > 0 ? '+' : ''}${Math.round(item.delta_ratio)}% ? ????????`}
+                        </p>
+                      </div>
+                    )}
+                  />
+                </ListCard>
+              ))}
+            </div>
+          )}
+        </section>
+      ) : null}
+
+      {localMode && segment === 'expense' ? (
+        <section className="space-y-4">
+          <SectionHeader
+            eyebrow="??????"
+            title="?????? ? ????"
+            description="?????????????? ????: ??? ??? ????????, ? ??? ?????? ??? ????? ????????? ?????."
+            action={<button className="pill-button pill-button--ghost" onClick={() => openSheet('budget')} type="button">?????????</button>}
           />
 
           {budgetOverviewQuery.isLoading ? (
@@ -208,16 +287,16 @@ export function InsightsPage() {
               <Skeleton className="h-24 w-full rounded-[24px]" />
             </div>
           ) : !budgetOverview || budgetOverview.configured_count === 0 ? (
-            <EmptyStateCard title="Лимиты пока не включены" description="Добавь общий бюджет или категории с лимитами — и TrackDen покажет картину по факту и остатку." />
+            <EmptyStateCard title="?????? ???? ?? ????????" description="?????? ????? ?????? ??? ????????? ? ???????? ? ? TrackDen ??????? ??????? ?? ????? ? ???????." />
           ) : (
             <div className="space-y-3">
               {budgetOverview.overall.enabled ? (
                 <SurfaceCard>
                   <div className="flex items-start justify-between gap-3">
                     <div>
-                      <p className="text-sm text-[var(--app-muted)]">Общий лимит</p>
+                      <p className="text-sm text-[var(--app-muted)]">????? ?????</p>
                       <p className="mt-2 text-2xl font-semibold tracking-[-0.04em] text-white">{formatMoney(budgetOverview.overall.spent)}</p>
-                      <p className="mt-2 text-sm text-[var(--app-muted)]">Лимит {formatMoney(budgetOverview.overall.limit ?? 0)}</p>
+                      <p className="mt-2 text-sm text-[var(--app-muted)]">????? {formatMoney(budgetOverview.overall.limit ?? 0)}</p>
                     </div>
                     <StatusBadge tone={getBudgetTone(budgetOverview.overall.status).badge}>{getBudgetTone(budgetOverview.overall.status).label}</StatusBadge>
                   </div>
@@ -244,7 +323,7 @@ export function InsightsPage() {
                       <div className="flex items-start justify-between gap-3">
                         <div>
                           <p className="text-base font-medium text-white">{item.category_name}</p>
-                          <p className="mt-1 text-sm text-[var(--app-muted)]">{formatMoney(item.spent)} из {formatMoney(item.limit ?? 0)}</p>
+                          <p className="mt-1 text-sm text-[var(--app-muted)]">{formatMoney(item.spent)} ?? {formatMoney(item.limit ?? 0)}</p>
                         </div>
                         <StatusBadge tone={tone.badge}>{tone.label}</StatusBadge>
                       </div>
@@ -262,7 +341,7 @@ export function InsightsPage() {
                   );
                 })
               ) : (
-                <EmptyStateCard title="Категорийные лимиты не включены" description="Сейчас TrackDen следит только за общим лимитом. При желании можно добавить лимиты по категориям." />
+                <EmptyStateCard title="???????????? ?????? ?? ????????" description="?????? TrackDen ?????? ?????? ?? ????? ???????. ??? ??????? ????? ???????? ?????? ?? ??????????." />
               )}
             </div>
           )}
@@ -272,10 +351,10 @@ export function InsightsPage() {
       {localMode && segment === 'expense' ? (
         <section className="space-y-4">
           <SectionHeader
-            eyebrow="Подписки"
-            title="Фиксированные и гибкие траты"
-            description="Разделение обязательных платежей и остальных расходов помогает видеть реальный простор месяца."
-            action={<button className="pill-button pill-button--ghost" onClick={() => openSheet('subscriptions')} type="button">Управлять</button>}
+            eyebrow="????????"
+            title="????????????? ? ?????? ?????"
+            description="?????????? ???????????? ???????? ? ????????? ???????? ???????? ?????? ???????? ??????? ??????."
+            action={<button className="pill-button pill-button--ghost" onClick={() => openSheet('subscriptions')} type="button">?????????</button>}
           />
 
           {subscriptionOverviewQuery.isLoading ? (
@@ -284,13 +363,13 @@ export function InsightsPage() {
               <Skeleton className="h-24 w-full rounded-[24px]" />
             </div>
           ) : !subscriptionOverview ? (
-            <EmptyStateCard title="Подписки ещё загружаются" description="Когда local-first данные будут готовы, здесь появится прогноз фиксированных трат." />
+            <EmptyStateCard title="???????? ??? ???????????" description="????? local-first ?????? ????? ??????, ????? ???????? ??????? ????????????? ????." />
           ) : (
             <div className="stat-grid">
-              <PremiumStatTile hint={`${subscriptionOverview.matched_this_month} совпадений в месяце`} label="Фиксированные" tone="accent" value={formatMoney(subscriptionOverview.fixed_spent)} />
-              <PremiumStatTile hint="Все остальные расходные операции" label="Гибкие" tone="neutral" value={formatMoney(subscriptionOverview.flexible_spent)} />
-              <PremiumStatTile hint="Ещё впереди в этом месяце" label="До конца месяца" tone="warning" value={formatMoney(subscriptionOverview.upcoming_total)} />
-              <PremiumStatTile hint={`${subscriptionOverview.active_count} активных подписок`} label="Прогноз минимума" tone="success" value={formatMoney(subscriptionOverview.forecast_total)} />
+              <PremiumStatTile hint={`${subscriptionOverview.matched_this_month} ?????????? ? ??????`} label="?????????????" tone="accent" value={formatMoney(subscriptionOverview.fixed_spent)} />
+              <PremiumStatTile hint="??? ????????? ????????? ????????" label="??????" tone="neutral" value={formatMoney(subscriptionOverview.flexible_spent)} />
+              <PremiumStatTile hint="??? ??????? ? ???? ??????" label="?? ????? ??????" tone="warning" value={formatMoney(subscriptionOverview.upcoming_total)} />
+              <PremiumStatTile hint={`${subscriptionOverview.active_count} ???????? ????????`} label="??????? ????????" tone="success" value={formatMoney(subscriptionOverview.forecast_total)} />
             </div>
           )}
         </section>
@@ -304,14 +383,11 @@ export function InsightsPage() {
           </>
         ) : (
           <>
-            <PremiumStatTile hint="Динамика относительно прошлой недели" label="Тренд" tone={derived.trend >= 0 ? (segment === 'expense' ? 'danger' : 'success') : (segment === 'expense' ? 'success' : 'danger')} value={formatSignedPercent(derived.trend)} />
-            <PremiumStatTile hint="Среднее значение по 4 недельным слотам" label="Средняя неделя" tone="neutral" value={formatCompactMoney(derived.averagePerWeek)} />
+            <PremiumStatTile hint="???????? ???????????? ??????? ??????" label="?????" tone={derived.trend >= 0 ? (segment === 'expense' ? 'danger' : 'success') : (segment === 'expense' ? 'success' : 'danger')} value={formatSignedPercent(derived.trend)} />
+            <PremiumStatTile hint="??????? ???????? ?? 4 ????????? ??????" label="??????? ??????" tone="neutral" value={formatCompactMoney(derived.averagePerWeek)} />
           </>
         )}
       </div>
     </div>
   );
 }
-
-
-

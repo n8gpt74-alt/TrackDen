@@ -3,6 +3,12 @@
 import type { AnalyticsOverviewResponse, CategorySpendPoint, DailySpendPoint } from '../../features/analytics/api';
 import type { Category, SessionResponse, UserSession } from '../../features/auth/api';
 import { createEmptyBudgetConfig, normalizeBudgetConfig, type BudgetConfig } from '../../features/budgets/model';
+import { findMatchingSmartRule } from '../../features/intelligence/engine';
+import {
+  createEmptyIntelligenceState,
+  normalizeIntelligenceState,
+  type IntelligenceWorkspaceState,
+} from '../../features/intelligence/model';
 import type { Receipt } from '../../features/receipts/api';
 import { synchronizeSubscriptionState } from '../../features/subscriptions/engine';
 import {
@@ -23,7 +29,7 @@ export type StoredTransaction = Omit<Transaction, 'category'> & {
   category_id?: string | null;
 };
 
-export type WorkspaceState = SubscriptionWorkspaceState & {
+export type WorkspaceState = SubscriptionWorkspaceState & IntelligenceWorkspaceState & {
   version: number;
   categories: Category[];
   receipts: Receipt[];
@@ -151,6 +157,7 @@ function defaultWorkspace(): WorkspaceState {
     transactions: [],
     budgets: createEmptyBudgetConfig(),
     ...createEmptySubscriptionState(),
+    ...createEmptyIntelligenceState(),
   };
 }
 
@@ -161,6 +168,7 @@ function workspaceKey(scopeId: string) {
 function sanitizeWorkspace(workspace: Partial<WorkspaceState> | WorkspaceState): WorkspaceState {
   const categories = normalizeCategories(workspace.categories);
   const subscriptionState = normalizeSubscriptionState(workspace, categories);
+  const intelligenceState = normalizeIntelligenceState(workspace, categories);
 
   return {
     version: SUBSCRIPTION_WORKSPACE_VERSION,
@@ -170,6 +178,8 @@ function sanitizeWorkspace(workspace: Partial<WorkspaceState> | WorkspaceState):
     budgets: normalizeBudgetConfig(workspace.budgets, categories),
     subscriptions: subscriptionState.subscriptions,
     dismissed_recurring_keys: subscriptionState.dismissed_recurring_keys,
+    smart_rules: intelligenceState.smart_rules,
+    quick_templates: intelligenceState.quick_templates,
   };
 }
 
@@ -328,7 +338,34 @@ function resolveCategory(
     ? workspace.receipts.find((receipt) => receipt.id === payload.receipt_id)?.extracted_merchant ?? ''
     : '';
   const type = payload.type ?? currentTransaction?.type ?? 'expense';
-  const sourceText = [payload.merchant, payload.description, receiptMerchant, currentTransaction?.merchant, currentTransaction?.description]
+  const merchant = payload.merchant ?? currentTransaction?.merchant ?? receiptMerchant;
+  const description = payload.description ?? currentTransaction?.description ?? null;
+  const smartMatch = findMatchingSmartRule(workspace.categories, workspace.smart_rules, {
+    merchant,
+    description,
+    type,
+  });
+
+  if (smartMatch) {
+    const now = new Date().toISOString();
+    workspace.smart_rules = workspace.smart_rules.map((rule) => (
+      rule.id === smartMatch.rule.id
+        ? {
+            ...rule,
+            use_count: rule.use_count + 1,
+            last_applied_at: now,
+            updated_at: now,
+          }
+        : rule
+    ));
+
+    return {
+      aiConfidence: 0.99,
+      category: smartMatch.category,
+    };
+  }
+
+  const sourceText = [merchant, description, receiptMerchant]
     .filter((value): value is string => Boolean(value))
     .join(' ')
     .toLowerCase();

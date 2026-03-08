@@ -1,4 +1,4 @@
-﻿import clsx from 'clsx';
+import clsx from 'clsx';
 import { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 
@@ -7,6 +7,7 @@ import { useSessionQuery } from '../features/auth/api';
 import { useBudgetOverviewQuery } from '../features/budgets/api';
 import type { BudgetOverview, BudgetStatus } from '../features/budgets/model';
 import { useFinanceSheet } from '../features/finance-sheet/useFinanceSheet';
+import { useAutomationOverviewQuery, useForecastOverviewQuery, useWeeklyReviewQuery } from '../features/intelligence/api';
 import { useSubscriptionManagerQuery } from '../features/subscriptions/api';
 import { useTransactionsQuery } from '../features/transactions/api';
 import { isLocalDataMode } from '../shared/api/mode';
@@ -47,13 +48,13 @@ function buildHeroBars(values: number[]) {
 function getBudgetTone(status: BudgetStatus) {
   switch (status) {
     case 'exceeded':
-      return { badge: 'danger', fill: '#ff7d7d', label: 'Перелимит' } as const;
+      return { badge: 'danger', fill: '#ff7d7d', label: '?????????' } as const;
     case 'warning':
-      return { badge: 'warning', fill: '#f59e0b', label: 'На контроле' } as const;
+      return { badge: 'warning', fill: '#f59e0b', label: '?? ????????' } as const;
     case 'normal':
-      return { badge: 'success', fill: '#2fd39a', label: 'В норме' } as const;
+      return { badge: 'success', fill: '#2fd39a', label: '? ?????' } as const;
     default:
-      return { badge: 'neutral', fill: '#6f6bff', label: 'Не задано' } as const;
+      return { badge: 'neutral', fill: '#6f6bff', label: '?? ??????' } as const;
   }
 }
 
@@ -75,30 +76,47 @@ function resolveBudgetState(overview: BudgetOverview | undefined | null): Budget
 
 function formatBudgetCopy(overview: BudgetOverview) {
   if (!overview.overall.enabled || overview.overall.remaining == null) {
-    return `${overview.categories.length} категорий под контролем`;
+    return `${overview.categories.length} ????????? ??? ?????????`;
   }
 
   if (overview.overall.remaining >= 0) {
-    return `Осталось ${formatMoney(overview.overall.remaining)}`;
+    return `???????? ${formatMoney(overview.overall.remaining)}`;
   }
 
-  return `Перерасход ${formatMoney(Math.abs(overview.overall.remaining))}`;
+  return `?????????? ${formatMoney(Math.abs(overview.overall.remaining))}`;
+}
+
+function getForecastMeta(status: 'safe' | 'attention' | 'risk') {
+  switch (status) {
+    case 'risk':
+      return { badge: 'danger', label: '????' } as const;
+    case 'attention':
+      return { badge: 'warning', label: '????????' } as const;
+    default:
+      return { badge: 'success', label: '????????' } as const;
+  }
 }
 
 export function DashboardPage() {
+  const navigate = useNavigate();
   const month = currentMonthKey();
   const localMode = isLocalDataMode();
   const sessionQuery = useSessionQuery();
   const overviewQuery = useOverviewQuery(month);
   const budgetOverviewQuery = useBudgetOverviewQuery(month);
   const subscriptionManagerQuery = useSubscriptionManagerQuery();
+  const automationQuery = useAutomationOverviewQuery();
+  const forecastQuery = useForecastOverviewQuery(month);
+  const weeklyReviewQuery = useWeeklyReviewQuery();
   const transactionsQuery = useTransactionsQuery(month, 12);
   const { openSheet } = useFinanceSheet();
-  const navigate = useNavigate();
 
   const overview = overviewQuery.data;
   const budgetOverview = localMode ? budgetOverviewQuery.data : null;
   const subscriptionManager = localMode ? subscriptionManagerQuery.data : null;
+  const automation = localMode ? automationQuery.data : null;
+  const forecast = localMode ? forecastQuery.data : null;
+  const weeklyReview = localMode ? weeklyReviewQuery.data : null;
   const transactions = transactionsQuery.data?.items ?? [];
   const user = sessionQuery.data?.user;
 
@@ -125,10 +143,12 @@ export function DashboardPage() {
   const budgetProgress = budgetOverview?.overall.enabled
     ? budgetOverview.overall
     : budgetOverview?.highlighted[0] ?? null;
+  const forecastMeta = getForecastMeta(forecast?.status ?? 'safe');
 
-  const firstName = user?.first_name?.trim() || 'друг';
+  const firstName = user?.first_name?.trim() || '????';
   const balance = overview?.balance ?? 0;
   const monthCaption = formatMonthCaption(month);
+  const quickTemplates = automation ? [...automation.quick_templates, ...automation.suggested_templates].slice(0, 4) : [];
 
   const profileBadge = user?.photo_url ? (
     <img alt={firstName} className="h-12 w-12 rounded-full border border-[var(--app-stroke)] object-cover" src={user.photo_url} />
@@ -142,8 +162,8 @@ export function DashboardPage() {
     <div className="space-y-6">
       <ScreenHeader
         eyebrow="TrackDen"
-        title={`Привет, ${firstName}`}
-        description={`Спокойный обзор за ${monthCaption}. Всё важное — на одном экране.`}
+        title={`??????, ${firstName}`}
+        description={`????????? ????? ?? ${monthCaption}. ??? ?????? ? ?? ????? ??????.`}
         leading={profileBadge}
         actions={(
           <>
@@ -164,9 +184,9 @@ export function DashboardPage() {
         <Skeleton className="h-[288px] w-full rounded-[28px]" />
       ) : (
         <HeroPanel
-          eyebrow="Главный обзор"
+          eyebrow="??????? ?????"
           title={formatMoney(balance)}
-          description={`После ${formatMoney(overview?.total_income ?? 0)} доходов и ${formatMoney(overview?.total_expense ?? 0)} расходов в этом месяце.`}
+          description={`????? ${formatMoney(overview?.total_income ?? 0)} ??????? ? ${formatMoney(overview?.total_expense ?? 0)} ???????? ? ???? ??????.`}
         >
           <div className="bar-strip mt-6">
             {derived.bars.map((bar, index) => (
@@ -180,27 +200,95 @@ export function DashboardPage() {
 
           <div className="hero-panel__metrics">
             <div className="hero-panel__metric">
-              <p className="hero-panel__metric-label">Расходы месяца</p>
+              <p className="hero-panel__metric-label">??????? ??????</p>
               <p className="hero-panel__metric-value">{formatCompactMoney(overview?.total_expense ?? 0)}</p>
-              <p className="hero-panel__metric-hint">Главный ориентир по темпу трат</p>
+              <p className="hero-panel__metric-hint">??????? ???????? ?? ????? ????</p>
             </div>
             <div className="hero-panel__metric">
-              <p className="hero-panel__metric-label">Доступный ритм</p>
+              <p className="hero-panel__metric-label">????????? ????</p>
               <p className="hero-panel__metric-value">{formatCompactMoney(derived.safePace)}</p>
-              <p className="hero-panel__metric-hint">Комфортный дневной темп до конца месяца</p>
+              <p className="hero-panel__metric-hint">?????????? ??????? ???? ?? ????? ??????</p>
             </div>
           </div>
 
           <div className="mt-5 flex flex-wrap gap-3">
             <button className="sheet-primary-button" onClick={() => openSheet('add')} type="button">
-              Добавить операцию
+              ???????? ????????
             </button>
             <button className="sheet-secondary-button" onClick={() => openSheet('ocr')} type="button">
-              Сканировать чек
+              ??????????? ???
             </button>
           </div>
         </HeroPanel>
       )}
+
+      {localMode ? (
+        <SurfaceCard>
+          <SectionHeader
+            eyebrow="????? ????"
+            title="??????? ? ??????? ????????"
+            description="TrackDen ??? ??????? ???? ??????, ???????? ????????? ????? ? ?????? ??? ????? ?????? ????????."
+            action={<button className="pill-button pill-button--ghost" onClick={() => openSheet('automation')} type="button">?????????</button>}
+          />
+
+          {forecastQuery.isLoading || weeklyReviewQuery.isLoading || automationQuery.isLoading ? (
+            <div className="mt-4 space-y-3">
+              <Skeleton className="h-24 w-full rounded-[22px]" />
+              <Skeleton className="h-24 w-full rounded-[22px]" />
+            </div>
+          ) : (
+            <>
+              <div className="mt-4 grid gap-3 md:grid-cols-2">
+                <SurfaceCard tone="soft">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="text-sm text-[var(--app-muted)]">??????? ????? ??????</p>
+                      <p className="mt-2 text-[28px] font-semibold tracking-[-0.04em] text-white">{formatMoney(forecast?.projected_expense ?? 0)}</p>
+                      <p className="mt-2 text-sm text-[var(--app-muted)]">{forecast?.summary ?? '??????? ????????, ????? ????????? ????? ??????.'}</p>
+                    </div>
+                    <StatusBadge tone={forecastMeta.badge}>{forecastMeta.label}</StatusBadge>
+                  </div>
+                  <div className="mt-4 flex gap-3 text-sm text-[var(--app-muted)]">
+                    <span>??? {forecast?.remaining_days ?? 0} ??.</span>
+                    <span>???????? ??????? {formatCompactMoney(forecast?.fixed_upcoming ?? 0)}</span>
+                  </div>
+                </SurfaceCard>
+
+                <SurfaceCard tone="soft">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="text-sm text-[var(--app-muted)]">????????? ?????</p>
+                      <p className="mt-2 text-[28px] font-semibold tracking-[-0.04em] text-white">{formatSignedPercent(weeklyReview?.delta_ratio ?? 0)}</p>
+                      <p className="mt-2 text-sm text-[var(--app-muted)]">{weeklyReview?.summary ?? '????? ??????? ?????? ? ??????????, ????? ???????? ???????? ?????.'}</p>
+                    </div>
+                    <StatusBadge tone={(weeklyReview?.delta_ratio ?? 0) > 15 ? 'danger' : (weeklyReview?.delta_ratio ?? 0) < -10 ? 'success' : 'neutral'}>
+                      {weeklyReview?.transaction_count ?? 0} ????????
+                    </StatusBadge>
+                  </div>
+                </SurfaceCard>
+              </div>
+
+              <div className="mt-4">
+                <SectionHeader
+                  eyebrow="???????"
+                  title="??????? ????????"
+                  description="????????? ????? ??? ? ???????? ?????? ? ??? ????? ???????? ???? ? ?????? ?? ???? ??????."
+                />
+                <div className="mt-3 flex flex-wrap gap-2.5">
+                  {quickTemplates.length ? quickTemplates.map((template) => (
+                    <button key={template.id} className="pill-button pill-button--ghost" onClick={() => openSheet('add', { templateId: template.id })} type="button">
+                      {template.label}
+                      {template.amount ? <span className="ml-2 text-[var(--app-muted)]">{formatCompactMoney(template.amount)}</span> : null}
+                    </button>
+                  )) : (
+                    <EmptyStateCard title="??????? ??? ?? ?????????" description="?????? ???? ????? ????????? ??? ??? TrackDen ???????? ???????, ????? ????????? ????? ?????????." action={<button className="sheet-primary-button mt-4 w-full" onClick={() => openSheet('automation')} type="button">??????? ?????????????</button>} />
+                  )}
+                </div>
+              </div>
+            </>
+          )}
+        </SurfaceCard>
+      ) : null}
 
       <div className="space-y-4">
         {localMode ? (
@@ -209,32 +297,32 @@ export function DashboardPage() {
           ) : (
             <SurfaceCard>
               <SectionHeader
-                eyebrow="Лимиты"
-                title="Контроль бюджета"
-                description="Единый взгляд на общий лимит и категории, где уже чувствуется давление." 
+                eyebrow="??????"
+                title="???????? ???????"
+                description="?????? ?????? ?? ????? ????? ? ?????????, ??? ??? ??????????? ????????."
                 action={<StatusBadge tone={budgetTone.badge}>{budgetTone.label}</StatusBadge>}
               />
 
               {!budgetOverview || budgetOverview.configured_count === 0 ? (
                 <div className="mt-4">
                   <EmptyStateCard
-                    title="Бюджеты ещё не заданы"
-                    description="Добавь общий лимит или несколько категорий — и TrackDen сразу покажет давление по месяцу."
-                    action={<button className="sheet-primary-button mt-4 w-full" onClick={() => openSheet('budget')} type="button">Настроить лимиты</button>}
+                    title="??????? ??? ?? ??????"
+                    description="?????? ????? ????? ??? ????????? ????????? ? ? TrackDen ????? ??????? ???????? ?? ??????."
+                    action={<button className="sheet-primary-button mt-4 w-full" onClick={() => openSheet('budget')} type="button">????????? ??????</button>}
                   />
                 </div>
               ) : (
                 <>
                   <div className="mt-4 flex items-start justify-between gap-4">
                     <div>
-                      <p className="text-sm text-[var(--app-muted)]">{budgetOverview.overall.enabled ? 'Потрачено от общего лимита' : 'Активных лимитов'}</p>
+                      <p className="text-sm text-[var(--app-muted)]">{budgetOverview.overall.enabled ? '????????? ?? ?????? ??????' : '???????? ???????'}</p>
                       <p className="mt-2 text-[30px] font-semibold tracking-[-0.04em] text-white">
                         {budgetOverview.overall.enabled ? formatMoney(budgetOverview.overall.spent) : budgetOverview.configured_count}
                       </p>
                       <p className="mt-2 text-sm text-[var(--app-muted)]">{formatBudgetCopy(budgetOverview)}</p>
                     </div>
                     <button className="pill-button pill-button--ghost" onClick={() => openSheet('budget')} type="button">
-                      Настроить
+                      ?????????
                     </button>
                   </div>
 
@@ -253,7 +341,7 @@ export function DashboardPage() {
                       {budgetOverview.highlighted.slice(0, 2).map((item) => (
                         <PremiumStatTile
                           key={item.category_id}
-                          hint={`Из ${formatCompactMoney(item.limit ?? 0)}`}
+                          hint={`?? ${formatCompactMoney(item.limit ?? 0)}`}
                           label={item.category_name}
                           tone={item.status === 'exceeded' ? 'danger' : item.status === 'warning' ? 'warning' : 'success'}
                           value={`${Math.round(item.ratio * 100)}%`}
@@ -273,30 +361,30 @@ export function DashboardPage() {
           ) : (
             <SurfaceCard>
               <SectionHeader
-                eyebrow="Подписки"
-                title="Фиксированные списания"
-                description="Активные ежемесячные траты и ближайшие обязательные списания без перегруза деталями."
-                action={<StatusBadge tone="accent">{subscriptionManager?.active_count ?? 0} активных</StatusBadge>}
+                eyebrow="????????"
+                title="????????????? ????????"
+                description="???????? ??????????? ????? ? ????????? ???????????? ???????? ??? ????????? ????????."
+                action={<StatusBadge tone="accent">{subscriptionManager?.active_count ?? 0} ????????</StatusBadge>}
               />
 
               {!subscriptionManager || (subscriptionManager.active_count === 0 && subscriptionManager.candidate_count === 0) ? (
                 <div className="mt-4">
                   <EmptyStateCard
-                    title="Пока без подписок"
-                    description="Когда появятся похожие ежемесячные списания, TrackDen предложит подтвердить их автоматически."
-                    action={<button className="sheet-primary-button mt-4 w-full" onClick={() => openSheet('subscriptions')} type="button">Открыть менеджер</button>}
+                    title="???? ??? ????????"
+                    description="????? ???????? ??????? ??????????? ????????, TrackDen ????????? ??????????? ?? ?????????????."
+                    action={<button className="sheet-primary-button mt-4 w-full" onClick={() => openSheet('subscriptions')} type="button">??????? ????????</button>}
                   />
                 </div>
               ) : (
                 <>
                   <div className="mt-4 flex items-start justify-between gap-4">
                     <div>
-                      <p className="text-sm text-[var(--app-muted)]">В месяц по активным подпискам</p>
+                      <p className="text-sm text-[var(--app-muted)]">? ????? ?? ???????? ?????????</p>
                       <p className="mt-2 text-[30px] font-semibold tracking-[-0.04em] text-white">{formatMoney(subscriptionManager.monthly_total)}</p>
-                      <p className="mt-2 text-sm text-[var(--app-muted)]">{subscriptionManager.candidate_count} предложений из истории ждут решения.</p>
+                      <p className="mt-2 text-sm text-[var(--app-muted)]">{subscriptionManager.candidate_count} ??????????? ?? ??????? ???? ???????.</p>
                     </div>
                     <button className="pill-button pill-button--ghost" onClick={() => openSheet('subscriptions')} type="button">
-                      Управлять
+                      ?????????
                     </button>
                   </div>
 
@@ -306,7 +394,7 @@ export function DashboardPage() {
                         <ListCard key={subscription.id}>
                           <ListRow
                             leading={<div className="transaction-avatar" style={{ background: 'rgba(111,107,255,0.18)', color: '#cbc9ff' }}>{subscription.merchant_label.slice(0, 1).toUpperCase()}</div>}
-                            subtitle={subscription.next_charge_at ? `Следующее списание ${formatShortDateLabel(subscription.next_charge_at)}` : 'Дата уточняется'}
+                            subtitle={subscription.next_charge_at ? `????????? ???????? ${formatShortDateLabel(subscription.next_charge_at)}` : '???? ??????????'}
                             title={subscription.merchant_label}
                             trailing={<div className="text-right text-sm font-semibold text-white">{formatMoney(subscription.expected_amount, subscription.currency)}</div>}
                           />
@@ -314,8 +402,8 @@ export function DashboardPage() {
                       ))
                     ) : (
                       <EmptyStateCard
-                        title="Все обязательные списания уже учтены"
-                        description="Новые совпадения появятся автоматически после следующих операций этого месяца."
+                        title="??? ???????????? ???????? ??? ??????"
+                        description="????? ?????????? ???????? ????????????? ????? ????????? ???????? ????? ??????."
                       />
                     )}
                   </div>
@@ -332,26 +420,26 @@ export function DashboardPage() {
         ) : (
           <>
             <PremiumStatTile
-              hint="Сравнение с предыдущими 7 днями"
-              label="Недельный тренд"
+              hint="????????? ? ??????????? 7 ?????"
+              label="????????? ?????"
               tone={derived.trend >= 0 ? 'success' : 'danger'}
               value={formatSignedPercent(derived.trend)}
             />
             <PremiumStatTile
-              hint={derived.latestExpense?.merchant || derived.latestExpense?.category?.name || 'Нет данных'}
-              label="Последняя покупка"
+              hint={derived.latestExpense?.merchant || derived.latestExpense?.category?.name || '??? ??????'}
+              label="????????? ???????"
               tone="danger"
               value={`-${formatCompactMoney(derived.latestExpense?.amount ?? 0)}`}
             />
             <PremiumStatTile
-              hint="По последним операциям месяца"
-              label="Средний чек"
+              hint="?? ????????? ????????? ??????"
+              label="??????? ???"
               tone="neutral"
               value={formatCompactMoney(derived.avgTicket)}
             />
             <PremiumStatTile
-              hint="Комфортный темп до конца месяца"
-              label="Дневной ритм"
+              hint="?????????? ???? ?? ????? ??????"
+              label="??????? ????"
               tone="accent"
               value={formatCompactMoney(derived.safePace)}
             />
@@ -361,10 +449,10 @@ export function DashboardPage() {
 
       <SurfaceCard>
         <SectionHeader
-          eyebrow="История"
-          title="Последние операции"
-          description="Чистая лента последних действий без лишнего шума."
-          action={<button className="pill-button pill-button--primary" onClick={() => openSheet('add')} type="button">Быстрый ввод</button>}
+          eyebrow="???????"
+          title="????????? ????????"
+          description="?????? ????? ????????? ???????? ??? ??????? ????."
+          action={<button className="pill-button pill-button--primary" onClick={() => openSheet('add')} type="button">??????? ????</button>}
         />
 
         {transactionsQuery.isLoading ? (
@@ -375,7 +463,7 @@ export function DashboardPage() {
           </div>
         ) : transactions.length === 0 ? (
           <div className="mt-4">
-            <EmptyStateCard title="История пока пустая" description="Сохрани первую операцию, и TrackDen начнёт собирать для тебя живую картину месяца." />
+            <EmptyStateCard title="??????? ???? ??????" description="??????? ?????? ????????, ? TrackDen ?????? ???????? ??? ???? ????? ??????? ??????." />
           </div>
         ) : (
           <div className="mt-4 space-y-3">
@@ -396,8 +484,8 @@ export function DashboardPage() {
                       </div>
                     )}
                     onClick={() => openSheet('edit', { transactionId: transaction.id })}
-                    subtitle={transaction.category?.name ?? 'Автокатегория'}
-                    title={transaction.merchant || transaction.description || 'Без названия'}
+                    subtitle={transaction.category?.name ?? '?????????????'}
+                    title={transaction.merchant || transaction.description || '??? ????????'}
                     trailing={(
                       <div className="text-right">
                         <p className={clsx('text-base font-semibold', isExpense ? 'text-[var(--app-danger)]' : 'text-[var(--app-success)]')}>
@@ -417,4 +505,3 @@ export function DashboardPage() {
     </div>
   );
 }
-

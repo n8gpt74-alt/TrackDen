@@ -1,6 +1,7 @@
 ﻿import type { Category } from '../../features/auth/api';
 import { normalizeBudgetConfig, type BudgetConfig } from '../../features/budgets/model';
 import { FINANCE_SHEET_DRAFT_STORAGE_KEY } from '../../features/finance-sheet/constants';
+import { normalizeIntelligenceState, type IntelligenceWorkspaceState, type QuickTemplate, type SmartRule } from '../../features/intelligence/model';
 import type { Receipt } from '../../features/receipts/api';
 import {
   normalizeSubscriptionState,
@@ -41,6 +42,8 @@ export type LocalWorkspaceSummary = {
   custom_categories: number;
   budget_limits: number;
   subscriptions: number;
+  smart_rules: number;
+  quick_templates: number;
 };
 
 function getStorage() {
@@ -317,6 +320,63 @@ function validateSubscriptionWorkspace(value: unknown, categories: Category[]): 
   );
 }
 
+function validateSmartRule(value: unknown): SmartRule {
+  const record = readObject(value, 'workspace.smart_rules[]');
+
+  return {
+    id: readString(record.id, 'workspace.smart_rules[].id'),
+    label: readString(record.label, 'workspace.smart_rules[].label'),
+    pattern: readString(record.pattern, 'workspace.smart_rules[].pattern'),
+    field: readEnum(record.field, 'workspace.smart_rules[].field', ['merchant', 'description', 'either'] as const),
+    transaction_type: readEnum(record.transaction_type, 'workspace.smart_rules[].transaction_type', ['expense', 'income', 'any'] as const),
+    category_id: readString(record.category_id, 'workspace.smart_rules[].category_id'),
+    active: readBoolean(record.active, 'workspace.smart_rules[].active'),
+    use_count: readOptionalNumber(record.use_count, 'workspace.smart_rules[].use_count') ?? 0,
+    last_applied_at: readOptionalString(record.last_applied_at, 'workspace.smart_rules[].last_applied_at'),
+    created_at: readString(record.created_at, 'workspace.smart_rules[].created_at'),
+    updated_at: readString(record.updated_at, 'workspace.smart_rules[].updated_at'),
+  };
+}
+
+function validateQuickTemplate(value: unknown): QuickTemplate {
+  const record = readObject(value, 'workspace.quick_templates[]');
+
+  return {
+    id: readString(record.id, 'workspace.quick_templates[].id'),
+    label: readString(record.label, 'workspace.quick_templates[].label'),
+    type: readEnum(record.type, 'workspace.quick_templates[].type', ['expense', 'income'] as const),
+    amount: readOptionalNumber(record.amount, 'workspace.quick_templates[].amount'),
+    currency: readString(record.currency, 'workspace.quick_templates[].currency'),
+    category_id: readOptionalString(record.category_id, 'workspace.quick_templates[].category_id'),
+    merchant: readOptionalString(record.merchant, 'workspace.quick_templates[].merchant'),
+    description: readOptionalString(record.description, 'workspace.quick_templates[].description'),
+    source: readEnum(record.source, 'workspace.quick_templates[].source', ['manual', 'learned'] as const),
+    pinned: readBoolean(record.pinned, 'workspace.quick_templates[].pinned'),
+    use_count: readOptionalNumber(record.use_count, 'workspace.quick_templates[].use_count') ?? 0,
+    last_used_at: readOptionalString(record.last_used_at, 'workspace.quick_templates[].last_used_at'),
+    created_at: readString(record.created_at, 'workspace.quick_templates[].created_at'),
+    updated_at: readString(record.updated_at, 'workspace.quick_templates[].updated_at'),
+  };
+}
+
+function validateIntelligenceWorkspace(value: unknown, categories: Category[]): IntelligenceWorkspaceState {
+  if (value == null) {
+    return normalizeIntelligenceState(null, categories);
+  }
+
+  const record = readObject(value, 'workspace');
+  const smartRules = readArray(record.smart_rules ?? [], 'workspace.smart_rules').map(validateSmartRule);
+  const quickTemplates = readArray(record.quick_templates ?? [], 'workspace.quick_templates').map(validateQuickTemplate);
+
+  return normalizeIntelligenceState(
+    {
+      smart_rules: smartRules,
+      quick_templates: quickTemplates,
+    },
+    categories,
+  );
+}
+
 function validateWorkspace(value: unknown): WorkspaceState {
   const record = readObject(value, 'workspace');
 
@@ -326,6 +386,7 @@ function validateWorkspace(value: unknown): WorkspaceState {
 
   const categories = readArray(record.categories, 'workspace.categories').map(validateCategory);
   const subscriptionState = validateSubscriptionWorkspace(record, categories);
+  const intelligenceState = validateIntelligenceWorkspace(record, categories);
 
   return {
     version: record.version,
@@ -335,6 +396,8 @@ function validateWorkspace(value: unknown): WorkspaceState {
     budgets: validateBudgetConfig(record.budgets, categories),
     subscriptions: subscriptionState.subscriptions,
     dismissed_recurring_keys: subscriptionState.dismissed_recurring_keys,
+    smart_rules: intelligenceState.smart_rules,
+    quick_templates: intelligenceState.quick_templates,
   };
 }
 
@@ -364,6 +427,8 @@ export function summarizeWorkspace(workspace: WorkspaceState): LocalWorkspaceSum
     custom_categories: workspace.categories.filter((category) => !category.is_system).length,
     budget_limits: budgetLimits,
     subscriptions: workspace.subscriptions.length,
+    smart_rules: workspace.smart_rules.length,
+    quick_templates: workspace.quick_templates.length,
   };
 }
 

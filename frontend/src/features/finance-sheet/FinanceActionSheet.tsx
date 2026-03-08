@@ -1,8 +1,9 @@
-﻿import clsx from 'clsx';
+import clsx from 'clsx';
 import { useQueryClient } from '@tanstack/react-query';
 import { type ChangeEvent, useEffect, useMemo, useRef, useState } from 'react';
 
 import { useSessionQuery } from '../auth/api';
+import { useMarkQuickTemplateUsedMutation, useQuickTemplateQuery } from '../intelligence/api';
 import { useReceiptQuery, useUploadReceiptMutation } from '../receipts/api';
 import {
   type Transaction,
@@ -91,14 +92,16 @@ function buildEditForm(payload: Transaction): ComposerState {
 }
 
 export function FinanceActionSheet() {
-  const { closeSheet, isOpen, mode, transactionId } = useFinanceSheet();
+  const { closeSheet, isOpen, mode, templateId, transactionId } = useFinanceSheet();
   const queryClient = useQueryClient();
   const inputRef = useRef<HTMLInputElement | null>(null);
   const sessionQuery = useSessionQuery();
   const transactionQuery = useTransactionQuery(mode === 'edit' ? transactionId : null);
+  const templateQuery = useQuickTemplateQuery(mode === 'add' ? templateId : null);
   const createMutation = useCreateTransactionMutation();
   const updateMutation = useUpdateTransactionMutation();
   const uploadMutation = useUploadReceiptMutation();
+  const markTemplateUsedMutation = useMarkQuickTemplateUsedMutation();
   const isTransactionMode = mode === 'add' || mode === 'ocr' || mode === 'edit';
 
   const [form, setForm] = useState<ComposerState>(DEFAULT_FORM);
@@ -111,6 +114,14 @@ export function FinanceActionSheet() {
 
   useEffect(() => {
     if (!isOpen || !isTransactionMode || mode === 'edit') {
+      return;
+    }
+
+    if (mode === 'add' && templateId) {
+      setForm(DEFAULT_FORM);
+      setDetailsOpen(false);
+      setReceiptId(null);
+      setOcrHydrated(false);
       return;
     }
 
@@ -127,7 +138,27 @@ export function FinanceActionSheet() {
     setDetailsOpen(false);
     setReceiptId(null);
     setOcrHydrated(false);
-  }, [isOpen, isTransactionMode, mode]);
+  }, [isOpen, isTransactionMode, mode, templateId]);
+
+  useEffect(() => {
+    if (!isOpen || mode !== 'add' || !templateId || !templateQuery.data) {
+      return;
+    }
+
+    setForm({
+      amount: templateQuery.data.amount ? String(templateQuery.data.amount) : '',
+      type: templateQuery.data.type,
+      currency: templateQuery.data.currency,
+      category_id: templateQuery.data.category_id ?? '',
+      merchant: templateQuery.data.merchant ?? '',
+      description: templateQuery.data.description ?? '',
+      source: 'manual',
+      receipt_id: '',
+    });
+    setDetailsOpen(Boolean(templateQuery.data.category_id || templateQuery.data.merchant || templateQuery.data.description));
+    setReceiptId(null);
+    setOcrHydrated(false);
+  }, [isOpen, mode, templateId, templateQuery.data]);
 
   useEffect(() => {
     if (!isTransactionMode || mode !== 'edit' || !transactionQuery.data) {
@@ -141,12 +172,12 @@ export function FinanceActionSheet() {
   }, [isTransactionMode, mode, transactionQuery.data]);
 
   useEffect(() => {
-    if (!isOpen || !isTransactionMode || mode === 'edit') {
+    if (!isOpen || !isTransactionMode || mode === 'edit' || (mode === 'add' && templateId)) {
       return;
     }
 
     writeDraft({ form, detailsOpen, receiptId });
-  }, [detailsOpen, form, isOpen, isTransactionMode, mode, receiptId]);
+  }, [detailsOpen, form, isOpen, isTransactionMode, mode, receiptId, templateId]);
 
   useEffect(() => {
     if (!isTransactionMode || mode !== 'ocr' || !receipt || receipt.status !== 'processed' || ocrHydrated) {
@@ -157,7 +188,7 @@ export function FinanceActionSheet() {
       ...current,
       amount: receipt.extracted_total ? String(receipt.extracted_total) : current.amount,
       merchant: receipt.extracted_merchant ?? current.merchant,
-      description: current.description || 'Добавлено по фото чека',
+      description: current.description || '????????? ?? ???? ????',
       source: 'ocr',
       receipt_id: receipt.id,
     }));
@@ -165,14 +196,16 @@ export function FinanceActionSheet() {
     setOcrHydrated(true);
   }, [isTransactionMode, mode, ocrHydrated, receipt]);
 
-  const isBusy = createMutation.isPending || updateMutation.isPending;
+  const isBusy = createMutation.isPending || updateMutation.isPending || markTemplateUsedMutation.isPending;
   const canSubmit = Number(form.amount) > 0 && isTransactionMode;
-  const headerTitle = mode === 'edit' ? 'Редактировать операцию' : mode === 'ocr' ? 'Добавить по чеку' : 'Быстрое добавление';
+  const headerTitle = mode === 'edit' ? '????????????? ????????' : mode === 'ocr' ? '???????? ?? ????' : '??????? ??????????';
   const headerSubtitle = mode === 'edit'
-    ? 'Меняй сумму, категорию и детали в единой спокойной шторке.'
+    ? '????? ?????, ????????? ? ?????? ? ?????? ????????? ??????.'
     : mode === 'ocr'
-      ? 'Сначала загрузи чек, затем подтверди распознанные поля.'
-      : 'Сумма, категория и одно нажатие на сохранение.';
+      ? '??????? ??????? ???, ????? ????????? ???????????? ????.'
+      : templateQuery.data
+        ? `?????? ??? ??????: ?????? ?${templateQuery.data.label}? ????????? ???????? ????.`
+        : '?????, ????????? ? ???? ??????? ?? ??????????.';
 
   const topCategories = useMemo(() => categories.slice(0, 6), [categories]);
 
@@ -187,6 +220,7 @@ export function FinanceActionSheet() {
       queryClient.invalidateQueries({ queryKey: ['transaction'] }),
       queryClient.invalidateQueries({ queryKey: ['budgets'] }),
       queryClient.invalidateQueries({ queryKey: ['subscriptions'] }),
+      queryClient.invalidateQueries({ queryKey: ['intelligence'] }),
     ]);
   };
 
@@ -227,6 +261,9 @@ export function FinanceActionSheet() {
       await updateMutation.mutateAsync({ id: transactionId, payload });
     } else {
       await createMutation.mutateAsync(payload);
+      if (templateId) {
+        await markTemplateUsedMutation.mutateAsync(templateId);
+      }
       clearDraft();
     }
 
@@ -235,7 +272,7 @@ export function FinanceActionSheet() {
   };
 
   const handleClose = () => {
-    if (isTransactionMode && mode !== 'edit') {
+    if (isTransactionMode && mode !== 'edit' && !(mode === 'add' && templateId)) {
       writeDraft({ form, detailsOpen, receiptId });
     }
     closeSheet();
@@ -248,14 +285,14 @@ export function FinanceActionSheet() {
   return (
     <BottomSheetScaffold
       description={headerSubtitle}
-      eyebrow="Операции"
+      eyebrow="????????"
       footer={(
         <div className="flex gap-3">
           <button className="sheet-secondary-button" onClick={handleClose} type="button">
-            Отмена
+            ??????
           </button>
           <button className="sheet-primary-button" disabled={!canSubmit || isBusy} onClick={() => void handleSubmit()} type="button">
-            {isBusy ? 'Сохраняем…' : mode === 'edit' ? 'Обновить' : 'Сохранить'}
+            {isBusy ? '??????????' : mode === 'edit' ? '????????' : '?????????'}
           </button>
         </div>
       )}
@@ -266,30 +303,30 @@ export function FinanceActionSheet() {
         <SurfaceCard>
           <div className="flex items-center justify-between gap-3">
             <div>
-              <p className="text-sm font-medium text-white">Сканирование чека</p>
-              <p className="mt-1 text-sm text-[var(--app-muted)]">Фото чека подтянет сумму и магазин прямо в форму ниже.</p>
+              <p className="text-sm font-medium text-white">???????????? ????</p>
+              <p className="mt-1 text-sm text-[var(--app-muted)]">???? ???? ???????? ????? ? ??????? ????? ? ????? ????.</p>
             </div>
             <button className="pill-button pill-button--ghost" onClick={() => inputRef.current?.click()} type="button">
               <UploadIcon size={16} />
-              Загрузить
+              ?????????
             </button>
           </div>
           <input ref={inputRef} accept="image/*" className="hidden" onChange={handleFilePick} type="file" />
           {uploadMutation.isPending ? <Skeleton className="mt-4 h-28 w-full rounded-[22px]" /> : null}
           {receipt?.status === 'pending' ? (
             <div className="mt-4 rounded-[24px] border border-[var(--app-stroke)] bg-white/[0.03] p-4 text-sm text-[var(--app-muted)]">
-              Чек обрабатывается — обычно это занимает пару секунд.
+              ??? ?????????????? ? ?????? ??? ???????? ???? ??????.
             </div>
           ) : null}
           {receipt?.status === 'processed' ? (
             <div className="mt-4 rounded-[24px] border border-emerald-400/20 bg-emerald-400/5 p-4">
               <div className="flex items-center justify-between gap-3">
                 <div>
-                  <p className="text-sm text-[var(--app-muted)]">Распознано</p>
-                  <p className="mt-1 text-lg font-semibold text-white">{receipt.extracted_merchant || 'Без названия'}</p>
+                  <p className="text-sm text-[var(--app-muted)]">??????????</p>
+                  <p className="mt-1 text-lg font-semibold text-white">{receipt.extracted_merchant || '??? ????????'}</p>
                 </div>
                 <div className="text-right">
-                  <p className="text-sm text-[var(--app-muted)]">Сумма</p>
+                  <p className="text-sm text-[var(--app-muted)]">?????</p>
                   <p className="mt-1 text-lg font-semibold text-white">{formatMoney(receipt.extracted_total ?? 0)}</p>
                 </div>
               </div>
@@ -297,7 +334,7 @@ export function FinanceActionSheet() {
           ) : null}
           {receipt?.status === 'failed' ? (
             <div className="mt-4 rounded-[24px] border border-[var(--app-danger)]/20 bg-[var(--app-danger)]/10 p-4 text-sm text-[var(--app-danger)]">
-              {receipt.error || 'Не удалось обработать чек.'}
+              {receipt.error || '?? ??????? ?????????? ???.'}
             </div>
           ) : null}
         </SurfaceCard>
@@ -313,14 +350,14 @@ export function FinanceActionSheet() {
           <SegmentedControl
             onChange={(value) => handleChange('type', value)}
             options={[
-              { label: 'Доходы', value: 'income' },
-              { label: 'Расходы', value: 'expense' },
+              { label: '??????', value: 'income' },
+              { label: '???????', value: 'expense' },
             ]}
             value={form.type}
           />
 
           <SurfaceCard>
-            <p className="soft-kicker">Сумма</p>
+            <p className="soft-kicker">?????</p>
             <div className="mt-3 flex items-end justify-between gap-3">
               <input
                 className="min-w-0 flex-1 bg-transparent text-[40px] font-semibold tracking-tight text-white outline-none"
@@ -341,6 +378,14 @@ export function FinanceActionSheet() {
             </div>
           </SurfaceCard>
 
+          {templateQuery.data ? (
+            <SurfaceCard>
+              <p className="text-sm text-[var(--app-muted)]">??????</p>
+              <p className="mt-2 text-base font-semibold text-white">{templateQuery.data.label}</p>
+              <p className="mt-1 text-sm text-[var(--app-muted)]">????? ????? ????????? ??? ???? ??? ?????? ???????? ?????? ????.</p>
+            </SurfaceCard>
+          ) : null}
+
           <div className="flex flex-wrap gap-2.5">
             {topCategories.map((category) => (
               <button
@@ -359,7 +404,7 @@ export function FinanceActionSheet() {
 
           <button className="pill-button pill-button--ghost w-fit" onClick={() => setDetailsOpen((current) => !current)} type="button">
             <SparklesIcon size={16} />
-            {detailsOpen ? 'Скрыть детали' : 'Добавить детали'}
+            {detailsOpen ? '?????? ??????' : '???????? ??????'}
           </button>
 
           {detailsOpen ? (
@@ -368,13 +413,13 @@ export function FinanceActionSheet() {
                 <input
                   className="sheet-input"
                   onChange={(event) => handleChange('merchant', event.target.value)}
-                  placeholder="Магазин или контрагент"
+                  placeholder="??????? ??? ??????????"
                   value={form.merchant}
                 />
                 <textarea
                   className="sheet-input min-h-24 resize-none"
                   onChange={(event) => handleChange('description', event.target.value)}
-                  placeholder="Короткое описание операции"
+                  placeholder="???????? ???????? ????????"
                   value={form.description}
                 />
                 <select
@@ -382,7 +427,7 @@ export function FinanceActionSheet() {
                   onChange={(event) => handleChange('category_id', event.target.value)}
                   value={form.category_id}
                 >
-                  <option value="">Автокатегория</option>
+                  <option value="">?????????????</option>
                   {categories.map((category) => (
                     <option key={category.id} value={category.id}>
                       {category.name}
@@ -392,7 +437,7 @@ export function FinanceActionSheet() {
                 {form.receipt_id ? (
                   <div className="flex items-center gap-2 rounded-[18px] border border-[var(--app-stroke)] bg-white/[0.03] px-4 py-3 text-sm text-[var(--app-muted)]">
                     <ReceiptIcon size={16} />
-                    Связан чек {form.receipt_id.slice(0, 8)}…
+                    ?????? ??? {form.receipt_id.slice(0, 8)}?
                   </div>
                 ) : null}
               </div>
@@ -400,12 +445,10 @@ export function FinanceActionSheet() {
           ) : null}
 
           {!detailsOpen && mode !== 'ocr' && !receipt ? (
-            <EmptyStateCard title="Минимум действий" description="Сумма и категория уже достаточно, чтобы сохранить операцию буквально за несколько секунд." />
+            <EmptyStateCard title="??????? ????????" description="????? ? ????????? ??? ??????????, ????? ????????? ???????? ????????? ?? ????????? ??????." />
           ) : null}
         </>
       )}
     </BottomSheetScaffold>
   );
 }
-
-
