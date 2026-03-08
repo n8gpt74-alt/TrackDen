@@ -1,4 +1,4 @@
-﻿# Personal Finance Tracker
+# Personal Finance Tracker
 
 MVP Telegram Mini App for tracking personal finances with fast transaction entry, mock OCR receipts, and mock AI categorization.
 
@@ -30,6 +30,7 @@ bot/       Telegram bot entry point for launching the Mini App
 
 - Frontend now works in `local-first` mode by default and stores user data in browser storage per Telegram user
 - Transactions, receipts, AI categorization, and analytics work without backend or cloud database
+- Backups are available from Settings inside the Mini App: export/import JSON plus local data reset for the active profile
 - To switch frontend back to API mode, set `VITE_DATA_MODE=remote` and provide `VITE_API_BASE_URL`
 
 ## Quick start with Docker
@@ -117,3 +118,4 @@ In Telegram, the frontend sends real init data and the backend validates it agai
 
 - A fully working public deployment still needs a public PostgreSQL instance
 - Redis is optional for Vercel now, but still recommended if you later move OCR processing back into a dedicated worker
+

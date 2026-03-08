@@ -1,4 +1,4 @@
-﻿import clsx from 'clsx';
+import clsx from 'clsx';
 import type { ButtonHTMLAttributes, ReactNode } from 'react';
 
 export type IconProps = {
@@ -30,6 +30,22 @@ export function BellIcon(props: IconProps) {
     <BaseIcon {...props}>
       <path d="M6.8 9a5.2 5.2 0 1 1 10.4 0c0 5.2 2 6.6 2 6.6H4.8S6.8 14.2 6.8 9Z" />
       <path d="M10 18.2a2.3 2.3 0 0 0 4 0" />
+    </BaseIcon>
+  );
+}
+
+export function SettingsIcon(props: IconProps) {
+  return (
+    <BaseIcon {...props}>
+      <circle cx="12" cy="12" r="3.2" />
+      <path d="M12 2.8v2.1" />
+      <path d="M12 19.1v2.1" />
+      <path d="m4.9 4.9 1.5 1.5" />
+      <path d="m17.6 17.6 1.5 1.5" />
+      <path d="M2.8 12h2.1" />
+      <path d="M19.1 12h2.1" />
+      <path d="m4.9 19.1 1.5-1.5" />
+      <path d="m17.6 6.4 1.5-1.5" />
     </BaseIcon>
   );
 }
@@ -114,6 +130,16 @@ export function UploadIcon(props: IconProps) {
   );
 }
 
+export function DownloadIcon(props: IconProps) {
+  return (
+    <BaseIcon {...props}>
+      <path d="M12 7v9" />
+      <path d="m8.5 12.5 3.5 3.5 3.5-3.5" />
+      <path d="M5 18.5h14" />
+    </BaseIcon>
+  );
+}
+
 export function CloseIcon(props: IconProps) {
   return (
     <BaseIcon {...props}>
@@ -172,6 +198,16 @@ export function ReceiptIcon(props: IconProps) {
   );
 }
 
+export function AlertTriangleIcon(props: IconProps) {
+  return (
+    <BaseIcon {...props}>
+      <path d="M12 4.5 20 18.5H4L12 4.5Z" />
+      <path d="M12 9.5v4.2" />
+      <circle cx="12" cy="16.6" fill="currentColor" r=".7" stroke="none" />
+    </BaseIcon>
+  );
+}
+
 export function IconCircleButton({ className, children, ...props }: ButtonHTMLAttributes<HTMLButtonElement> & { children: ReactNode }) {
   return (
     <button
@@ -210,3 +246,4 @@ export function SegmentedControl<T extends string>({
     </div>
   );
 }
+

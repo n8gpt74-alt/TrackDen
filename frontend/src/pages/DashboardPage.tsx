@@ -1,5 +1,6 @@
-п»їimport clsx from 'clsx';
+import clsx from 'clsx';
 import { useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 import { useOverviewQuery } from '../features/analytics/api';
 import { useSessionQuery } from '../features/auth/api';
@@ -10,9 +11,9 @@ import { buildRecurringPreview, calculateAverageTicket, calculateRecentTrend } f
 import { formatCompactMoney, formatMoney, formatSignedPercent } from '../shared/lib/money';
 import {
   ActivityIcon,
-  BellIcon,
   IconCircleButton,
   ReceiptIcon,
+  SettingsIcon,
   SparklesIcon,
 } from '../shared/ui/premium';
 import { Skeleton } from '../shared/ui/Skeleton';
@@ -35,6 +36,7 @@ function buildHeroBars(values: number[]) {
 }
 
 export function DashboardPage() {
+  const navigate = useNavigate();
   const month = currentMonthKey();
   const sessionQuery = useSessionQuery();
   const overviewQuery = useOverviewQuery(month);
@@ -69,7 +71,7 @@ export function DashboardPage() {
     };
   }, [overview, transactions]);
 
-  const firstName = user?.first_name?.trim() || 'РґСЂСѓРі';
+  const firstName = user?.first_name?.trim() || 'друг';
   const balance = overview?.balance ?? 0;
 
   return (
@@ -85,13 +87,13 @@ export function DashboardPage() {
           )}
           <div>
             <p className="soft-kicker">Premium ledger</p>
-            <p className="text-sm text-[var(--app-muted)]">{overview?.month ?? 'Р­С‚РѕС‚ РјРµСЃСЏС†'}</p>
+            <p className="text-sm text-[var(--app-muted)]">{overview?.month ?? 'Этот месяц'}</p>
           </div>
         </div>
 
         <div className="flex gap-2">
-          <IconCircleButton>
-            <BellIcon size={18} />
+          <IconCircleButton onClick={() => navigate('/settings')}>
+            <SettingsIcon size={18} />
           </IconCircleButton>
           <IconCircleButton onClick={() => openSheet('ocr')}>
             <ReceiptIcon size={18} />
@@ -100,8 +102,8 @@ export function DashboardPage() {
       </header>
 
       <section>
-        <p className="text-[34px] font-semibold leading-[1.02] tracking-[-0.04em] text-white">РџСЂРёРІРµС‚, {firstName}</p>
-        <p className="mt-2 max-w-[280px] text-[15px] leading-6 text-[var(--app-muted)]">Р’РѕС‚ РєСЂР°С‚РєРёР№ РѕР±Р·РѕСЂ РґРІРёР¶РµРЅРёСЏ РґРµРЅРµРі Рё СЃР°РјС‹С… РІР°Р¶РЅС‹С… С‚СЂР°С‚ Р·Р° С‚РµРєСѓС‰РёР№ РјРµСЃСЏС†.</p>
+        <p className="text-[34px] font-semibold leading-[1.02] tracking-[-0.04em] text-white">Привет, {firstName}</p>
+        <p className="mt-2 max-w-[280px] text-[15px] leading-6 text-[var(--app-muted)]">Вот краткий обзор движения денег и самых важных трат за текущий месяц.</p>
       </section>
 
       {overviewQuery.isLoading ? (
@@ -111,8 +113,8 @@ export function DashboardPage() {
           <div className="glow-dot left-[-30px] top-[-28px] h-24 w-24 bg-[var(--app-glow-a)]" />
           <div className="glow-dot bottom-[-28px] right-[-20px] h-24 w-24 bg-[var(--app-glow-b)]" />
           <div className="relative">
-            <p className="text-[15px] font-medium text-[var(--app-muted-strong)]">Р¤РёРЅР°РЅСЃРѕРІС‹Р№ СЂРёС‚Рј РјРµСЃСЏС†Р°</p>
-            <p className="mt-1 max-w-[250px] text-sm leading-6 text-[var(--app-muted)]">РЎР»РµРґРё Р·Р° С‚РµРјРїРѕРј СЂР°СЃС…РѕРґРѕРІ Рё РґРѕР±Р°РІР»СЏР№ РѕРїРµСЂР°С†РёРё, РЅРµ РІС‹РїР°РґР°СЏ РёР· РїРѕС‚РѕРєР°.</p>
+            <p className="text-[15px] font-medium text-[var(--app-muted-strong)]">Финансовый ритм месяца</p>
+            <p className="mt-1 max-w-[250px] text-sm leading-6 text-[var(--app-muted)]">Следи за темпом расходов и добавляй операции, не выпадая из потока.</p>
 
             <div className="bar-strip mt-6">
               {derived.bars.map((bar, index) => (
@@ -126,23 +128,23 @@ export function DashboardPage() {
 
             <div className="mt-6 grid grid-cols-2 gap-4">
               <div>
-                <p className="text-xs uppercase tracking-[0.2em] text-[var(--app-muted)]">Р‘Р°Р»Р°РЅСЃ</p>
+                <p className="text-xs uppercase tracking-[0.2em] text-[var(--app-muted)]">Баланс</p>
                 <p className={clsx('mt-2 text-[28px] font-semibold tracking-[-0.04em]', balance >= 0 ? 'text-[var(--app-success)]' : 'text-[var(--app-danger)]')}>
                   {formatMoney(balance)}
                 </p>
               </div>
               <div>
-                <p className="text-right text-xs uppercase tracking-[0.2em] text-[var(--app-muted)]">РўСЂР°С‚С‹ РјРµСЃСЏС†Р°</p>
+                <p className="text-right text-xs uppercase tracking-[0.2em] text-[var(--app-muted)]">Траты месяца</p>
                 <p className="mt-2 text-right text-[28px] font-semibold tracking-[-0.04em] text-white">{formatMoney(overview?.total_expense ?? 0)}</p>
               </div>
             </div>
 
             <div className="mt-5 flex gap-3">
               <button className="sheet-primary-button" onClick={() => openSheet('add')} type="button">
-                Р”РѕР±Р°РІРёС‚СЊ РѕРїРµСЂР°С†РёСЋ
+                Добавить операцию
               </button>
               <button className="sheet-secondary-button" onClick={() => openSheet('ocr')} type="button">
-                OCR С‡РµРє
+                OCR чек
               </button>
             </div>
           </div>
@@ -155,26 +157,26 @@ export function DashboardPage() {
         ) : (
           <>
             <div className="metric-tile">
-              <p className="text-sm text-[var(--app-muted)]">РќРµРґРµР»СЊРЅС‹Р№ С‚СЂРµРЅРґ</p>
+              <p className="text-sm text-[var(--app-muted)]">Недельный тренд</p>
               <p className={clsx('mt-2 text-[28px] font-semibold tracking-[-0.04em]', derived.trend >= 0 ? 'text-[var(--app-success)]' : 'text-[var(--app-danger)]')}>
                 {formatSignedPercent(derived.trend)}
               </p>
-              <p className="mt-2 text-xs text-[var(--app-muted)]">РЎСЂР°РІРЅРµРЅРёРµ СЃ РїСЂРµРґС‹РґСѓС‰РёРјРё 7 РґРЅСЏРјРё</p>
+              <p className="mt-2 text-xs text-[var(--app-muted)]">Сравнение с предыдущими 7 днями</p>
             </div>
             <div className="metric-tile">
-              <p className="text-sm text-[var(--app-muted)]">РџРѕСЃР»РµРґРЅСЏСЏ РїРѕРєСѓРїРєР°</p>
+              <p className="text-sm text-[var(--app-muted)]">Последняя покупка</p>
               <p className="mt-2 text-[28px] font-semibold tracking-[-0.04em] text-[var(--app-danger)]">-{formatCompactMoney(derived.latestExpense?.amount ?? 0)}</p>
-              <p className="mt-2 text-xs text-[var(--app-muted)]">{derived.latestExpense?.merchant || derived.latestExpense?.category?.name || 'РќРµС‚ РґР°РЅРЅС‹С…'}</p>
+              <p className="mt-2 text-xs text-[var(--app-muted)]">{derived.latestExpense?.merchant || derived.latestExpense?.category?.name || 'Нет данных'}</p>
             </div>
             <div className="metric-tile">
-              <p className="text-sm text-[var(--app-muted)]">РЎСЂРµРґРЅРёР№ С‡РµРє</p>
+              <p className="text-sm text-[var(--app-muted)]">Средний чек</p>
               <p className="mt-2 text-[28px] font-semibold tracking-[-0.04em] text-white">{formatCompactMoney(derived.avgTicket)}</p>
-              <p className="mt-2 text-xs text-[var(--app-muted)]">РџРѕ РїРѕСЃР»РµРґРЅРёРј РѕРїРµСЂР°С†РёСЏРј РјРµСЃСЏС†Р°</p>
+              <p className="mt-2 text-xs text-[var(--app-muted)]">По последним операциям месяца</p>
             </div>
             <div className="metric-tile">
-              <p className="text-sm text-[var(--app-muted)]">Р”РЅРµРІРЅРѕР№ СЂРёС‚Рј</p>
+              <p className="text-sm text-[var(--app-muted)]">Дневной ритм</p>
               <p className="mt-2 text-[28px] font-semibold tracking-[-0.04em] text-[var(--app-accent)]">{formatCompactMoney(derived.dayBudget)}</p>
-              <p className="mt-2 text-xs text-[var(--app-muted)]">Р§С‚РѕР±С‹ СѓРґРµСЂР¶Р°С‚СЊ С‚РµРєСѓС‰РёР№ Р±Р°Р»Р°РЅСЃ</p>
+              <p className="mt-2 text-xs text-[var(--app-muted)]">Чтобы удержать текущий баланс</p>
             </div>
           </>
         )}
@@ -184,10 +186,10 @@ export function DashboardPage() {
         <div className="mb-4 flex items-center justify-between">
           <div>
             <p className="soft-kicker">Quick patterns</p>
-            <h2 className="mt-1 text-xl font-semibold text-white">Р§Р°СЃС‚С‹Рµ РїР»Р°С‚РµР¶Рё</h2>
+            <h2 className="mt-1 text-xl font-semibold text-white">Частые платежи</h2>
           </div>
           <button className="text-sm text-[var(--app-accent)]" onClick={() => openSheet('add')} type="button">
-            Р”РѕР±Р°РІРёС‚СЊ
+            Добавить
           </button>
         </div>
 
@@ -196,7 +198,7 @@ export function DashboardPage() {
             {Array.from({ length: 3 }).map((_, index) => <Skeleton key={index} className="h-24 w-full rounded-[20px]" />)}
           </div>
         ) : derived.recurring.length === 0 ? (
-          <div className="empty-card">РџРѕРєР° РЅРµС‚ С‡Р°СЃС‚С‹С… РѕРїРµСЂР°С†РёР№. Р”РѕР±Р°РІСЊ РЅРµСЃРєРѕР»СЊРєРѕ РїРѕРєСѓРїРѕРє вЂ” Рё Р·РґРµСЃСЊ РїРѕСЏРІСЏС‚СЃСЏ Р±С‹СЃС‚СЂС‹Рµ РїР°С‚С‚РµСЂРЅС‹.</div>
+          <div className="empty-card">Пока нет частых операций. Добавь несколько покупок — и здесь появятся быстрые паттерны.</div>
         ) : (
           <div className="grid grid-cols-3 gap-3">
             {derived.recurring.map((item) => (
@@ -217,11 +219,11 @@ export function DashboardPage() {
         <div className="mb-4 flex items-center justify-between">
           <div>
             <p className="soft-kicker">Recent activity</p>
-            <h2 className="mt-1 text-xl font-semibold text-white">РџРѕСЃР»РµРґРЅРёРµ РѕРїРµСЂР°С†РёРё</h2>
+            <h2 className="mt-1 text-xl font-semibold text-white">Последние операции</h2>
           </div>
           <button className="inline-flex items-center gap-2 text-sm text-[var(--app-accent)]" onClick={() => openSheet('add')} type="button">
             <SparklesIcon size={14} />
-            Р‘С‹СЃС‚СЂС‹Р№ РІРІРѕРґ
+            Быстрый ввод
           </button>
         </div>
 
@@ -232,7 +234,7 @@ export function DashboardPage() {
             <Skeleton className="h-20 w-full rounded-[22px]" />
           </div>
         ) : transactions.length === 0 ? (
-          <div className="empty-card">РЎРѕС…СЂР°РЅРё РїРµСЂРІСѓСЋ РѕРїРµСЂР°С†РёСЋ, С‡С‚РѕР±С‹ РіР»Р°РІРЅР°СЏ РЅР°С‡Р°Р»Р° РІС‹РіР»СЏРґРµС‚СЊ РєР°Рє РІ СЂРµС„РµСЂРµРЅСЃРµ вЂ” Р¶РёРІРѕР№ Рё РїРѕР»РµР·РЅРѕР№.</div>
+          <div className="empty-card">Сохрани первую операцию, чтобы главная начала выглядеть как в референсе — живой и полезной.</div>
         ) : (
           <div className="space-y-3">
             {transactions.slice(0, 3).map((transaction) => {
@@ -255,8 +257,8 @@ export function DashboardPage() {
                       {isExpense ? <ActivityIcon size={18} /> : <SparklesIcon size={18} />}
                     </div>
                     <div>
-                      <p className="font-medium text-white">{transaction.merchant || transaction.description || 'Р‘РµР· РЅР°Р·РІР°РЅРёСЏ'}</p>
-                      <p className="mt-1 text-sm text-[var(--app-muted)]">{transaction.category?.name ?? 'РђРІС‚РѕРєР°С‚РµРіРѕСЂРёСЏ'}</p>
+                      <p className="font-medium text-white">{transaction.merchant || transaction.description || 'Без названия'}</p>
+                      <p className="mt-1 text-sm text-[var(--app-muted)]">{transaction.category?.name ?? 'Автокатегория'}</p>
                     </div>
                   </div>
                   <div className="text-right">
@@ -275,3 +277,6 @@ export function DashboardPage() {
     </div>
   );
 }
+
+
+

@@ -1,4 +1,4 @@
-Ôªøexport function currentMonthKey() {
+export function currentMonthKey() {
   const date = new Date();
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -20,11 +20,11 @@ export function formatDateGroupLabel(value: string) {
 
   const targetKey = target.toDateString();
   if (targetKey === today.toDateString()) {
-    return '–°–µ–≥–æ–¥–Ω—è';
+    return '—Â„Ó‰Ìˇ';
   }
 
   if (targetKey === yesterday.toDateString()) {
-    return '–í—á–µ—Ä–∞';
+    return '¬˜Â‡';
   }
 
   return new Intl.DateTimeFormat('ru-RU', {
@@ -43,3 +43,13 @@ export function formatMonthCaption(value: string) {
     year: 'numeric',
   }).format(new Date(year, month - 1, 1));
 }
+
+export function formatDateTimeLabel(value: string) {
+  return new Intl.DateTimeFormat('ru-RU', {
+    day: 'numeric',
+    month: 'long',
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(new Date(value));
+}
+

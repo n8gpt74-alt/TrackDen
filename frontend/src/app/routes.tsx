@@ -1,4 +1,4 @@
-﻿import { lazy, Suspense } from 'react';
+import { lazy, Suspense } from 'react';
 import { Navigate, Route, Routes } from 'react-router-dom';
 
 import { Skeleton } from '../shared/ui/Skeleton';
@@ -13,6 +13,9 @@ const InsightsPage = lazy(async () => ({
 const TransactionsPage = lazy(async () => ({
   default: (await import('../pages/TransactionsPage')).TransactionsPage,
 }));
+const SettingsPage = lazy(async () => ({
+  default: (await import('../pages/SettingsPage')).SettingsPage,
+}));
 
 export function AppRoutes() {
   return (
@@ -23,9 +26,11 @@ export function AppRoutes() {
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/insights" element={<InsightsPage />} />
           <Route path="/transactions" element={<TransactionsPage />} />
+          <Route path="/settings" element={<SettingsPage />} />
           <Route path="/receipt" element={<Navigate to="/dashboard?sheet=ocr" replace />} />
         </Route>
       </Routes>
     </Suspense>
   );
 }
+
