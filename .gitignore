@@ -45,3 +45,4 @@ frontend/tailwind.config.d.ts
 .windsurf/
 skills/
 skills-lock.json
+.vercel
