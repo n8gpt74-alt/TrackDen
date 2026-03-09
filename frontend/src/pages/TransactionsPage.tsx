@@ -19,7 +19,6 @@ import {
   EmptyStateCard,
   ListCard,
   ListRow,
-  PremiumStatTile,
   ScreenHeader,
   SectionHeader,
   StatusBadge,
@@ -27,10 +26,6 @@ import {
 } from '../shared/ui/premium-kit';
 import { ActivityIcon, IconCircleButton, PencilIcon, SegmentedControl, TrashIcon } from '../shared/ui/premium';
 import { Skeleton } from '../shared/ui/Skeleton';
-
-function getSegmentSummaryLabel(segment: TransactionType) {
-  return segment === 'expense' ? '????????? ???????? ??????' : '???????? ???????? ??????';
-}
 
 export function TransactionsPage() {
   const queryClient = useQueryClient();
@@ -47,10 +42,8 @@ export function TransactionsPage() {
 
   const transactions = transactionsQuery.data?.items ?? [];
   const groupedTransactions = useMemo(() => groupTransactionsByDate(transactions), [transactions]);
-  const templates = localMode && automationQuery.data ? [...automationQuery.data.quick_templates, ...automationQuery.data.suggested_templates].slice(0, 4) : [];
-  const candidates = localMode && segment === 'expense' ? (subscriptionManagerQuery.data?.candidates ?? []).slice(0, 3) : [];
-
-  const totalVolume = useMemo(() => transactions.reduce((sum, item) => sum + item.amount, 0), [transactions]);
+  const templates = localMode && automationQuery.data ? [...automationQuery.data.quick_templates, ...automationQuery.data.suggested_templates].slice(0, 3) : [];
+  const candidates = localMode && segment === 'expense' ? (subscriptionManagerQuery.data?.candidates ?? []).slice(0, 2) : [];
 
   const invalidateFinanceData = async () => {
     await Promise.all([
@@ -63,7 +56,7 @@ export function TransactionsPage() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!window.confirm('??????? ??? ?????????')) {
+    if (!window.confirm('Удалить эту операцию?')) {
       return;
     }
 
@@ -82,19 +75,19 @@ export function TransactionsPage() {
   };
 
   return (
-    <div className="space-y-7">
+    <div className="space-y-6">
       <ScreenHeader
-        eyebrow="???????"
-        title="???????????? ????"
-        description="???????, ????????? ? ?????? ????? ?????? ??????? ? ????? ????????? ??????."
+        eyebrow="Лента"
+        title="Операционный день"
+        description="Шаблоны, подсказки по подпискам и последняя активность собраны на одном экране."
         actions={
           localMode ? (
             <div className="flex gap-2">
               <button className="pill-button pill-button--ghost" onClick={() => openSheet('automation')} type="button">
-                ?????????????
+                Автоматизация
               </button>
               <button className="pill-button pill-button--ghost" onClick={() => openSheet('subscriptions')} type="button">
-                ????????
+                Открыть
               </button>
             </div>
           ) : undefined
@@ -105,62 +98,36 @@ export function TransactionsPage() {
         onChange={setSegment}
         options={[
           { label: UI_TEXT.common.income, value: 'income' },
-          { label: '???????', value: 'expense' },
+          { label: 'Расходы', value: 'expense' },
         ]}
         value={segment}
       />
 
-      <SurfaceCard className="activity-hero-card" tone="soft">
-        <div className="activity-hero-card__top">
-          <div>
-            <p className="soft-kicker">????? ?????</p>
-            <h2 className="home-focus-card__title">{segment === 'expense' ? '??????? ??? ?????????' : '?????? ??????'}</h2>
-            <p className="mt-2 text-sm text-[var(--app-muted)]">{getSegmentSummaryLabel(segment)}</p>
-          </div>
-          <StatusBadge tone={segment === 'expense' ? 'danger' : 'success'}>{transactions.length} ???????</StatusBadge>
-        </div>
-
-        <div className="activity-hero-grid">
-          <PremiumStatTile
-            hint="????? ?? ???????? ???????"
-            label="????? ??????"
-            tone={segment === 'expense' ? 'danger' : 'success'}
-            value={formatMoney(totalVolume)}
-          />
-          <PremiumStatTile
-            hint="??????? ????? ?? ????? ?????? ? ?????"
-            label="???? ? ?????"
-            tone="neutral"
-            value={String(groupedTransactions.length)}
-          />
-        </div>
-      </SurfaceCard>
-
       <section className="space-y-4">
         <SectionHeader
           eyebrow={UI_TEXT.common.templates}
-          title="??????? ????????"
-          description="????????????? ???????? ?????? ??? ?????, ????? ???????? ?? ??? ?????? ?????."
+          title="Быстрые операции"
+          description="Сохранённые и подсказанные шаблоны сильно ускоряют повторные записи."
           action={localMode ? <button className="pill-button pill-button--ghost" onClick={() => openSheet('automation')} type="button">{UI_TEXT.common.open}</button> : undefined}
         />
 
         {transactionsQuery.isLoading || automationQuery.isLoading ? (
-          <div className="activity-template-grid">
-            {Array.from({ length: 4 }).map((_, index) => <Skeleton key={index} className="h-32 w-full rounded-[22px]" />)}
+          <div className="grid grid-cols-3 gap-3">
+            {Array.from({ length: 3 }).map((_, index) => <Skeleton key={index} className="h-28 w-full rounded-[22px]" />)}
           </div>
         ) : templates.length === 0 ? (
-          <EmptyStateCard title="???????? ???? ???" description="?????? ????????? ??????? ??????? ??? ??????? ?????? ???????, ? ??????? ???????? ???????? ????? ?????????????." />
+          <EmptyStateCard title="Шаблонов пока нет" description="Сделай несколько похожих записей или сохрани свой шаблон, и быстрые действия появятся здесь автоматически." />
         ) : (
-          <div className="activity-template-grid">
+          <div className="grid grid-cols-3 gap-3">
             {templates.map((item) => (
-              <SurfaceCard key={item.id} className="activity-template-card" tone="soft">
+              <SurfaceCard key={item.id} className="p-3" tone="soft">
                 <button className="w-full text-left" onClick={() => openSheet('add', { templateId: item.id })} type="button">
                   <div className="transaction-avatar h-11 w-11 rounded-[16px] text-sm" style={{ background: 'rgba(111,107,255,0.16)', color: '#cbc9ff' }}>
                     {item.label.slice(0, 1).toUpperCase()}
                   </div>
                   <p className="mt-3 truncate text-sm font-medium text-white">{item.label}</p>
-                  <p className="mt-1 min-h-[34px] text-xs leading-4 text-[var(--app-muted)]">{item.merchant || item.description || (item.source === 'manual' ? UI_TEXT.common.noDescription : '????????? TrackDen')}</p>
-                  <p className="mt-3 text-sm font-semibold text-white">{item.amount ? formatCompactMoney(item.amount) : UI_TEXT.common.noAmount}</p>
+                  <p className="mt-1 truncate text-xs text-[var(--app-muted)]">{item.merchant || item.description || (item.source === 'manual' ? UI_TEXT.common.noDescription : 'Подсказка TrackDen')}</p>
+                  <p className="mt-2 text-sm font-semibold text-white">{item.amount ? formatCompactMoney(item.amount) : UI_TEXT.common.noAmount}</p>
                 </button>
               </SurfaceCard>
             ))}
@@ -172,9 +139,9 @@ export function TransactionsPage() {
         <section className="space-y-4">
           <SectionHeader
             eyebrow={UI_TEXT.common.subscriptions}
-            title="????????? ? ????????"
-            description="???? TrackDen ????? ????????????? ??????????? ??????, ?? ?????????? ??? ????? ??? ???????? ?????????????."
-            action={<StatusBadge tone="accent">{subscriptionManagerQuery.data?.candidate_count ?? 0} ??????????</StatusBadge>}
+            title="Кандидаты в подписки"
+            description="TrackDen заметил повторяющиеся ежемесячные траты и предлагает превратить их в подписки."
+            action={<StatusBadge tone="accent">{subscriptionManagerQuery.data?.candidate_count ?? 0} кандидатов</StatusBadge>}
           />
 
           {subscriptionManagerQuery.isLoading ? (
@@ -183,30 +150,32 @@ export function TransactionsPage() {
               <Skeleton className="h-28 w-full rounded-[24px]" />
             </div>
           ) : candidates.length === 0 ? (
-            <EmptyStateCard title="???? ?????? ?? ???????" description="??? ?????? ???????? ??????? ??????????? ???????, ????? ???????? ????????? ?? ????????." />
+            <EmptyStateCard title="Пока ничего не найдено" description="Как только в истории появятся похожие ежемесячные расходы, здесь появятся кандидаты на подписки." />
           ) : (
             <div className="space-y-3">
               {candidates.map((candidate) => (
-                <SurfaceCard key={candidate.id} className="activity-candidate-card">
-                  <div className="activity-candidate-card__top">
+                <SurfaceCard key={candidate.id}>
+                  <div className="flex items-start justify-between gap-3">
                     <div>
                       <p className="text-base font-medium text-white">{candidate.merchant_label}</p>
-                      <p className="mt-1 text-sm text-[var(--app-muted)]">{candidate.match_count} ?????????? ? {Math.round(candidate.confidence * 100)}% ???????????</p>
+                      <p className="mt-1 text-sm text-[var(--app-muted)]">
+                        {candidate.match_count} совпадения · {Math.round(candidate.confidence * 100)}% уверенности
+                      </p>
                     </div>
                     <div className="text-right">
                       <p className="text-base font-semibold text-white">{formatMoney(candidate.expected_amount, candidate.currency)}</p>
-                      <p className="mt-1 text-sm text-[var(--app-muted)]">{candidate.expected_day} ?????</p>
+                      <p className="mt-1 text-sm text-[var(--app-muted)]">{candidate.expected_day} числа</p>
                     </div>
                   </div>
-                  <div className="activity-candidate-actions">
+                  <div className="mt-4 flex flex-wrap gap-3">
                     <button className="pill-button pill-button--primary" onClick={() => void handleCandidateConfirm(candidate.id)} type="button">
-                      ???????????
+                      Подтвердить
                     </button>
                     <button className="pill-button" onClick={() => void handleCandidateDismiss(candidate.id)} type="button">
-                      ?? ????????
+                      Не подписка
                     </button>
                     <button className="pill-button" onClick={() => openSheet('subscriptions')} type="button">
-                      ?????
+                      Позже
                     </button>
                   </div>
                 </SurfaceCard>
@@ -219,9 +188,9 @@ export function TransactionsPage() {
       <section className="space-y-4">
         <SectionHeader
           eyebrow={UI_TEXT.common.history}
-          title="??? ????????"
-          description="????? ??????? ?? ????, ????? ?????? ???????? ???????? ??????? ? ??? ????."
-          action={<button className="pill-button pill-button--ghost" onClick={() => openSheet('add')} type="button">????????</button>}
+          title="Все операции"
+          description="Сгруппированная по дням и категориям лента помогает легко вернуться к любой записи."
+          action={<button className="pill-button pill-button--primary" onClick={() => openSheet('add')} type="button">{UI_TEXT.common.add}</button>}
         />
 
         {transactionsQuery.isLoading ? (
@@ -231,21 +200,20 @@ export function TransactionsPage() {
             <Skeleton className="h-24 w-full rounded-[24px]" />
           </div>
         ) : groupedTransactions.length === 0 ? (
-          <EmptyStateCard title="? ???? ?????? ??? ??? ????????" description="?????? ?????? ??????, ? ????? ?????? ????????? ?? ???? ? ??????????." />
+          <EmptyStateCard title="В этом месяце ещё нет операций" description="Добавь первую запись, и лента начнёт строиться по дням и категориям." />
         ) : (
           <div className="space-y-5">
             {groupedTransactions.map((group) => (
               <div key={group.label} className="space-y-3">
-                <div className="activity-group-header">
+                <div className="flex items-center justify-between px-1">
                   <p className="soft-kicker">{formatDateGroupLabel(group.label)}</p>
-                  <span className="activity-group-header__count">{group.items.length}</span>
                 </div>
                 <div className="space-y-3">
                   {group.items.map((transaction) => {
                     const isExpense = transaction.type === 'expense';
                     return (
                       <ListCard key={transaction.id}>
-                        <div className="activity-row">
+                        <div className="list-row">
                           <div className="list-row__leading">
                             <div
                               className="transaction-avatar"
@@ -257,23 +225,21 @@ export function TransactionsPage() {
                               <ActivityIcon size={18} />
                             </div>
                           </div>
-
                           <div className="list-row__content">
                             <p className="list-row__title">{transaction.merchant || transaction.description || UI_TEXT.common.noDescription}</p>
                             <p className="list-row__subtitle">{transaction.category?.name ?? UI_TEXT.common.uncategorized}</p>
                           </div>
-
-                          <div className="activity-row__aside">
+                          <div className="list-row__trailing flex items-center gap-3">
                             <div className="text-right">
                               <p className={clsx('text-base font-semibold', isExpense ? 'text-[var(--app-danger)]' : 'text-[var(--app-success)]')}>
                                 {isExpense ? '-' : '+'}
                                 {formatMoney(transaction.amount, transaction.currency)}
                               </p>
-                              <p className="mt-1 text-xs text-[var(--app-muted)]">
-                                {transaction.ai_confidence ? `AI ${Math.round(transaction.ai_confidence * 100)}%` : '?????? ??????'}
-                              </p>
+                              {transaction.ai_confidence ? (
+                                <p className="mt-1 text-xs text-[var(--app-muted)]">AI {Math.round(transaction.ai_confidence * 100)}%</p>
+                              ) : null}
                             </div>
-                            <div className="activity-row__actions">
+                            <div className="flex gap-2">
                               <IconCircleButton className="icon-circle-button--small" onClick={() => openSheet('edit', { transactionId: transaction.id })}>
                                 <PencilIcon size={15} />
                               </IconCircleButton>
