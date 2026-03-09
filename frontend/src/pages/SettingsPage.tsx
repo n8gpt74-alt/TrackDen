@@ -50,7 +50,7 @@ function getErrorMessage(error: unknown) {
     return error.message;
   }
 
-  return '\u0412\u043d\u0435 Telegram \u0438\u043b\u0438 \u0431\u0435\u0437 \u0441\u0435\u0441\u0441\u0438\u0438. \u0418\u043c\u043f\u043e\u0440\u0442 \u0438\u0437 \u0444\u0430\u0439\u043b\u0430 \u0432\u0441\u0451 \u0440\u0430\u0432\u043d\u043e \u0434\u043e\u0441\u0442\u0443\u043f\u0435\u043d.';
+  return 'Вне Telegram или без сессии. Импорт из файла всё равно доступен.';
 }
 
 function downloadBlob(fileName: string, blob: Blob) {
@@ -111,7 +111,7 @@ export function SettingsPage() {
       setSummaryVersion((current) => current + 1);
       setNotice({
         tone: 'success',
-        message: `\u0420\u0435\u0437\u0435\u0440\u0432\u043d\u0430\u044f \u043a\u043e\u043f\u0438\u044f \u0441\u043e\u0437\u0434\u0430\u043d\u0430. \u0412\u0440\u0435\u043c\u044f \u044d\u043a\u0441\u043f\u043e\u0440\u0442\u0430: ${formatDateTimeLabel(result.backup.exported_at)}.`,
+        message: `Резервная копия создана. Время экспорта: ${formatDateTimeLabel(result.backup.exported_at)}.`,
       });
     } catch (error) {
       setNotice({ tone: 'danger', message: getErrorMessage(error) });
@@ -146,7 +146,7 @@ export function SettingsPage() {
     if (ownerMismatch && !ownerConfirmed) {
       setNotice({
         tone: 'danger',
-        message: '\u042d\u0442\u0430 \u043a\u043e\u043f\u0438\u044f \u043f\u0440\u0438\u043d\u0430\u0434\u043b\u0435\u0436\u0438\u0442 \u0434\u0440\u0443\u0433\u043e\u043c\u0443 Telegram-\u043f\u0440\u043e\u0444\u0438\u043b\u044e. \u0415\u0449\u0451 \u0440\u0430\u0437 \u043f\u0440\u043e\u0432\u0435\u0440\u044c, \u0447\u0442\u043e \u0445\u043e\u0447\u0435\u0448\u044c \u0438\u043c\u043f\u043e\u0440\u0442\u0438\u0440\u043e\u0432\u0430\u0442\u044c \u0438\u043c\u0435\u043d\u043d\u043e \u0435\u0451.',
+        message: 'Эта копия принадлежит другому Telegram-профилю. Ещё раз проверь, что хочешь импортировать именно её.',
       });
       return;
     }
@@ -159,7 +159,7 @@ export function SettingsPage() {
       setPreview(null);
       setOwnerConfirmed(false);
       setClearArmed(false);
-      setNotice({ tone: 'success', message: '\u0414\u0430\u043d\u043d\u044b\u0435 \u0432\u043e\u0441\u0441\u0442\u0430\u043d\u043e\u0432\u043b\u0435\u043d\u044b: \u043e\u043f\u0435\u0440\u0430\u0446\u0438\u0438, \u0447\u0435\u043a\u0438, \u043b\u0438\u043c\u0438\u0442\u044b, \u043f\u043e\u0434\u043f\u0438\u0441\u043a\u0438 \u0438 \u0430\u0432\u0442\u043e\u043c\u0430\u0442\u0438\u0437\u0430\u0446\u0438\u044f \u0441\u043d\u043e\u0432\u0430 \u043d\u0430 \u043c\u0435\u0441\u0442\u0435.' });
+      setNotice({ tone: 'success', message: 'Данные восстановлены: операции, чеки, лимиты, подписки и автоматизация снова на месте.' });
     } catch (error) {
       setNotice({ tone: 'danger', message: getErrorMessage(error) });
     } finally {
@@ -184,7 +184,7 @@ export function SettingsPage() {
       setClearArmed(false);
       setNotice({
         tone: 'success',
-        message: `\u041b\u043e\u043a\u0430\u043b\u044c\u043d\u044b\u0435 \u0434\u0430\u043d\u043d\u044b\u0435 \u043e\u0447\u0438\u0449\u0435\u043d\u044b: \u0443\u0434\u0430\u043b\u0435\u043d\u043e ${result.deletedSummary.transactions} \u043e\u043f\u0435\u0440\u0430\u0446\u0438\u0439, ${result.deletedSummary.receipts} \u0447\u0435\u043a\u043e\u0432, ${result.deletedSummary.budget_limits} \u043b\u0438\u043c\u0438\u0442\u043e\u0432, ${result.deletedSummary.subscriptions} \u043f\u043e\u0434\u043f\u0438\u0441\u043e\u043a \u0438 ${result.deletedSummary.smart_rules + result.deletedSummary.quick_templates} \u044d\u043b\u0435\u043c\u0435\u043d\u0442\u043e\u0432 \u0430\u0432\u0442\u043e\u043c\u0430\u0442\u0438\u0437\u0430\u0446\u0438\u0438.`,
+        message: `Локальные данные очищены: удалено ${result.deletedSummary.transactions} операций, ${result.deletedSummary.receipts} чеков, ${result.deletedSummary.budget_limits} лимитов, ${result.deletedSummary.subscriptions} подписок и ${result.deletedSummary.smart_rules + result.deletedSummary.quick_templates} элементов автоматизации.`,
       });
     } catch (error) {
       setNotice({ tone: 'danger', message: getErrorMessage(error) });
@@ -197,8 +197,8 @@ export function SettingsPage() {
     <div className="space-y-6">
       <ScreenHeader
         eyebrow={UI_TEXT.common.settings}
-        title="\u041b\u043e\u043a\u0430\u043b\u044c\u043d\u044b\u0439 \u043f\u0440\u043e\u0444\u0438\u043b\u044c"
-        description="\u0423\u043f\u0440\u0430\u0432\u043b\u044f\u0439 \u0434\u0430\u043d\u043d\u044b\u043c\u0438, \u0440\u0435\u0437\u0435\u0440\u0432\u043d\u044b\u043c\u0438 \u043a\u043e\u043f\u0438\u044f\u043c\u0438 \u0438 \u0432\u0441\u0435\u043c, \u0447\u0442\u043e \u0445\u0440\u0430\u043d\u0438\u0442\u0441\u044f \u043d\u0430 \u044d\u0442\u043e\u043c \u0443\u0441\u0442\u0440\u043e\u0439\u0441\u0442\u0432\u0435."
+        title="Локальный профиль"
+        description="Управляй данными, резервными копиями и всем, что хранится на этом устройстве."
         leading={(
           <IconCircleButton onClick={() => navigate('/dashboard')}>
             <ChevronLeftIcon size={18} />
@@ -208,33 +208,33 @@ export function SettingsPage() {
 
       <SurfaceCard tone="hero">
         <SectionHeader
-          eyebrow="\u0421\u043d\u0438\u043c\u043e\u043a \u043f\u0440\u043e\u0444\u0438\u043b\u044f"
-          title="\u0427\u0442\u043e \u0441\u0435\u0439\u0447\u0430\u0441 \u0435\u0441\u0442\u044c \u043d\u0430 \u044d\u0442\u043e\u043c \u0443\u0441\u0442\u0440\u043e\u0439\u0441\u0442\u0432\u0435"
-          description="TrackDen \u0445\u0440\u0430\u043d\u0438\u0442 \u0434\u0430\u043d\u043d\u044b\u0435 \u043b\u043e\u043a\u0430\u043b\u044c\u043d\u043e. \u0417\u0434\u0435\u0441\u044c \u0432\u0438\u0434\u043d\u043e, \u0432 \u043a\u0430\u043a\u0438\u0445 \u043c\u043e\u0434\u0443\u043b\u044f\u0445 \u0443\u0436\u0435 \u0435\u0441\u0442\u044c \u0438\u0441\u0442\u043e\u0440\u0438\u044f."
-          action={storageSnapshot?.lastExportAt ? <StatusBadge tone="success">\u041a\u043e\u043f\u0438\u044f \u0435\u0441\u0442\u044c</StatusBadge> : <StatusBadge tone="neutral">\u041a\u043e\u043f\u0438\u0438 \u043d\u0435\u0442</StatusBadge>}
+          eyebrow="Снимок профиля"
+          title="Что сейчас есть на этом устройстве"
+          description="TrackDen хранит данные локально. Здесь видно, в каких модулях уже есть история."
+          action={storageSnapshot?.lastExportAt ? <StatusBadge tone="success">Копия есть</StatusBadge> : <StatusBadge tone="neutral">Копии нет</StatusBadge>}
         />
 
         {!localMode ? (
           <div className="mt-4">
             <ConfirmStateCard
-              title="\u041b\u043e\u043a\u0430\u043b\u044c\u043d\u044b\u0439 \u0440\u0435\u0436\u0438\u043c \u0431\u0435\u0440\u0435\u0436\u0451\u0442 \u043f\u0440\u0438\u0432\u0430\u0442\u043d\u043e\u0441\u0442\u044c"
-              description="\u041f\u043e\u043a\u0430 \u0432\u043a\u043b\u044e\u0447\u0451\u043d \u043b\u043e\u043a\u0430\u043b\u044c\u043d\u044b\u0439 \u0440\u0435\u0436\u0438\u043c, \u0433\u043b\u0430\u0432\u043d\u044b\u0435 \u0444\u0438\u043d\u0430\u043d\u0441\u043e\u0432\u044b\u0435 \u0434\u0430\u043d\u043d\u044b\u0435 \u043e\u0441\u0442\u0430\u044e\u0442\u0441\u044f \u043d\u0430 \u0443\u0441\u0442\u0440\u043e\u0439\u0441\u0442\u0432\u0435."
+              title="Локальный режим бережёт приватность"
+              description="Пока включён локальный режим, главные финансовые данные остаются на устройстве."
               tone="warning"
             />
           </div>
         ) : (
           <>
             <div className="stat-grid mt-4">
-              <PremiumStatTile hint="\u0412\u0441\u0435\u0433\u043e \u043e\u043f\u0435\u0440\u0430\u0446\u0438\u0439" label={UI_TEXT.common.transactions} tone="neutral" value={String(summary?.transactions ?? 0)} />
-              <PremiumStatTile hint="\u0420\u0430\u0441\u043f\u043e\u0437\u043d\u0430\u043d\u043d\u044b\u0435 \u0447\u0435\u043a\u0438" label={UI_TEXT.common.receipts} tone="accent" value={String(summary?.receipts ?? 0)} />
-              <PremiumStatTile hint="\u0410\u043a\u0442\u0438\u0432\u043d\u044b\u0435 \u043b\u0438\u043c\u0438\u0442\u044b" label={UI_TEXT.common.budgets} tone="warning" value={String(summary?.budget_limits ?? 0)} />
-              <PremiumStatTile hint="\u0421\u0432\u044f\u0437\u0438 \u0438 \u0440\u0435\u0433\u0443\u043b\u044f\u0440\u043d\u044b\u0435 \u0441\u043f\u0438\u0441\u0430\u043d\u0438\u044f" label={UI_TEXT.common.subscriptions} tone="success" value={String(summary?.subscriptions ?? 0)} />
+              <PremiumStatTile hint="Всего операций" label={UI_TEXT.common.transactions} tone="neutral" value={String(summary?.transactions ?? 0)} />
+              <PremiumStatTile hint="Распознанные чеки" label={UI_TEXT.common.receipts} tone="accent" value={String(summary?.receipts ?? 0)} />
+              <PremiumStatTile hint="Активные лимиты" label={UI_TEXT.common.budgets} tone="warning" value={String(summary?.budget_limits ?? 0)} />
+              <PremiumStatTile hint="Связи и регулярные списания" label={UI_TEXT.common.subscriptions} tone="success" value={String(summary?.subscriptions ?? 0)} />
             </div>
 
             <ReviewCard className="mt-4">
-              <p className="text-sm text-[var(--app-muted)]">\u041f\u043e\u0441\u043b\u0435\u0434\u043d\u0438\u0439 \u044d\u043a\u0441\u043f\u043e\u0440\u0442</p>
+              <p className="text-sm text-[var(--app-muted)]">Последний экспорт</p>
               <p className="mt-2 text-base font-semibold text-white">
-                {storageSnapshot?.lastExportAt ? formatDateTimeLabel(storageSnapshot.lastExportAt) : '\u041d\u0430 \u044d\u0442\u043e\u043c \u0443\u0441\u0442\u0440\u043e\u0439\u0441\u0442\u0432\u0435 \u0435\u0449\u0451 \u043d\u0435\u0442 \u0440\u0435\u0437\u0435\u0440\u0432\u043d\u043e\u0439 \u043a\u043e\u043f\u0438\u0438.'}
+                {storageSnapshot?.lastExportAt ? formatDateTimeLabel(storageSnapshot.lastExportAt) : 'На этом устройстве ещё нет резервной копии.'}
               </p>
             </ReviewCard>
           </>
@@ -245,8 +245,8 @@ export function SettingsPage() {
         <SurfaceCard>
           <SectionHeader
             eyebrow={UI_TEXT.common.automation}
-            title="\u041f\u0440\u0430\u0432\u0438\u043b\u0430, \u0448\u0430\u0431\u043b\u043e\u043d\u044b \u0438 \u0443\u043c\u043d\u044b\u0439 \u0441\u043b\u043e\u0439"
-            description="\u0417\u0434\u0435\u0441\u044c \u0436\u0438\u0432\u0443\u0442 \u0430\u0432\u0442\u043e\u043f\u0440\u0430\u0432\u0438\u043b\u0430, \u0431\u044b\u0441\u0442\u0440\u044b\u0435 \u0448\u0430\u0431\u043b\u043e\u043d\u044b \u0438 \u043f\u043e\u0434\u0441\u043a\u0430\u0437\u043a\u0438, \u043a\u043e\u0442\u043e\u0440\u044b\u0435 \u0440\u043e\u0436\u0434\u0430\u044e\u0442\u0441\u044f \u0438\u0437 \u0438\u0441\u0442\u043e\u0440\u0438\u0438."
+            title="Правила, шаблоны и умный слой"
+            description="Здесь живут автоправила, быстрые шаблоны и подсказки, которые рождаются из истории."
             action={<button className="pill-button pill-button--ghost" onClick={() => openSheet('automation')} type="button">{UI_TEXT.common.open}</button>}
           />
 
@@ -258,10 +258,10 @@ export function SettingsPage() {
             </div>
           ) : (
             <div className="stat-grid mt-4">
-              <PremiumStatTile hint="\u0410\u043a\u0442\u0438\u0432\u043d\u044b\u0435 \u043f\u0440\u0430\u0432\u0438\u043b\u0430" label={UI_TEXT.common.rules} tone="accent" value={String(automationQuery.data?.active_rule_count ?? 0)} />
-              <PremiumStatTile hint="\u0421\u043e\u0445\u0440\u0430\u043d\u0451\u043d\u043d\u044b\u0435 \u0448\u0430\u0431\u043b\u043e\u043d\u044b" label={UI_TEXT.common.templates} tone="success" value={String(automationQuery.data?.manual_template_count ?? 0)} />
-              <PremiumStatTile hint="\u041f\u043e\u0434\u0441\u043a\u0430\u0437\u043a\u0438 \u0438\u0437 \u0438\u0441\u0442\u043e\u0440\u0438\u0438" label={UI_TEXT.common.suggestions} tone="warning" value={String(automationQuery.data?.suggested_template_count ?? 0)} />
-              <PremiumStatTile hint="\u041f\u043e\u043f\u0430\u0434\u0451\u0442 \u0432 \u0440\u0435\u0437\u0435\u0440\u0432\u043d\u0443\u044e \u043a\u043e\u043f\u0438\u044e" label="\u0421\u043b\u043e\u0439" tone="neutral" value={String((summary?.smart_rules ?? 0) + (summary?.quick_templates ?? 0))} />
+              <PremiumStatTile hint="Активные правила" label={UI_TEXT.common.rules} tone="accent" value={String(automationQuery.data?.active_rule_count ?? 0)} />
+              <PremiumStatTile hint="Сохранённые шаблоны" label={UI_TEXT.common.templates} tone="success" value={String(automationQuery.data?.manual_template_count ?? 0)} />
+              <PremiumStatTile hint="Подсказки из истории" label={UI_TEXT.common.suggestions} tone="warning" value={String(automationQuery.data?.suggested_template_count ?? 0)} />
+              <PremiumStatTile hint="Попадёт в резервную копию" label="Слой" tone="neutral" value={String((summary?.smart_rules ?? 0) + (summary?.quick_templates ?? 0))} />
             </div>
           )}
         </SurfaceCard>
@@ -270,7 +270,7 @@ export function SettingsPage() {
       {notice ? (
         <ConfirmStateCard
           description={notice.message}
-          title={notice.tone === 'success' ? '\u0413\u043e\u0442\u043e\u0432\u043e' : '\u041d\u0443\u0436\u043d\u043e \u0432\u043d\u0438\u043c\u0430\u043d\u0438\u0435'}
+          title={notice.tone === 'success' ? 'Готово' : 'Нужно внимание'}
           tone={notice.tone === 'success' ? 'success' : 'danger'}
         />
       ) : null}
@@ -278,8 +278,8 @@ export function SettingsPage() {
       <SurfaceCard>
         <SectionHeader
           eyebrow={UI_TEXT.common.backup}
-          title="\u042d\u043a\u0441\u043f\u043e\u0440\u0442 JSON"
-          description="\u0424\u0430\u0439\u043b \u0441\u043e\u0434\u0435\u0440\u0436\u0438\u0442 \u043b\u043e\u043a\u0430\u043b\u044c\u043d\u044b\u0435 \u0444\u0438\u043d\u0430\u043d\u0441\u043e\u0432\u044b\u0435 \u0434\u0430\u043d\u043d\u044b\u0435: \u043e\u043f\u0435\u0440\u0430\u0446\u0438\u0438, \u043a\u0430\u0442\u0435\u0433\u043e\u0440\u0438\u0438, \u0447\u0435\u043a\u0438, \u043b\u0438\u043c\u0438\u0442\u044b, \u043f\u043e\u0434\u043f\u0438\u0441\u043a\u0438 \u0438 \u0430\u0432\u0442\u043e\u043c\u0430\u0442\u0438\u0437\u0430\u0446\u0438\u044e."
+          title="Экспорт JSON"
+          description="Файл содержит локальные финансовые данные: операции, категории, чеки, лимиты, подписки и автоматизацию."
           action={(
             <IconCircleButton onClick={handleExport} disabled={!localMode}>
               <DownloadIcon size={18} />
@@ -288,7 +288,7 @@ export function SettingsPage() {
         />
         <div className="mt-4">
           <button className="sheet-primary-button w-full" disabled={!localMode} onClick={handleExport} type="button">
-            \u042d\u043a\u0441\u043f\u043e\u0440\u0442\u0438\u0440\u043e\u0432\u0430\u0442\u044c JSON
+            Экспортировать JSON
           </button>
         </div>
       </SurfaceCard>
@@ -296,8 +296,8 @@ export function SettingsPage() {
       <SurfaceCard>
         <SectionHeader
           eyebrow={UI_TEXT.common.restore}
-          title="\u0418\u043c\u043f\u043e\u0440\u0442 \u0438\u0437 \u043a\u043e\u043f\u0438\u0438"
-          description="\u041c\u043e\u0436\u043d\u043e \u043f\u043e\u043b\u043d\u043e\u0441\u0442\u044c\u044e \u0437\u0430\u043c\u0435\u043d\u0438\u0442\u044c \u0442\u0435\u043a\u0443\u0449\u0438\u0439 \u043f\u0440\u043e\u0444\u0438\u043b\u044c \u0434\u0430\u043d\u043d\u044b\u043c\u0438 \u0438\u0437 \u0434\u0440\u0443\u0433\u043e\u0433\u043e \u0444\u0430\u0439\u043b\u0430, \u0435\u0441\u043b\u0438 \u0442\u044b \u0434\u043e\u0432\u0435\u0440\u044f\u0435\u0448\u044c \u0438\u0441\u0442\u043e\u0447\u043d\u0438\u043a\u0443."
+          title="Импорт из копии"
+          description="Можно полностью заменить текущий профиль данными из другого файла, если ты доверяешь источнику."
           action={(
             <IconCircleButton onClick={() => fileInputRef.current?.click()} disabled={!localMode || isRestoring}>
               <UploadIcon size={18} />
@@ -309,7 +309,7 @@ export function SettingsPage() {
 
         <div className="mt-4">
           <button className="sheet-secondary-button w-full" disabled={!localMode || isRestoring} onClick={() => fileInputRef.current?.click()} type="button">
-            \u0412\u044b\u0431\u0440\u0430\u0442\u044c JSON-\u0444\u0430\u0439\u043b
+            Выбрать JSON-файл
           </button>
         </div>
 
@@ -319,34 +319,34 @@ export function SettingsPage() {
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <p className="text-sm font-medium text-white">{preview.fileName}</p>
-                  <p className="mt-1 text-sm text-[var(--app-muted)]">\u042d\u043a\u0441\u043f\u043e\u0440\u0442: {formatDateTimeLabel(preview.backup.exported_at)}</p>
+                  <p className="mt-1 text-sm text-[var(--app-muted)]">Экспорт: {formatDateTimeLabel(preview.backup.exported_at)}</p>
                 </div>
                 <StatusBadge tone="neutral">v{preview.backup.version}</StatusBadge>
               </div>
             </ReviewCard>
 
             <ReviewCard>
-              <p className="text-sm text-[var(--app-muted)]">\u0412\u043b\u0430\u0434\u0435\u043b\u0435\u0446 \u043a\u043e\u043f\u0438\u0438</p>
-              <p className="mt-2 text-base font-semibold text-white">{preview.backup.owner.first_name || preview.backup.owner.username || '\u041f\u0440\u043e\u0444\u0438\u043b\u044c TrackDen'}</p>
+              <p className="text-sm text-[var(--app-muted)]">Владелец копии</p>
+              <p className="mt-2 text-base font-semibold text-white">{preview.backup.owner.first_name || preview.backup.owner.username || 'Профиль TrackDen'}</p>
               <p className="mt-1 text-sm text-[var(--app-muted)]">{preview.backup.owner.username ? `@${preview.backup.owner.username}` : preview.backup.owner.scope_id}</p>
             </ReviewCard>
 
             <div className="stat-grid">
-              <PremiumStatTile hint="\u0412\u0441\u0435\u0433\u043e \u043e\u043f\u0435\u0440\u0430\u0446\u0438\u0439" label={UI_TEXT.common.transactions} tone="neutral" value={String(previewSummary?.transactions ?? 0)} />
-              <PremiumStatTile hint="\u041c\u0435\u0442\u0430\u0434\u0430\u043d\u043d\u044b\u0435 \u0447\u0435\u043a\u043e\u0432" label={UI_TEXT.common.receipts} tone="accent" value={String(previewSummary?.receipts ?? 0)} />
-              <PremiumStatTile hint="\u041d\u0430\u0441\u0442\u0440\u043e\u0439\u043a\u0438 \u043b\u0438\u043c\u0438\u0442\u043e\u0432" label={UI_TEXT.common.budgets} tone="warning" value={String(previewSummary?.budget_limits ?? 0)} />
-              <PremiumStatTile hint="\u0410\u0432\u0442\u043e\u043c\u0430\u0442\u0438\u0437\u0430\u0446\u0438\u044f \u0432 \u044d\u0442\u043e\u043c \u043f\u0440\u043e\u0444\u0438\u043b\u0435" label={UI_TEXT.common.automation} tone="success" value={String((previewSummary?.smart_rules ?? 0) + (previewSummary?.quick_templates ?? 0))} />
+              <PremiumStatTile hint="Всего операций" label={UI_TEXT.common.transactions} tone="neutral" value={String(previewSummary?.transactions ?? 0)} />
+              <PremiumStatTile hint="Метаданные чеков" label={UI_TEXT.common.receipts} tone="accent" value={String(previewSummary?.receipts ?? 0)} />
+              <PremiumStatTile hint="Настройки лимитов" label={UI_TEXT.common.budgets} tone="warning" value={String(previewSummary?.budget_limits ?? 0)} />
+              <PremiumStatTile hint="Автоматизация в этом профиле" label={UI_TEXT.common.automation} tone="success" value={String((previewSummary?.smart_rules ?? 0) + (previewSummary?.quick_templates ?? 0))} />
             </div>
 
             {ownerMismatch ? (
               <ConfirmStateCard
-                title="\u042d\u0442\u0430 \u043a\u043e\u043f\u0438\u044f \u043f\u0440\u0438\u043d\u0430\u0434\u043b\u0435\u0436\u0438\u0442 \u0434\u0440\u0443\u0433\u043e\u043c\u0443 Telegram-\u043f\u0440\u043e\u0444\u0438\u043b\u044e"
-                description="\u0418\u043c\u043f\u043e\u0440\u0442 \u0440\u0430\u0437\u0440\u0435\u0448\u0451\u043d, \u043d\u043e \u0441\u043d\u0430\u0447\u0430\u043b\u0430 \u0443\u0431\u0435\u0434\u0438\u0441\u044c, \u0447\u0442\u043e \u0442\u044b \u0442\u043e\u0447\u043d\u043e \u0445\u043e\u0447\u0435\u0448\u044c \u0437\u0430\u043c\u0435\u043d\u0438\u0442\u044c \u0442\u0435\u043a\u0443\u0449\u0438\u0439 \u043b\u043e\u043a\u0430\u043b\u044c\u043d\u044b\u0439 \u043f\u0440\u043e\u0444\u0438\u043b\u044c \u0438\u043c\u0435\u043d\u043d\u043e \u044d\u0442\u043e\u0439 \u043a\u043e\u043f\u0438\u0435\u0439."
+                title="Эта копия принадлежит другому Telegram-профилю"
+                description="Импорт разрешён, но сначала убедись, что ты точно хочешь заменить текущий локальный профиль именно этой копией."
                 tone="warning"
                 action={(
                   <label className="mt-3 flex items-start gap-3 rounded-[18px] border border-amber-300/15 bg-black/10 px-4 py-3 text-sm text-amber-50">
                     <input checked={ownerConfirmed} className="mt-1" onChange={(event) => setOwnerConfirmed(event.target.checked)} type="checkbox" />
-                    <span>\u041f\u043e\u043d\u0438\u043c\u0430\u044e, \u0447\u0442\u043e \u044d\u0442\u043e \u0437\u0430\u043c\u0435\u043d\u0438\u0442 \u0442\u0435\u043a\u0443\u0449\u0438\u0439 \u043b\u043e\u043a\u0430\u043b\u044c\u043d\u044b\u0439 \u043f\u0440\u043e\u0444\u0438\u043b\u044c.</span>
+                    <span>Понимаю, что это заменит текущий локальный профиль.</span>
                   </label>
                 )}
               />
@@ -357,7 +357,7 @@ export function SettingsPage() {
                 {UI_TEXT.common.cancel}
               </button>
               <button className="sheet-primary-button" disabled={isRestoring || (ownerMismatch && !ownerConfirmed)} onClick={() => void handleRestore()} type="button">
-                {isRestoring ? '\u0412\u043e\u0441\u0441\u0442\u0430\u043d\u0430\u0432\u043b\u0438\u0432\u0430\u0435\u043c\u2026' : '\u0412\u043e\u0441\u0441\u0442\u0430\u043d\u043e\u0432\u0438\u0442\u044c \u043f\u0440\u043e\u0444\u0438\u043b\u044c'}
+                {isRestoring ? 'Восстанавливаем…' : 'Восстановить профиль'}
               </button>
             </div>
           </div>
@@ -366,16 +366,16 @@ export function SettingsPage() {
 
       <SurfaceCard tone="danger">
         <SectionHeader
-          eyebrow="\u041e\u043f\u0430\u0441\u043d\u0430\u044f \u0437\u043e\u043d\u0430"
-          title="\u041e\u0447\u0438\u0441\u0442\u0438\u0442\u044c \u043b\u043e\u043a\u0430\u043b\u044c\u043d\u044b\u0435 \u0434\u0430\u043d\u043d\u044b\u0435"
-          description="\u041e\u0442\u043c\u0435\u043d\u0438\u0442\u044c \u044d\u0442\u043e \u043d\u0435\u043b\u044c\u0437\u044f: \u043e\u043f\u0435\u0440\u0430\u0446\u0438\u0438, \u0441\u0432\u044f\u0437\u0438 \u0432 \u0438\u0441\u0442\u043e\u0440\u0438\u0438, \u0448\u0430\u0431\u043b\u043e\u043d\u044b \u0438 \u0432\u0441\u0435 \u0434\u0430\u043d\u043d\u044b\u0435 \u043d\u0430 \u0443\u0441\u0442\u0440\u043e\u0439\u0441\u0442\u0432\u0435 \u0431\u0443\u0434\u0443\u0442 \u0443\u0434\u0430\u043b\u0435\u043d\u044b."
+          eyebrow="Опасная зона"
+          title="Очистить локальные данные"
+          description="Отменить это нельзя: операции, связи в истории, шаблоны и все данные на устройстве будут удалены."
           action={<IconCircleButton className="text-[var(--app-danger)]"><TrashIcon size={18} /></IconCircleButton>}
         />
 
         <div className="mt-4">
           <ReviewCard>
             <p className="text-sm leading-6 text-[var(--app-muted)]">
-              {`\u0411\u0443\u0434\u0443\u0442 \u0443\u0434\u0430\u043b\u0435\u043d\u044b ${summary?.transactions ?? 0} \u043e\u043f\u0435\u0440\u0430\u0446\u0438\u0439, ${summary?.receipts ?? 0} \u0447\u0435\u043a\u043e\u0432, ${summary?.budget_limits ?? 0} \u043b\u0438\u043c\u0438\u0442\u043e\u0432, ${summary?.subscriptions ?? 0} \u043f\u043e\u0434\u043f\u0438\u0441\u043e\u043a, ${summary?.smart_rules ?? 0} \u043f\u0440\u0430\u0432\u0438\u043b \u0438 ${summary?.quick_templates ?? 0} \u0448\u0430\u0431\u043b\u043e\u043d\u043e\u0432.`}
+              {`Будут удалены ${summary?.transactions ?? 0} операций, ${summary?.receipts ?? 0} чеков, ${summary?.budget_limits ?? 0} лимитов, ${summary?.subscriptions ?? 0} подписок, ${summary?.smart_rules ?? 0} правил и ${summary?.quick_templates ?? 0} шаблонов.`}
             </p>
           </ReviewCard>
         </div>
@@ -383,8 +383,8 @@ export function SettingsPage() {
         <div className="mt-4">
           {clearArmed ? (
             <ConfirmStateCard
-              title="\u041f\u043e\u0434\u0442\u0432\u0435\u0440\u0436\u0434\u0435\u043d\u0438\u0435 \u043e\u0447\u0438\u0441\u0442\u043a\u0438"
-              description="TrackDen \u043f\u043e\u0441\u043b\u0435 \u043e\u0447\u0438\u0441\u0442\u043a\u0438 \u0432\u043e\u0441\u0441\u043e\u0437\u0434\u0430\u0441\u0442 \u0431\u0430\u0437\u043e\u0432\u044b\u0435 \u043a\u0430\u0442\u0435\u0433\u043e\u0440\u0438\u0438, \u043d\u043e \u0432\u0441\u0435 \u043b\u0438\u0447\u043d\u044b\u0435 \u0434\u0430\u043d\u043d\u044b\u0435 \u043d\u0430 \u0443\u0441\u0442\u0440\u043e\u0439\u0441\u0442\u0432\u0435 \u0438\u0441\u0447\u0435\u0437\u043d\u0443\u0442."
+              title="Подтверждение очистки"
+              description="TrackDen после очистки воссоздаст базовые категории, но все личные данные на устройстве исчезнут."
               tone="danger"
               action={(
                 <div className="mt-4 flex gap-3">
@@ -392,14 +392,14 @@ export function SettingsPage() {
                     {UI_TEXT.common.cancel}
                   </button>
                   <button className="sheet-primary-button" disabled={isClearing} onClick={() => void handleClear()} type="button">
-                    {isClearing ? '\u041e\u0447\u0438\u0449\u0430\u0435\u043c\u2026' : '\u041e\u0447\u0438\u0441\u0442\u0438\u0442\u044c \u0434\u0430\u043d\u043d\u044b\u0435'}
+                    {isClearing ? 'Очищаем…' : 'Очистить данные'}
                   </button>
                 </div>
               )}
             />
           ) : (
             <button className="sheet-secondary-button w-full border-[var(--app-danger)]/25 text-[var(--app-danger)]" disabled={!localMode} onClick={() => void handleClear()} type="button">
-              \u041e\u0447\u0438\u0441\u0442\u0438\u0442\u044c \u043f\u0440\u043e\u0444\u0438\u043b\u044c
+              Очистить профиль
             </button>
           )}
         </div>

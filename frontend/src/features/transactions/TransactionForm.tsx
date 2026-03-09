@@ -101,16 +101,16 @@ export function TransactionForm({
     <Card className="overflow-hidden rounded-[28px] border border-[var(--app-border)] bg-[var(--app-surface-strong)] p-5 shadow-[0_24px_60px_rgba(15,23,42,0.12)]">
       <div className="mb-4 flex items-center justify-between">
         <div>
-          <p className="text-sm font-medium text-[var(--app-muted)]">\u0411\u044b\u0441\u0442\u0440\u043e\u0435 \u0434\u043e\u0431\u0430\u0432\u043b\u0435\u043d\u0438\u0435</p>
-          <h2 className="text-xl font-semibold">{isEditing ? '\u0420\u0435\u0434\u0430\u043a\u0442\u0438\u0440\u043e\u0432\u0430\u043d\u0438\u0435 \u043e\u043f\u0435\u0440\u0430\u0446\u0438\u0438' : '\u041d\u043e\u0432\u0430\u044f \u043e\u043f\u0435\u0440\u0430\u0446\u0438\u044f'}</h2>
+          <p className="text-sm font-medium text-[var(--app-muted)]">Быстрое добавление</p>
+          <h2 className="text-xl font-semibold">{isEditing ? 'Редактирование операции' : 'Новая операция'}</h2>
         </div>
-        {initialDraft?.receipt_id ? <span className="rounded-full bg-[var(--app-accent)]/10 px-3 py-1 text-xs font-semibold text-[var(--app-accent)]">OCR \u0447\u0435\u0440\u043d\u043e\u0432\u0438\u043a</span> : null}
+        {initialDraft?.receipt_id ? <span className="rounded-full bg-[var(--app-accent)]/10 px-3 py-1 text-xs font-semibold text-[var(--app-accent)]">OCR черновик</span> : null}
       </div>
 
       <form className="space-y-4" onSubmit={handleSubmit}>
         <div className="grid grid-cols-2 gap-3">
-          <button className={`rounded-2xl px-4 py-3 text-sm font-semibold transition ${formState.type === 'expense' ? 'bg-[var(--app-accent)] text-[var(--app-accent-text)]' : 'bg-black/5 text-[var(--app-text)] dark:bg-white/5'}`} onClick={() => updateField('type', 'expense')} type="button">\u0420\u0430\u0441\u0445\u043e\u0434</button>
-          <button className={`rounded-2xl px-4 py-3 text-sm font-semibold transition ${formState.type === 'income' ? 'bg-[var(--app-accent)] text-[var(--app-accent-text)]' : 'bg-black/5 text-[var(--app-text)] dark:bg-white/5'}`} onClick={() => updateField('type', 'income')} type="button">\u0414\u043e\u0445\u043e\u0434</button>
+          <button className={`rounded-2xl px-4 py-3 text-sm font-semibold transition ${formState.type === 'expense' ? 'bg-[var(--app-accent)] text-[var(--app-accent-text)]' : 'bg-black/5 text-[var(--app-text)] dark:bg-white/5'}`} onClick={() => updateField('type', 'expense')} type="button">Расход</button>
+          <button className={`rounded-2xl px-4 py-3 text-sm font-semibold transition ${formState.type === 'income' ? 'bg-[var(--app-accent)] text-[var(--app-accent-text)]' : 'bg-black/5 text-[var(--app-text)] dark:bg-white/5'}`} onClick={() => updateField('type', 'income')} type="button">Доход</button>
         </div>
 
         <div className="grid grid-cols-[1fr_96px] gap-3">
@@ -119,17 +119,17 @@ export function TransactionForm({
         </div>
 
         <select className="w-full rounded-2xl border border-[var(--app-border)] bg-transparent px-4 py-3 outline-none focus:border-[var(--app-accent)]" onChange={(event) => updateField('category_id', event.target.value)} value={formState.category_id}>
-          <option value="">\u0410\u0432\u0442\u043e\u043a\u0430\u0442\u0435\u0433\u043e\u0440\u0438\u044f</option>
+          <option value="">Автокатегория</option>
           {categories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}
         </select>
 
-        <input className="w-full rounded-2xl border border-[var(--app-border)] bg-transparent px-4 py-3 outline-none focus:border-[var(--app-accent)]" onChange={(event) => updateField('merchant', event.target.value)} placeholder="\u041c\u0430\u0433\u0430\u0437\u0438\u043d \u0438\u043b\u0438 \u043a\u043e\u043d\u0442\u0440\u0430\u0433\u0435\u043d\u0442" value={formState.merchant} />
+        <input className="w-full rounded-2xl border border-[var(--app-border)] bg-transparent px-4 py-3 outline-none focus:border-[var(--app-accent)]" onChange={(event) => updateField('merchant', event.target.value)} placeholder="Магазин или контрагент" value={formState.merchant} />
 
-        <textarea className="min-h-24 w-full rounded-2xl border border-[var(--app-border)] bg-transparent px-4 py-3 outline-none focus:border-[var(--app-accent)]" onChange={(event) => updateField('description', event.target.value)} placeholder="\u041e\u043f\u0438\u0441\u0430\u043d\u0438\u0435 \u0438\u043b\u0438 \u0437\u0430\u043c\u0435\u0442\u043a\u0430" value={formState.description} />
+        <textarea className="min-h-24 w-full rounded-2xl border border-[var(--app-border)] bg-transparent px-4 py-3 outline-none focus:border-[var(--app-accent)]" onChange={(event) => updateField('description', event.target.value)} placeholder="Описание или заметка" value={formState.description} />
 
         <div className="flex gap-3">
-          <Button className="flex-1 rounded-2xl" disabled={isSubmitting} large type="submit">{isSubmitting ? '\u0421\u043e\u0445\u0440\u0430\u043d\u044f\u0435\u043c...' : isEditing ? '\u041e\u0431\u043d\u043e\u0432\u0438\u0442\u044c' : '\u0414\u043e\u0431\u0430\u0432\u0438\u0442\u044c'}</Button>
-          {isEditing ? <Button className="rounded-2xl" clear large onClick={onCancelEdit} type="button">\u041e\u0442\u043c\u0435\u043d\u0430</Button> : null}
+          <Button className="flex-1 rounded-2xl" disabled={isSubmitting} large type="submit">{isSubmitting ? 'Сохраняем...' : isEditing ? 'Обновить' : 'Добавить'}</Button>
+          {isEditing ? <Button className="rounded-2xl" clear large onClick={onCancelEdit} type="button">Отмена</Button> : null}
         </div>
       </form>
     </Card>

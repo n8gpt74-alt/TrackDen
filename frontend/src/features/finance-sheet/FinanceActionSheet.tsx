@@ -188,7 +188,7 @@ export function FinanceActionSheet() {
       ...current,
       amount: receipt.extracted_total ? String(receipt.extracted_total) : current.amount,
       merchant: receipt.extracted_merchant ?? current.merchant,
-      description: current.description || '\u0421\u043e\u0437\u0434\u0430\u043d\u043e \u0432 \u043e\u0434\u0438\u043d \u0442\u0430\u043f',
+      description: current.description || 'Создано в один тап',
       source: 'ocr',
       receipt_id: receipt.id,
     }));
@@ -198,14 +198,14 @@ export function FinanceActionSheet() {
 
   const isBusy = createMutation.isPending || updateMutation.isPending || markTemplateUsedMutation.isPending;
   const canSubmit = Number(form.amount) > 0 && isTransactionMode;
-  const headerTitle = mode === 'edit' ? '\u0420\u0435\u0434\u0430\u043a\u0442\u0438\u0440\u043e\u0432\u0430\u0442\u044c \u043e\u043f\u0435\u0440\u0430\u0446\u0438\u044e' : mode === 'ocr' ? '\u0414\u043e\u0431\u0430\u0432\u0438\u0442\u044c \u0438\u0437 \u0447\u0435\u043a\u0430' : '\u0411\u044b\u0441\u0442\u0440\u043e\u0435 \u0434\u043e\u0431\u0430\u0432\u043b\u0435\u043d\u0438\u0435';
+  const headerTitle = mode === 'edit' ? 'Редактировать операцию' : mode === 'ocr' ? 'Добавить из чека' : 'Быстрое добавление';
   const headerSubtitle = mode === 'edit'
-    ? '\u041f\u0440\u043e\u0432\u0435\u0440\u044c \u0441\u0443\u043c\u043c\u0443 \u0438 \u043a\u0430\u0442\u0435\u0433\u043e\u0440\u0438\u044e, \u0430 \u043f\u043e\u0442\u043e\u043c \u0441\u043e\u0445\u0440\u0430\u043d\u0438 \u0438\u0437\u043c\u0435\u043d\u0435\u043d\u0438\u044f.'
+    ? 'Проверь сумму и категорию, а потом сохрани изменения.'
     : mode === 'ocr'
-      ? '\u0417\u0430\u0433\u0440\u0443\u0437\u0438 \u0444\u043e\u0442\u043e \u0447\u0435\u043a\u0430, \u0438 \u043e\u0441\u043d\u043e\u0432\u043d\u044b\u0435 \u043f\u043e\u043b\u044f \u0437\u0430\u043f\u043e\u043b\u043d\u044f\u0442\u0441\u044f \u0441\u0430\u043c\u0438.'
+      ? 'Загрузи фото чека, и основные поля заполнятся сами.'
       : templateQuery.data
-        ? `\u0428\u0430\u0431\u043b\u043e\u043d \u00ab${templateQuery.data.label}\u00bb \u0441\u0440\u0430\u0437\u0443 \u043f\u043e\u0434\u0441\u0442\u0430\u0432\u0438\u0442 \u043e\u0441\u043d\u043e\u0432\u043d\u044b\u0435 \u043f\u043e\u043b\u044f.`
-        : '\u0412\u0432\u0435\u0434\u0438 \u0441\u0443\u043c\u043c\u0443, \u0432\u044b\u0431\u0435\u0440\u0438 \u043a\u0430\u0442\u0435\u0433\u043e\u0440\u0438\u044e \u0438 \u0441\u043e\u0445\u0440\u0430\u043d\u0438 \u0437\u0430 \u043f\u0430\u0440\u0443 \u0441\u0435\u043a\u0443\u043d\u0434.';
+        ? `Шаблон «${templateQuery.data.label}» сразу подставит основные поля.`
+        : 'Введи сумму, выбери категорию и сохрани за пару секунд.';
 
   const topCategories = useMemo(() => categories.slice(0, 6), [categories]);
 
@@ -292,7 +292,7 @@ export function FinanceActionSheet() {
             {UI_TEXT.common.close}
           </button>
           <button className="sheet-primary-button" disabled={!canSubmit || isBusy} onClick={() => void handleSubmit()} type="button">
-            {isBusy ? '\u0421\u043e\u0445\u0440\u0430\u043d\u044f\u0435\u043c\u2026' : mode === 'edit' ? UI_TEXT.common.update : UI_TEXT.common.add}
+            {isBusy ? 'Сохраняем…' : mode === 'edit' ? UI_TEXT.common.update : UI_TEXT.common.add}
           </button>
         </div>
       )}
@@ -303,23 +303,23 @@ export function FinanceActionSheet() {
         <SurfaceCard>
           <div className="flex items-center justify-between gap-3">
             <div>
-              <p className="text-sm font-medium text-white">OCR \u0447\u0435\u043a\u0430</p>
-              <p className="mt-1 text-sm text-[var(--app-muted)]">\u041e\u0434\u043d\u043e\u0433\u043e \u0444\u043e\u0442\u043e \u0445\u0432\u0430\u0442\u0438\u0442, \u0447\u0442\u043e\u0431\u044b \u043f\u043e\u0434\u0442\u044f\u043d\u0443\u0442\u044c \u0441\u0443\u043c\u043c\u0443, \u043f\u0440\u043e\u0434\u0430\u0432\u0446\u0430 \u0438 \u0447\u0435\u0440\u043d\u043e\u0432\u0438\u043a \u043e\u043f\u0435\u0440\u0430\u0446\u0438\u0438.</p>
+              <p className="text-sm font-medium text-white">OCR чека</p>
+              <p className="mt-1 text-sm text-[var(--app-muted)]">Одного фото хватит, чтобы подтянуть сумму, продавца и черновик операции.</p>
             </div>
             <button className="pill-button pill-button--ghost" onClick={() => inputRef.current?.click()} type="button">
               <UploadIcon size={16} />
-              \u0417\u0430\u0433\u0440\u0443\u0437\u0438\u0442\u044c \u0444\u043e\u0442\u043e
+              Загрузить фото
             </button>
           </div>
           <input ref={inputRef} accept="image/*" className="hidden" onChange={handleFilePick} type="file" />
           {uploadMutation.isPending ? <Skeleton className="mt-4 h-28 w-full rounded-[22px]" /> : null}
-          {receipt?.status === 'pending' ? <div className="mt-4 rounded-[24px] border border-[var(--app-stroke)] bg-white/[0.03] p-4 text-sm text-[var(--app-muted)]">OCR \u0443\u0436\u0435 \u0437\u0430\u043f\u043e\u043b\u043d\u0438\u043b \u0447\u0435\u0440\u043d\u043e\u0432\u0438\u043a. \u041f\u0440\u043e\u0432\u0435\u0440\u044c \u0441\u0443\u043c\u043c\u0443 \u0438 \u043a\u0430\u0442\u0435\u0433\u043e\u0440\u0438\u044e \u043f\u0435\u0440\u0435\u0434 \u0441\u043e\u0445\u0440\u0430\u043d\u0435\u043d\u0438\u0435\u043c.</div> : null}
+          {receipt?.status === 'pending' ? <div className="mt-4 rounded-[24px] border border-[var(--app-stroke)] bg-white/[0.03] p-4 text-sm text-[var(--app-muted)]">OCR уже заполнил черновик. Проверь сумму и категорию перед сохранением.</div> : null}
           {receipt?.status === 'processed' ? (
             <div className="mt-4 rounded-[24px] border border-emerald-400/20 bg-emerald-400/5 p-4">
               <div className="flex items-center justify-between gap-3">
                 <div>
                   <p className="text-sm text-[var(--app-muted)]">{UI_TEXT.common.merchant}</p>
-                  <p className="mt-1 text-lg font-semibold text-white">{receipt.extracted_merchant || '\u041f\u0440\u043e\u0434\u0430\u0432\u0435\u0446 \u043d\u0435 \u043e\u043f\u0440\u0435\u0434\u0435\u043b\u0451\u043d'}</p>
+                  <p className="mt-1 text-lg font-semibold text-white">{receipt.extracted_merchant || 'Продавец не определён'}</p>
                 </div>
                 <div className="text-right">
                   <p className="text-sm text-[var(--app-muted)]">{UI_TEXT.common.amount}</p>
@@ -328,7 +328,7 @@ export function FinanceActionSheet() {
               </div>
             </div>
           ) : null}
-          {receipt?.status === 'failed' ? <div className="mt-4 rounded-[24px] border border-[var(--app-danger)]/20 bg-[var(--app-danger)]/10 p-4 text-sm text-[var(--app-danger)]">{receipt.error || '\u041d\u0435 \u0443\u0434\u0430\u043b\u043e\u0441\u044c \u0440\u0430\u0441\u043f\u043e\u0437\u043d\u0430\u0442\u044c \u0447\u0435\u043a.'}</div> : null}
+          {receipt?.status === 'failed' ? <div className="mt-4 rounded-[24px] border border-[var(--app-danger)]/20 bg-[var(--app-danger)]/10 p-4 text-sm text-[var(--app-danger)]">{receipt.error || 'Не удалось распознать чек.'}</div> : null}
         </SurfaceCard>
       ) : null}
 
@@ -353,29 +353,29 @@ export function FinanceActionSheet() {
             <SurfaceCard>
               <p className="text-sm text-[var(--app-muted)]">{UI_TEXT.common.details}</p>
               <p className="mt-2 text-base font-semibold text-white">{templateQuery.data.label}</p>
-              <p className="mt-1 text-sm text-[var(--app-muted)]">\u041c\u043e\u0436\u043d\u043e \u0434\u043e\u0431\u0430\u0432\u0438\u0442\u044c \u043f\u0440\u043e\u0434\u0430\u0432\u0446\u0430, \u0437\u0430\u043c\u0435\u0442\u043a\u0443, \u0440\u0443\u0447\u043d\u043e \u0432\u044b\u0431\u0440\u0430\u0442\u044c \u043a\u0430\u0442\u0435\u0433\u043e\u0440\u0438\u044e \u0438\u043b\u0438 \u043f\u0440\u0438\u043a\u0440\u0435\u043f\u0438\u0442\u044c \u0447\u0435\u0440\u043d\u043e\u0432\u0438\u043a \u0447\u0435\u043a\u0430.</p>
+              <p className="mt-1 text-sm text-[var(--app-muted)]">Можно добавить продавца, заметку, ручно выбрать категорию или прикрепить черновик чека.</p>
             </SurfaceCard>
           ) : null}
 
           <div className="flex flex-wrap gap-2.5">{topCategories.map((category) => <button key={category.id} className={clsx('pill-button', form.category_id === category.id ? 'pill-button--primary' : 'pill-button--ghost')} onClick={() => handleChange('category_id', form.category_id === category.id ? '' : category.id)} type="button">{category.name}</button>)}</div>
 
-          <button className="pill-button pill-button--ghost w-fit" onClick={() => setDetailsOpen((current) => !current)} type="button"><SparklesIcon size={16} />{detailsOpen ? '\u0421\u043a\u0440\u044b\u0442\u044c \u0434\u0435\u0442\u0430\u043b\u0438' : '\u041f\u043e\u043a\u0430\u0437\u0430\u0442\u044c \u0434\u0435\u0442\u0430\u043b\u0438'}</button>
+          <button className="pill-button pill-button--ghost w-fit" onClick={() => setDetailsOpen((current) => !current)} type="button"><SparklesIcon size={16} />{detailsOpen ? 'Скрыть детали' : 'Показать детали'}</button>
 
           {detailsOpen ? (
             <SurfaceCard>
               <div className="space-y-3">
-                <input className="sheet-input" onChange={(event) => handleChange('merchant', event.target.value)} placeholder="\u041f\u0440\u043e\u0434\u0430\u0432\u0435\u0446 \u0438\u043b\u0438 \u043c\u0430\u0433\u0430\u0437\u0438\u043d" value={form.merchant} />
-                <textarea className="sheet-input min-h-24 resize-none" onChange={(event) => handleChange('description', event.target.value)} placeholder="\u041a\u043e\u0440\u043e\u0442\u043a\u0430\u044f \u0437\u0430\u043c\u0435\u0442\u043a\u0430 \u043a \u043e\u043f\u0435\u0440\u0430\u0446\u0438\u0438" value={form.description} />
+                <input className="sheet-input" onChange={(event) => handleChange('merchant', event.target.value)} placeholder="Продавец или магазин" value={form.merchant} />
+                <textarea className="sheet-input min-h-24 resize-none" onChange={(event) => handleChange('description', event.target.value)} placeholder="Короткая заметка к операции" value={form.description} />
                 <select className="sheet-input" onChange={(event) => handleChange('category_id', event.target.value)} value={form.category_id}>
                   <option value="">{UI_TEXT.common.uncategorized}</option>
                   {categories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}
                 </select>
-                {form.receipt_id ? <div className="flex items-center gap-2 rounded-[18px] border border-[var(--app-stroke)] bg-white/[0.03] px-4 py-3 text-sm text-[var(--app-muted)]"><ReceiptIcon size={16} />{`OCR \u0447\u0435\u043a #${form.receipt_id.slice(0, 8)}`}</div> : null}
+                {form.receipt_id ? <div className="flex items-center gap-2 rounded-[18px] border border-[var(--app-stroke)] bg-white/[0.03] px-4 py-3 text-sm text-[var(--app-muted)]"><ReceiptIcon size={16} />{`OCR чек #${form.receipt_id.slice(0, 8)}`}</div> : null}
               </div>
             </SurfaceCard>
           ) : null}
 
-          {!detailsOpen && mode !== 'ocr' && !receipt ? <EmptyStateCard title="\u0427\u0435\u043a \u043f\u043e\u044f\u0432\u0438\u0442\u0441\u044f \u0437\u0434\u0435\u0441\u044c" description="\u0417\u0430\u0433\u0440\u0443\u0437\u0438 \u0438\u043b\u0438 \u0441\u043d\u0438\u043c\u0438 \u0447\u0435\u043a, \u0438 \u0432 \u044d\u0442\u043e\u0439 \u0448\u0442\u043e\u0440\u043a\u0435 \u043f\u043e\u044f\u0432\u0438\u0442\u0441\u044f OCR-\u043f\u0440\u0435\u0432\u044c\u044e." /> : null}
+          {!detailsOpen && mode !== 'ocr' && !receipt ? <EmptyStateCard title="Чек появится здесь" description="Загрузи или сними чек, и в этой шторке появится OCR-превью." /> : null}
         </>
       )}
     </BottomSheetScaffold>
