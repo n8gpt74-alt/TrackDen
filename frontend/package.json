@@ -5,9 +5,10 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "build": "tsc -b && vite build && npm run check:dist-text",
     "preview": "vite preview",
-    "lint": "tsc --noEmit"
+    "lint": "tsc --noEmit",
+    "check:dist-text": "node scripts/check-dist-text.mjs"
   },
   "dependencies": {
     "@tma.js/sdk": "^3.1.7",

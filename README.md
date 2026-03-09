@@ -118,4 +118,10 @@ In Telegram, the frontend sends real init data and the backend validates it agai
 
 - A fully working public deployment still needs a public PostgreSQL instance
 - Redis is optional for Vercel now, but still recommended if you later move OCR processing back into a dedicated worker
+## Build guard: защита от «иероглифов»
 
+Иногда при неверном экранировании русские строки попадают в бандл как **двойные unicode-escape** (например, `\\u041f...` или `\\U0000041F...`). Тогда UI может показать буквальные `\u041f...` вместо нормальных букв.
+
+Во `frontend` есть guard-проверка, которая после `npm run build` сканирует `dist/assets/*.js` и валит сборку, если в ней обнаружены такие последовательности.
+
+Локальная проверка: `cd frontend && npm run build`
