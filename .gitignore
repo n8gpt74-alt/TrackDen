@@ -31,3 +31,17 @@ frontend/vite.config.js
 frontend/vite.config.d.ts
 frontend/tailwind.config.js
 frontend/tailwind.config.d.ts
+.agent/
+.agents/
+.claude/
+.codebuddy/
+.continue/
+.factory/
+.kiro/
+.qoder/
+.qwen/
+.roo/
+.trae/
+.windsurf/
+skills/
+skills-lock.json

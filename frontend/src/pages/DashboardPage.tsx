@@ -49,13 +49,13 @@ function buildHeroBars(values: number[]) {
 function getBudgetTone(status: BudgetStatus) {
   switch (status) {
     case 'exceeded':
-      return { badge: 'danger', fill: '#ff7d7d', label: 'Перерасход' } as const;
+      return { badge: 'danger', fill: '#ff7d7d', label: '??????????' } as const;
     case 'warning':
-      return { badge: 'warning', fill: '#f59e0b', label: 'У лимита' } as const;
+      return { badge: 'warning', fill: '#f59e0b', label: '? ??????' } as const;
     case 'normal':
-      return { badge: 'success', fill: '#2fd39a', label: 'В норме' } as const;
+      return { badge: 'success', fill: '#2fd39a', label: '? ?????' } as const;
     default:
-      return { badge: 'neutral', fill: '#6f6bff', label: 'Не задан' } as const;
+      return { badge: 'neutral', fill: '#6f6bff', label: '?? ?????' } as const;
   }
 }
 
@@ -77,25 +77,37 @@ function resolveBudgetState(overview: BudgetOverview | undefined | null): Budget
 
 function formatBudgetCopy(overview: BudgetOverview) {
   if (!overview.overall.enabled || overview.overall.remaining == null) {
-    return `${overview.categories.length} категорий под контролем`;
+    return `${overview.categories.length} ????????? ??? ?????????`;
   }
 
   if (overview.overall.remaining >= 0) {
-    return `Осталось ${formatMoney(overview.overall.remaining)}`;
+    return `???????? ${formatMoney(overview.overall.remaining)}`;
   }
 
-  return `Перерасход на ${formatMoney(Math.abs(overview.overall.remaining))}`;
+  return `?????????? ?? ${formatMoney(Math.abs(overview.overall.remaining))}`;
 }
 
 function getForecastMeta(status: 'safe' | 'attention' | 'risk') {
   switch (status) {
     case 'risk':
-      return { badge: 'danger', label: 'Риск' } as const;
+      return { badge: 'danger', label: '????' } as const;
     case 'attention':
-      return { badge: 'warning', label: 'Внимание' } as const;
+      return { badge: 'warning', label: '????????' } as const;
     default:
-      return { badge: 'success', label: 'Спокойно' } as const;
+      return { badge: 'success', label: '????????' } as const;
   }
+}
+
+function getExpenseTrendTone(trend: number) {
+  if (trend > 8) {
+    return 'danger' as const;
+  }
+
+  if (trend < -8) {
+    return 'success' as const;
+  }
+
+  return 'neutral' as const;
 }
 
 export function DashboardPage() {
@@ -145,8 +157,9 @@ export function DashboardPage() {
     ? budgetOverview.overall
     : budgetOverview?.highlighted[0] ?? null;
   const forecastMeta = getForecastMeta(forecast?.status ?? 'safe');
+  const trendTone = getExpenseTrendTone(derived.trend);
 
-  const firstName = user?.first_name?.trim() || 'друг';
+  const firstName = user?.first_name?.trim() || '????';
   const balance = overview?.balance ?? 0;
   const monthCaption = formatMonthCaption(month);
   const quickTemplates = automation ? [...automation.quick_templates, ...automation.suggested_templates].slice(0, 4) : [];
@@ -160,18 +173,18 @@ export function DashboardPage() {
   );
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-7">
       <ScreenHeader
         eyebrow="TrackDen"
-        title={`Привет, ${firstName}`}
-        description={`Вот твой ритм за ${monthCaption}. Всё важное — под рукой.`}
+        title={`??????, ${firstName}`}
+        description={`??? ???? ???? ?? ${monthCaption}. ??? ?????? ??? ?? ?????.`}
         leading={profileBadge}
         actions={(
           <>
             <IconCircleButton onClick={() => openSheet('ocr')}>
               <ReceiptIcon size={18} />
             </IconCircleButton>
-            <IconCircleButton onClick={() => openSheet('add')}>
+            <IconCircleButton onClick={() => openSheet('automation')}>
               <SparklesIcon size={18} />
             </IconCircleButton>
             <IconCircleButton onClick={() => navigate('/settings')}>
@@ -182,13 +195,29 @@ export function DashboardPage() {
       />
 
       {overviewQuery.isLoading ? (
-        <Skeleton className="h-[288px] w-full rounded-[28px]" />
+        <Skeleton className="h-[320px] w-full rounded-[28px]" />
       ) : (
         <HeroPanel
-          eyebrow="Главная"
+          eyebrow="??????? ?????"
           title={formatMoney(balance)}
-          description={`Доходы ${formatMoney(overview?.total_income ?? 0)} против расходов ${formatMoney(overview?.total_expense ?? 0)} за этот месяц.`}
+          description={`?????? ${formatMoney(overview?.total_income ?? 0)} ? ??????? ${formatMoney(overview?.total_expense ?? 0)} ?? ???? ?????.`}
+          actions={<StatusBadge tone={trendTone}>{formatSignedPercent(derived.trend)}</StatusBadge>}
         >
+          <div className="home-hero-summary">
+            <div className="home-hero-summary__item">
+              <span className="home-hero-summary__label">??????</span>
+              <strong className="home-hero-summary__value">{formatCompactMoney(overview?.total_income ?? 0)}</strong>
+            </div>
+            <div className="home-hero-summary__item">
+              <span className="home-hero-summary__label">???????</span>
+              <strong className="home-hero-summary__value">{formatCompactMoney(overview?.total_expense ?? 0)}</strong>
+            </div>
+            <div className="home-hero-summary__item">
+              <span className="home-hero-summary__label">?????</span>
+              <strong className="home-hero-summary__value">{monthCaption}</strong>
+            </div>
+          </div>
+
           <div className="bar-strip mt-6">
             {derived.bars.map((bar, index) => (
               <span
@@ -199,37 +228,186 @@ export function DashboardPage() {
             ))}
           </div>
 
-          <div className="hero-panel__metrics">
+          <div className="hero-grid home-hero-grid">
             <div className="hero-panel__metric">
-              <p className="hero-panel__metric-label">Запас месяца</p>
-              <p className="hero-panel__metric-value">{formatCompactMoney(overview?.total_expense ?? 0)}</p>
-              <p className="hero-panel__metric-hint">Свободный запас до конца цикла</p>
+              <p className="hero-panel__metric-label">???????? ? ????</p>
+              <p className="hero-panel__metric-value">{formatCompactMoney(derived.safePace)}</p>
+              <p className="hero-panel__metric-hint">????? ????????? ??????? ?????? ?? ????? ??????.</p>
             </div>
             <div className="hero-panel__metric">
-              <p className="hero-panel__metric-label">Темп месяца</p>
-              <p className="hero-panel__metric-value">{formatCompactMoney(derived.safePace)}</p>
-              <p className="hero-panel__metric-hint">Текущий темп по всем расходам</p>
+              <p className="hero-panel__metric-label">??????? ???</p>
+              <p className="hero-panel__metric-value">{formatCompactMoney(derived.avgTicket)}</p>
+              <p className="hero-panel__metric-hint">??????? ????? ????????? ???????? ?? ???? ?????.</p>
             </div>
           </div>
 
-          <div className="mt-5 flex flex-wrap gap-3">
+          <div className="home-hero-actions">
             <button className="sheet-primary-button" onClick={() => openSheet('add')} type="button">
-              Быстро добавить
+              ???????? ??????
             </button>
             <button className="sheet-secondary-button" onClick={() => openSheet('ocr')} type="button">
-              Сканировать чек
+              ??????????? ???
+            </button>
+            <button className="sheet-secondary-button" onClick={() => navigate('/transactions')} type="button">
+              ??????? ???????
             </button>
           </div>
         </HeroPanel>
       )}
 
       {localMode ? (
+        <section className="space-y-4">
+          <SectionHeader
+            eyebrow="???????? ??????"
+            title="?????? ? ????????????? ????????"
+            description="??? ??????? ????? ????????: ??? ?????? ??? ????? ? ????? ???????????? ????? ??? ???????."
+          />
+
+          <div className="home-focus-grid">
+            {budgetOverviewQuery.isLoading ? (
+              <Skeleton className="h-[248px] w-full rounded-[28px]" />
+            ) : (
+              <SurfaceCard className="home-focus-card" tone="soft">
+                <div className="home-focus-card__top">
+                  <div>
+                    <p className="soft-kicker">{UI_TEXT.common.budgets}</p>
+                    <h3 className="home-focus-card__title">?????? ??????</h3>
+                  </div>
+                  <StatusBadge tone={budgetTone.badge}>{budgetTone.label}</StatusBadge>
+                </div>
+
+                {!budgetOverview || budgetOverview.configured_count === 0 ? (
+                  <EmptyStateCard
+                    className="mt-4"
+                    title="?????? ??? ?? ??????"
+                    description="?????? ????? ????? ??? ???? ????????? ? ? TrackDen ????? ??????? ????????." 
+                    action={(
+                      <button className="sheet-primary-button mt-4 w-full" onClick={() => openSheet('budget')} type="button">
+                        ????????? ??????
+                      </button>
+                    )}
+                  />
+                ) : (
+                  <>
+                    <div className="home-focus-card__value-wrap">
+                      <p className="home-focus-card__label">{budgetOverview.overall.enabled ? '????????? ?? ?????? ??????' : '???????? ????????? ??? ?????????'}</p>
+                      <p className="home-focus-card__value">
+                        {budgetOverview.overall.enabled ? formatMoney(budgetOverview.overall.spent) : String(budgetOverview.configured_count)}
+                      </p>
+                      <p className="home-focus-card__hint">{formatBudgetCopy(budgetOverview)}</p>
+                    </div>
+
+                    <div className="home-progress">
+                      <div
+                        className="home-progress__bar"
+                        style={{
+                          width: `${Math.max(8, Math.min(100, Math.round((budgetProgress?.ratio ?? 0) * 100)))}%`,
+                          background: budgetTone.fill,
+                        }}
+                      />
+                    </div>
+
+                    <div className="home-mini-stack">
+                      {budgetOverview.highlighted.length > 0 ? budgetOverview.highlighted.slice(0, 2).map((item) => (
+                        <div className="home-mini-row" key={item.category_id}>
+                          <div>
+                            <p className="home-mini-row__title">{item.category_name}</p>
+                            <p className="home-mini-row__hint">????? {formatCompactMoney(item.limit ?? 0)}</p>
+                          </div>
+                          <div className="home-mini-row__value">{Math.round(item.ratio * 100)}%</div>
+                        </div>
+                      )) : (
+                        <div className="home-mini-row home-mini-row--ghost">
+                          <div>
+                            <p className="home-mini-row__title">????? ?? ??????????</p>
+                            <p className="home-mini-row__hint">TrackDen ??????? ???? ?????, ??? ?????? ???????? ??????.</p>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    <button className="pill-button pill-button--ghost mt-4" onClick={() => openSheet('budget')} type="button">
+                      ????????? ????????
+                    </button>
+                  </>
+                )}
+              </SurfaceCard>
+            )}
+
+            {subscriptionManagerQuery.isLoading ? (
+              <Skeleton className="h-[248px] w-full rounded-[28px]" />
+            ) : (
+              <SurfaceCard className="home-focus-card" tone="soft">
+                <div className="home-focus-card__top">
+                  <div>
+                    <p className="soft-kicker">{UI_TEXT.common.subscriptions}</p>
+                    <h3 className="home-focus-card__title">????????????? ????????</h3>
+                  </div>
+                  <StatusBadge tone="accent">{subscriptionManager?.active_count ?? 0} ????????</StatusBadge>
+                </div>
+
+                {!subscriptionManager || (subscriptionManager.active_count === 0 && subscriptionManager.candidate_count === 0) ? (
+                  <EmptyStateCard
+                    className="mt-4"
+                    title="???????? ???? ???"
+                    description="????? ? ??????? ???????? ??????? ??????????? ????????, TrackDen ????????? ???????? ?? ??? ????????."
+                    action={(
+                      <button className="sheet-primary-button mt-4 w-full" onClick={() => openSheet('subscriptions')} type="button">
+                        ??????? ????????
+                      </button>
+                    )}
+                  />
+                ) : (
+                  <>
+                    <div className="home-focus-card__value-wrap">
+                      <p className="home-focus-card__label">???????? ? ???? ??????</p>
+                      <p className="home-focus-card__value">{formatMoney(subscriptionManager.monthly_total)}</p>
+                      <p className="home-focus-card__hint">{subscriptionManager.candidate_count} ?????????? ?? ??????? ????????.</p>
+                    </div>
+
+                    <div className="home-mini-stack">
+                      {subscriptionManager.upcoming.length > 0 ? subscriptionManager.upcoming.slice(0, 2).map((subscription) => (
+                        <div className="home-mini-row" key={subscription.id}>
+                          <div>
+                            <p className="home-mini-row__title">{subscription.merchant_label}</p>
+                            <p className="home-mini-row__hint">
+                              {subscription.next_charge_at ? `????????? ???????? ${formatShortDateLabel(subscription.next_charge_at)}` : '???? ??????????'}
+                            </p>
+                          </div>
+                          <div className="home-mini-row__value">{formatCompactMoney(subscription.expected_amount)}</div>
+                        </div>
+                      )) : (
+                        <div className="home-mini-row home-mini-row--ghost">
+                          <div>
+                            <p className="home-mini-row__title">????????? ???????? ???? ???</p>
+                            <p className="home-mini-row__hint">??? ?????? ???????? ???????? ????????, ????? ????? ????????? ??????.</p>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    <button className="pill-button pill-button--ghost mt-4" onClick={() => openSheet('subscriptions')} type="button">
+                      ????????? ??????????
+                    </button>
+                  </>
+                )}
+              </SurfaceCard>
+            )}
+          </div>
+        </section>
+      ) : null}
+
+      {localMode ? (
         <SurfaceCard>
           <SectionHeader
-            eyebrow="Умный слой"
-            title="Прогноз и автоматизация"
-            description="TrackDen уже видит твой ритм трат, подсказывает быстрые действия и держит шаблоны под рукой."
-            action={<button className="pill-button pill-button--ghost" onClick={() => openSheet('automation')} type="button">{UI_TEXT.common.automation}</button>}
+            eyebrow="????? ????????"
+            title="??????? ? ??????? ????????"
+            description="TrackDen ??? ????? ???? ???? ????, ???????????? ????? ?????? ? ?????? ?????? ???????? ??? ?????."
+            action={(
+              <button className="pill-button pill-button--ghost" onClick={() => openSheet('automation')} type="button">
+                {UI_TEXT.common.automation}
+              </button>
+            )}
           />
 
           {forecastQuery.isLoading || weeklyReviewQuery.isLoading || automationQuery.isLoading ? (
@@ -239,50 +417,56 @@ export function DashboardPage() {
             </div>
           ) : (
             <>
-              <div className="mt-4 grid gap-3 md:grid-cols-2">
+              <div className="home-review-grid mt-4">
                 <SurfaceCard tone="soft">
                   <div className="flex items-start justify-between gap-3">
                     <div>
-                      <p className="text-sm text-[var(--app-muted)]">Прогноз до конца месяца</p>
+                      <p className="text-sm text-[var(--app-muted)]">??????? ?? ????? ??????</p>
                       <p className="mt-2 text-[28px] font-semibold tracking-[-0.04em] text-white">{formatMoney(forecast?.projected_expense ?? 0)}</p>
-                      <p className="mt-2 text-sm text-[var(--app-muted)]">{forecast?.summary ?? 'Прогноз появится, когда накопится хотя бы немного истории трат.'}</p>
+                      <p className="mt-2 text-sm text-[var(--app-muted)]">{forecast?.summary ?? '??????? ????????, ????? ????????? ???? ?? ??????? ??????? ????.'}</p>
                     </div>
                     <StatusBadge tone={forecastMeta.badge}>{forecastMeta.label}</StatusBadge>
                   </div>
-                  <div className="mt-4 flex gap-3 text-sm text-[var(--app-muted)]">
-                    <span>{`Осталось ${forecast?.remaining_days ?? 0} дн.`}</span>
-                    <span>{`Ближайшие списания ${formatCompactMoney(forecast?.fixed_upcoming ?? 0)}`}</span>
+                  <div className="mt-4 flex flex-wrap gap-3 text-sm text-[var(--app-muted)]">
+                    <span>{`???????? ${forecast?.remaining_days ?? 0} ??.`}</span>
+                    <span>{`????????? ???????? ${formatCompactMoney(forecast?.fixed_upcoming ?? 0)}`}</span>
                   </div>
                 </SurfaceCard>
 
                 <SurfaceCard tone="soft">
                   <div className="flex items-start justify-between gap-3">
                     <div>
-                      <p className="text-sm text-[var(--app-muted)]">Пульс недели</p>
+                      <p className="text-sm text-[var(--app-muted)]">????? ??????</p>
                       <p className="mt-2 text-[28px] font-semibold tracking-[-0.04em] text-white">{formatSignedPercent(weeklyReview?.delta_ratio ?? 0)}</p>
-                      <p className="mt-2 text-sm text-[var(--app-muted)]">{weeklyReview?.summary ?? 'Недельный обзор появится после первых расходных записей.'}</p>
+                      <p className="mt-2 text-sm text-[var(--app-muted)]">{weeklyReview?.summary ?? '????????? ????? ???????? ????? ?????? ????????? ???????.'}</p>
                     </div>
-                    <StatusBadge tone={(weeklyReview?.delta_ratio ?? 0) > 15 ? 'danger' : (weeklyReview?.delta_ratio ?? 0) < -10 ? 'success' : 'neutral'}>
-                      {weeklyReview?.transaction_count ?? 0} записей
-                    </StatusBadge>
+                    <StatusBadge tone={trendTone}>{weeklyReview?.transaction_count ?? 0} ???????</StatusBadge>
                   </div>
                 </SurfaceCard>
               </div>
 
-              <div className="mt-4">
+              <div className="mt-5">
                 <SectionHeader
                   eyebrow={UI_TEXT.common.templates}
-                  title="Быстрые действия"
-                  description="Сохраняй частые траты и доходы, чтобы вносить их за пару касаний."
+                  title="??????? ????????"
+                  description="?????? ????? ? ?????? ?????? ??? ????? ? ????? ???????? ?????? ?? ???? ???????."
                 />
-                <div className="mt-3 flex flex-wrap gap-2.5">
+                <div className="home-template-wrap mt-3">
                   {quickTemplates.length ? quickTemplates.map((template) => (
                     <button key={template.id} className="pill-button pill-button--ghost" onClick={() => openSheet('add', { templateId: template.id })} type="button">
                       {template.label}
                       {template.amount ? <span className="ml-2 text-[var(--app-muted)]">{formatCompactMoney(template.amount)}</span> : null}
                     </button>
                   )) : (
-                    <EmptyStateCard title="Шаблонов пока нет" description="Сделай пару похожих записей или создай шаблон вручную, и TrackDen начнёт подсказывать быстрые действия здесь." action={<button className="sheet-primary-button mt-4 w-full" onClick={() => openSheet('automation')} type="button">{'Открыть автоматизацию'}</button>} />
+                    <EmptyStateCard
+                      title="???????? ???? ???"
+                      description="?????? ???? ??????? ??????? ??? ?????? ?????? ??????? ? ? ??????? ???????? ???????? ?????."
+                      action={(
+                        <button className="sheet-primary-button mt-4 w-full" onClick={() => openSheet('automation')} type="button">
+                          ??????? ?????????????
+                        </button>
+                      )}
+                    />
                   )}
                 </div>
               </div>
@@ -291,169 +475,57 @@ export function DashboardPage() {
         </SurfaceCard>
       ) : null}
 
-      <div className="space-y-4">
-        {localMode ? (
-          budgetOverviewQuery.isLoading ? (
-            <Skeleton className="h-[214px] w-full rounded-[28px]" />
+      <section className="space-y-4">
+        <SectionHeader
+          eyebrow="???????? ???????"
+          title="????? ??????"
+          description="???????? ???? ?? ??????, ???????? ???? ? ????????? ??????? ? ??? ?????????? ???????."
+        />
+
+        <div className="stat-grid">
+          {overviewQuery.isLoading ? (
+            Array.from({ length: 4 }).map((_, index) => <Skeleton key={index} className="h-34 w-full rounded-[24px]" />)
           ) : (
-            <SurfaceCard>
-              <SectionHeader
-                eyebrow={UI_TEXT.common.budgets}
-                title="Месячные лимиты"
-                description="Сразу видно, где траты уже давят на бюджет, а где запас ещё спокоен."
-                action={<StatusBadge tone={budgetTone.badge}>{budgetTone.label}</StatusBadge>}
+            <>
+              <PremiumStatTile
+                hint="????????? ? ??????? 7 ????"
+                label="????? ??????"
+                tone={trendTone}
+                value={formatSignedPercent(derived.trend)}
               />
-
-              {!budgetOverview || budgetOverview.configured_count === 0 ? (
-                <div className="mt-4">
-                  <EmptyStateCard
-                    title="Лимиты ещё не заданы"
-                    description="Добавь общий лимит или несколько категорийных лимитов, и TrackDen покажет прогресс здесь."
-                    action={<button className="sheet-primary-button mt-4 w-full" onClick={() => openSheet('budget')} type="button">Настроить лимиты</button>}
-                  />
-                </div>
-              ) : (
-                <>
-                  <div className="mt-4 flex items-start justify-between gap-4">
-                    <div>
-                      <p className="text-sm text-[var(--app-muted)]">{budgetOverview.overall.enabled ? 'Осталось до общего лимита' : 'Общий лимит выключен'}</p>
-                      <p className="mt-2 text-[30px] font-semibold tracking-[-0.04em] text-white">
-                        {budgetOverview.overall.enabled ? formatMoney(budgetOverview.overall.spent) : budgetOverview.configured_count}
-                      </p>
-                      <p className="mt-2 text-sm text-[var(--app-muted)]">{formatBudgetCopy(budgetOverview)}</p>
-                    </div>
-                    <button className="pill-button pill-button--ghost" onClick={() => openSheet('budget')} type="button">
-                      Категории
-                    </button>
-                  </div>
-
-                  <div className="mt-4 h-3 overflow-hidden rounded-full bg-white/[0.05]">
-                    <div
-                      className="h-full rounded-full transition-all"
-                      style={{
-                        width: `${Math.max(8, Math.min(100, Math.round((budgetProgress?.ratio ?? 0) * 100)))}%`,
-                        background: budgetTone.fill,
-                      }}
-                    />
-                  </div>
-
-                  {budgetOverview.highlighted.length > 0 ? (
-                    <div className="mt-4 grid grid-cols-2 gap-3">
-                      {budgetOverview.highlighted.slice(0, 2).map((item) => (
-                        <PremiumStatTile
-                          key={item.category_id}
-                          hint={`Лимит ${formatCompactMoney(item.limit ?? 0)}`}
-                          label={item.category_name}
-                          tone={item.status === 'exceeded' ? 'danger' : item.status === 'warning' ? 'warning' : 'success'}
-                          value={`${Math.round(item.ratio * 100)}%`}
-                        />
-                      ))}
-                    </div>
-                  ) : null}
-                </>
-              )}
-            </SurfaceCard>
-          )
-        ) : null}
-
-        {localMode ? (
-          subscriptionManagerQuery.isLoading ? (
-            <Skeleton className="h-[214px] w-full rounded-[28px]" />
-          ) : (
-            <SurfaceCard>
-              <SectionHeader
-                eyebrow={UI_TEXT.common.subscriptions}
-                title="Фиксированные списания"
-                description="Следи за подписками и повторяющимися списаниями без ручного подсчёта."
-                action={<StatusBadge tone="accent">{subscriptionManager?.active_count ?? 0} активных</StatusBadge>}
+              <PremiumStatTile
+                hint={derived.latestExpense?.merchant || derived.latestExpense?.category?.name || UI_TEXT.common.noData}
+                label="????????? ?????"
+                tone="danger"
+                value={`-${formatCompactMoney(derived.latestExpense?.amount ?? 0)}`}
               />
-
-              {!subscriptionManager || (subscriptionManager.active_count === 0 && subscriptionManager.candidate_count === 0) ? (
-                <div className="mt-4">
-                  <EmptyStateCard
-                    title="Подписок пока нет"
-                    description="Когда в истории появятся похожие ежемесячные списания, TrackDen подскажет превратить их в подписки."
-                    action={<button className="sheet-primary-button mt-4 w-full" onClick={() => openSheet('subscriptions')} type="button">Открыть подписки</button>}
-                  />
-                </div>
-              ) : (
-                <>
-                  <div className="mt-4 flex items-start justify-between gap-4">
-                    <div>
-                      <p className="text-sm text-[var(--app-muted)]">В этом месяце по подпискам</p>
-                      <p className="mt-2 text-[30px] font-semibold tracking-[-0.04em] text-white">{formatMoney(subscriptionManager.monthly_total)}</p>
-                      <p className="mt-2 text-sm text-[var(--app-muted)]">{subscriptionManager.candidate_count} кандидатов на будущие подписки.</p>
-                    </div>
-                    <button className="pill-button pill-button--ghost" onClick={() => openSheet('subscriptions')} type="button">
-                      Кандидаты
-                    </button>
-                  </div>
-
-                  <div className="mt-4 space-y-3">
-                    {subscriptionManager.upcoming.length > 0 ? (
-                      subscriptionManager.upcoming.slice(0, 2).map((subscription) => (
-                        <ListCard key={subscription.id}>
-                          <ListRow
-                            leading={<div className="transaction-avatar" style={{ background: 'rgba(111,107,255,0.18)', color: '#cbc9ff' }}>{subscription.merchant_label.slice(0, 1).toUpperCase()}</div>}
-                            subtitle={subscription.next_charge_at ? `Следующее списание ${formatShortDateLabel(subscription.next_charge_at)}` : 'Дата уточняется'}
-                            title={subscription.merchant_label}
-                            trailing={<div className="text-right text-sm font-semibold text-white">{formatMoney(subscription.expected_amount, subscription.currency)}</div>}
-                          />
-                        </ListCard>
-                      ))
-                    ) : (
-                      <EmptyStateCard
-                        title="В этом месяце нет запланированных списаний"
-                        description="Как только появятся активные подписки, здесь будут видны ближайшие обязательные списания."
-                      />
-                    )}
-                  </div>
-                </>
-              )}
-            </SurfaceCard>
-          )
-        ) : null}
-      </div>
-
-      <div className="stat-grid">
-        {overviewQuery.isLoading ? (
-          Array.from({ length: 4 }).map((_, index) => <Skeleton key={index} className="h-34 w-full rounded-[24px]" />)
-        ) : (
-          <>
-            <PremiumStatTile
-              hint="Изменение к прошлым 7 дням"
-              label="Пульс недели"
-              tone={derived.trend >= 0 ? 'success' : 'danger'}
-              value={formatSignedPercent(derived.trend)}
-            />
-            <PremiumStatTile
-              hint={derived.latestExpense?.merchant || derived.latestExpense?.category?.name || UI_TEXT.common.noData}
-              label="Последняя покупка"
-              tone="danger"
-              value={`-${formatCompactMoney(derived.latestExpense?.amount ?? 0)}`}
-            />
-            <PremiumStatTile
-              hint="По текущему ритму трат"
-              label="Дневной ритм"
-              tone="neutral"
-              value={formatCompactMoney(derived.avgTicket)}
-            />
-            <PremiumStatTile
-              hint="Средний чек за месяц"
-              label="Средняя трата"
-              tone="accent"
-              value={formatCompactMoney(derived.safePace)}
-            />
-          </>
-        )}
-      </div>
+              <PremiumStatTile
+                hint="??????? ????? ????????? ????????"
+                label="??????? ???"
+                tone="accent"
+                value={formatCompactMoney(derived.avgTicket)}
+              />
+              <PremiumStatTile
+                hint="????? ?? ?????? ???? ????? ??????"
+                label="???????? ? ????"
+                tone="neutral"
+                value={formatCompactMoney(derived.safePace)}
+              />
+            </>
+          )}
+        </div>
+      </section>
 
       <SurfaceCard>
         <SectionHeader
           eyebrow={UI_TEXT.common.history}
-          title="Последние операции"
-          description="Показываем самые свежие записи, чтобы ты держал день под контролем."
-          action={<button className="pill-button pill-button--primary" onClick={() => openSheet('add')} type="button">{'Добавить трату'}</button>}
+          title="????????? ????????"
+          description="?????? ?????? ?? ????, ????? ???? ? ????? ???? ??? ?????????."
+          action={(
+            <button className="pill-button pill-button--ghost" onClick={() => navigate('/transactions')} type="button">
+              ??? ???????
+            </button>
+          )}
         />
 
         {transactionsQuery.isLoading ? (
@@ -464,11 +536,11 @@ export function DashboardPage() {
           </div>
         ) : transactions.length === 0 ? (
           <div className="mt-4">
-            <EmptyStateCard title="Операций пока нет" description="Добавь первую операцию, и TrackDen начнёт строить живую финансовую картину." />
+            <EmptyStateCard title="???????? ???? ???" description="?????? ?????? ??????, ? TrackDen ?????? ??????? ????? ??????? ??????." />
           </div>
         ) : (
           <div className="mt-4 space-y-3">
-            {transactions.slice(0, 3).map((transaction) => {
+            {transactions.slice(0, 4).map((transaction) => {
               const isExpense = transaction.type === 'expense';
               return (
                 <ListCard key={transaction.id}>
