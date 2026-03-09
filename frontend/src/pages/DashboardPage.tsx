@@ -48,13 +48,13 @@ function buildHeroBars(values: number[]) {
 function getBudgetTone(status: BudgetStatus) {
   switch (status) {
     case 'exceeded':
-      return { badge: 'danger', fill: '#ff7d7d', label: '?????????' } as const;
+      return { badge: 'danger', fill: '#ff7d7d', label: 'Over limit' } as const;
     case 'warning':
-      return { badge: 'warning', fill: '#f59e0b', label: '?? ????????' } as const;
+      return { badge: 'warning', fill: '#f59e0b', label: 'Near limit' } as const;
     case 'normal':
-      return { badge: 'success', fill: '#2fd39a', label: '? ?????' } as const;
+      return { badge: 'success', fill: '#2fd39a', label: 'On track' } as const;
     default:
-      return { badge: 'neutral', fill: '#6f6bff', label: '?? ??????' } as const;
+      return { badge: 'neutral', fill: '#6f6bff', label: 'Not set' } as const;
   }
 }
 
@@ -76,24 +76,24 @@ function resolveBudgetState(overview: BudgetOverview | undefined | null): Budget
 
 function formatBudgetCopy(overview: BudgetOverview) {
   if (!overview.overall.enabled || overview.overall.remaining == null) {
-    return `${overview.categories.length} ????????? ??? ?????????`;
+    return `${overview.categories.length} categories in focus`;
   }
 
   if (overview.overall.remaining >= 0) {
-    return `???????? ${formatMoney(overview.overall.remaining)}`;
+    return `Remaining ${formatMoney(overview.overall.remaining)}`;
   }
 
-  return `?????????? ${formatMoney(Math.abs(overview.overall.remaining))}`;
+  return `Over by ${formatMoney(Math.abs(overview.overall.remaining))}`;
 }
 
 function getForecastMeta(status: 'safe' | 'attention' | 'risk') {
   switch (status) {
     case 'risk':
-      return { badge: 'danger', label: '????' } as const;
+      return { badge: 'danger', label: 'Risk' } as const;
     case 'attention':
-      return { badge: 'warning', label: '????????' } as const;
+      return { badge: 'warning', label: 'Watch' } as const;
     default:
-      return { badge: 'success', label: '????????' } as const;
+      return { badge: 'success', label: 'Calm' } as const;
   }
 }
 
@@ -145,7 +145,7 @@ export function DashboardPage() {
     : budgetOverview?.highlighted[0] ?? null;
   const forecastMeta = getForecastMeta(forecast?.status ?? 'safe');
 
-  const firstName = user?.first_name?.trim() || '????';
+  const firstName = user?.first_name?.trim() || 'friend';
   const balance = overview?.balance ?? 0;
   const monthCaption = formatMonthCaption(month);
   const quickTemplates = automation ? [...automation.quick_templates, ...automation.suggested_templates].slice(0, 4) : [];
@@ -162,8 +162,8 @@ export function DashboardPage() {
     <div className="space-y-6">
       <ScreenHeader
         eyebrow="TrackDen"
-        title={`??????, ${firstName}`}
-        description={`????????? ????? ?? ${monthCaption}. ??? ?????? ? ?? ????? ??????.`}
+        title={`Hello, ${firstName}`}
+        description={`Here is your pulse for ${monthCaption}. Everything important stays in one place.`}
         leading={profileBadge}
         actions={(
           <>
@@ -184,9 +184,9 @@ export function DashboardPage() {
         <Skeleton className="h-[288px] w-full rounded-[28px]" />
       ) : (
         <HeroPanel
-          eyebrow="??????? ?????"
+          eyebrow="Home"
           title={formatMoney(balance)}
-          description={`????? ${formatMoney(overview?.total_income ?? 0)} ??????? ? ${formatMoney(overview?.total_expense ?? 0)} ???????? ? ???? ??????.`}
+          description={`Income ${formatMoney(overview?.total_income ?? 0)} vs expenses ${formatMoney(overview?.total_expense ?? 0)} this month.`}
         >
           <div className="bar-strip mt-6">
             {derived.bars.map((bar, index) => (
@@ -200,23 +200,23 @@ export function DashboardPage() {
 
           <div className="hero-panel__metrics">
             <div className="hero-panel__metric">
-              <p className="hero-panel__metric-label">??????? ??????</p>
+              <p className="hero-panel__metric-label">Month runway</p>
               <p className="hero-panel__metric-value">{formatCompactMoney(overview?.total_expense ?? 0)}</p>
-              <p className="hero-panel__metric-hint">??????? ???????? ?? ????? ????</p>
+              <p className="hero-panel__metric-hint">Free margin left for the current cycle</p>
             </div>
             <div className="hero-panel__metric">
-              <p className="hero-panel__metric-label">????????? ????</p>
+              <p className="hero-panel__metric-label">Monthly spend</p>
               <p className="hero-panel__metric-value">{formatCompactMoney(derived.safePace)}</p>
-              <p className="hero-panel__metric-hint">?????????? ??????? ???? ?? ????? ??????</p>
+              <p className="hero-panel__metric-hint">Current spending pace across all expenses</p>
             </div>
           </div>
 
           <div className="mt-5 flex flex-wrap gap-3">
             <button className="sheet-primary-button" onClick={() => openSheet('add')} type="button">
-              ???????? ????????
+              Quick add
             </button>
             <button className="sheet-secondary-button" onClick={() => openSheet('ocr')} type="button">
-              ??????????? ???
+              Scan receipt
             </button>
           </div>
         </HeroPanel>
@@ -225,10 +225,10 @@ export function DashboardPage() {
       {localMode ? (
         <SurfaceCard>
           <SectionHeader
-            eyebrow="????? ????"
-            title="??????? ? ??????? ????????"
-            description="TrackDen ??? ??????? ???? ??????, ???????? ????????? ????? ? ?????? ??? ????? ?????? ????????."
-            action={<button className="pill-button pill-button--ghost" onClick={() => openSheet('automation')} type="button">?????????</button>}
+            eyebrow="Smart layer"
+            title="Forecast and automation"
+            description="TrackDen already sees your spending rhythm, surfaces quick actions, and keeps useful templates close."
+            action={<button className="pill-button pill-button--ghost" onClick={() => openSheet('automation')} type="button">Automation</button>}
           />
 
           {forecastQuery.isLoading || weeklyReviewQuery.isLoading || automationQuery.isLoading ? (
@@ -242,27 +242,27 @@ export function DashboardPage() {
                 <SurfaceCard tone="soft">
                   <div className="flex items-start justify-between gap-3">
                     <div>
-                      <p className="text-sm text-[var(--app-muted)]">??????? ????? ??????</p>
+                      <p className="text-sm text-[var(--app-muted)]">End-of-month forecast</p>
                       <p className="mt-2 text-[28px] font-semibold tracking-[-0.04em] text-white">{formatMoney(forecast?.projected_expense ?? 0)}</p>
-                      <p className="mt-2 text-sm text-[var(--app-muted)]">{forecast?.summary ?? '??????? ????????, ????? ????????? ????? ??????.'}</p>
+                      <p className="mt-2 text-sm text-[var(--app-muted)]">{forecast?.summary ?? 'Forecast appears once a bit of spending history is available.'}</p>
                     </div>
                     <StatusBadge tone={forecastMeta.badge}>{forecastMeta.label}</StatusBadge>
                   </div>
                   <div className="mt-4 flex gap-3 text-sm text-[var(--app-muted)]">
                     <span>??? {forecast?.remaining_days ?? 0} ??.</span>
-                    <span>???????? ??????? {formatCompactMoney(forecast?.fixed_upcoming ?? 0)}</span>
+                    <span>Fixed upcoming {formatCompactMoney(forecast?.fixed_upcoming ?? 0)}</span>
                   </div>
                 </SurfaceCard>
 
                 <SurfaceCard tone="soft">
                   <div className="flex items-start justify-between gap-3">
                     <div>
-                      <p className="text-sm text-[var(--app-muted)]">????????? ?????</p>
+                      <p className="text-sm text-[var(--app-muted)]">Weekly pulse</p>
                       <p className="mt-2 text-[28px] font-semibold tracking-[-0.04em] text-white">{formatSignedPercent(weeklyReview?.delta_ratio ?? 0)}</p>
-                      <p className="mt-2 text-sm text-[var(--app-muted)]">{weeklyReview?.summary ?? '????? ??????? ?????? ? ??????????, ????? ???????? ???????? ?????.'}</p>
+                      <p className="mt-2 text-sm text-[var(--app-muted)]">{weeklyReview?.summary ?? 'Weekly review will appear after a few expense records.'}</p>
                     </div>
                     <StatusBadge tone={(weeklyReview?.delta_ratio ?? 0) > 15 ? 'danger' : (weeklyReview?.delta_ratio ?? 0) < -10 ? 'success' : 'neutral'}>
-                      {weeklyReview?.transaction_count ?? 0} ????????
+                      {weeklyReview?.transaction_count ?? 0} entries
                     </StatusBadge>
                   </div>
                 </SurfaceCard>
@@ -270,9 +270,9 @@ export function DashboardPage() {
 
               <div className="mt-4">
                 <SectionHeader
-                  eyebrow="???????"
-                  title="??????? ????????"
-                  description="????????? ????? ??? ? ???????? ?????? ? ??? ????? ???????? ???? ? ?????? ?? ???? ??????."
+                  eyebrow="Templates"
+                  title="Quick actions"
+                  description="Save frequent expenses and income items so you can log them again in a couple of taps."
                 />
                 <div className="mt-3 flex flex-wrap gap-2.5">
                   {quickTemplates.length ? quickTemplates.map((template) => (
@@ -281,7 +281,7 @@ export function DashboardPage() {
                       {template.amount ? <span className="ml-2 text-[var(--app-muted)]">{formatCompactMoney(template.amount)}</span> : null}
                     </button>
                   )) : (
-                    <EmptyStateCard title="??????? ??? ?? ?????????" description="?????? ???? ????? ????????? ??? ??? TrackDen ???????? ???????, ????? ????????? ????? ?????????." action={<button className="sheet-primary-button mt-4 w-full" onClick={() => openSheet('automation')} type="button">??????? ?????????????</button>} />
+                    <EmptyStateCard title="No templates yet" description="Create a few similar records or add a manual template, and TrackDen will surface quick actions here." action={<button className="sheet-primary-button mt-4 w-full" onClick={() => openSheet('automation')} type="button">Open automation</button>} />
                   )}
                 </div>
               </div>
@@ -297,32 +297,32 @@ export function DashboardPage() {
           ) : (
             <SurfaceCard>
               <SectionHeader
-                eyebrow="??????"
-                title="???????? ???????"
-                description="?????? ?????? ?? ????? ????? ? ?????????, ??? ??? ??????????? ????????."
+                eyebrow="Budgets"
+                title="Monthly budget"
+                description="Keep your spending visible and see where pressure is building first."
                 action={<StatusBadge tone={budgetTone.badge}>{budgetTone.label}</StatusBadge>}
               />
 
               {!budgetOverview || budgetOverview.configured_count === 0 ? (
                 <div className="mt-4">
                   <EmptyStateCard
-                    title="??????? ??? ?? ??????"
-                    description="?????? ????? ????? ??? ????????? ????????? ? ? TrackDen ????? ??????? ???????? ?? ??????."
-                    action={<button className="sheet-primary-button mt-4 w-full" onClick={() => openSheet('budget')} type="button">????????? ??????</button>}
+                    title="Budgets are not set"
+                    description="Add one overall limit or a few category limits and TrackDen will show progress here."
+                    action={<button className="sheet-primary-button mt-4 w-full" onClick={() => openSheet('budget')} type="button">Set budgets</button>}
                   />
                 </div>
               ) : (
                 <>
                   <div className="mt-4 flex items-start justify-between gap-4">
                     <div>
-                      <p className="text-sm text-[var(--app-muted)]">{budgetOverview.overall.enabled ? '????????? ?? ?????? ??????' : '???????? ???????'}</p>
+                      <p className="text-sm text-[var(--app-muted)]">{budgetOverview.overall.enabled ? 'Left before overall limit' : 'Overall budget disabled'}</p>
                       <p className="mt-2 text-[30px] font-semibold tracking-[-0.04em] text-white">
                         {budgetOverview.overall.enabled ? formatMoney(budgetOverview.overall.spent) : budgetOverview.configured_count}
                       </p>
                       <p className="mt-2 text-sm text-[var(--app-muted)]">{formatBudgetCopy(budgetOverview)}</p>
                     </div>
                     <button className="pill-button pill-button--ghost" onClick={() => openSheet('budget')} type="button">
-                      ?????????
+                      Categories
                     </button>
                   </div>
 
@@ -361,30 +361,30 @@ export function DashboardPage() {
           ) : (
             <SurfaceCard>
               <SectionHeader
-                eyebrow="????????"
-                title="????????????? ????????"
-                description="???????? ??????????? ????? ? ????????? ???????????? ???????? ??? ????????? ????????."
-                action={<StatusBadge tone="accent">{subscriptionManager?.active_count ?? 0} ????????</StatusBadge>}
+                eyebrow="Subscriptions"
+                title="Fixed monthly charges"
+                description="Track subscriptions and repeating payments without manual math."
+                action={<StatusBadge tone="accent">{subscriptionManager?.active_count ?? 0} active</StatusBadge>}
               />
 
               {!subscriptionManager || (subscriptionManager.active_count === 0 && subscriptionManager.candidate_count === 0) ? (
                 <div className="mt-4">
                   <EmptyStateCard
-                    title="???? ??? ????????"
-                    description="????? ???????? ??????? ??????????? ????????, TrackDen ????????? ??????????? ?? ?????????????."
-                    action={<button className="sheet-primary-button mt-4 w-full" onClick={() => openSheet('subscriptions')} type="button">??????? ????????</button>}
+                    title="No subscriptions yet"
+                    description="Once similar monthly charges appear, TrackDen will suggest turning them into subscriptions."
+                    action={<button className="sheet-primary-button mt-4 w-full" onClick={() => openSheet('subscriptions')} type="button">Open subscriptions</button>}
                   />
                 </div>
               ) : (
                 <>
                   <div className="mt-4 flex items-start justify-between gap-4">
                     <div>
-                      <p className="text-sm text-[var(--app-muted)]">? ????? ?? ???????? ?????????</p>
+                      <p className="text-sm text-[var(--app-muted)]">This month in subscriptions</p>
                       <p className="mt-2 text-[30px] font-semibold tracking-[-0.04em] text-white">{formatMoney(subscriptionManager.monthly_total)}</p>
-                      <p className="mt-2 text-sm text-[var(--app-muted)]">{subscriptionManager.candidate_count} ??????????? ?? ??????? ???? ???????.</p>
+                      <p className="mt-2 text-sm text-[var(--app-muted)]">{subscriptionManager.candidate_count} candidates for future subscriptions.</p>
                     </div>
                     <button className="pill-button pill-button--ghost" onClick={() => openSheet('subscriptions')} type="button">
-                      ?????????
+                      Candidates
                     </button>
                   </div>
 
@@ -394,7 +394,7 @@ export function DashboardPage() {
                         <ListCard key={subscription.id}>
                           <ListRow
                             leading={<div className="transaction-avatar" style={{ background: 'rgba(111,107,255,0.18)', color: '#cbc9ff' }}>{subscription.merchant_label.slice(0, 1).toUpperCase()}</div>}
-                            subtitle={subscription.next_charge_at ? `????????? ???????? ${formatShortDateLabel(subscription.next_charge_at)}` : '???? ??????????'}
+                            subtitle={subscription.next_charge_at ? `Next charge ${formatShortDateLabel(subscription.next_charge_at)}` : 'Date pending'}
                             title={subscription.merchant_label}
                             trailing={<div className="text-right text-sm font-semibold text-white">{formatMoney(subscription.expected_amount, subscription.currency)}</div>}
                           />
@@ -402,8 +402,8 @@ export function DashboardPage() {
                       ))
                     ) : (
                       <EmptyStateCard
-                        title="??? ???????????? ???????? ??? ??????"
-                        description="????? ?????????? ???????? ????????????? ????? ????????? ???????? ????? ??????."
+                        title="No scheduled charges this month"
+                        description="As soon as active subscriptions appear, the nearest mandatory charges will show up here."
                       />
                     )}
                   </div>
@@ -420,26 +420,26 @@ export function DashboardPage() {
         ) : (
           <>
             <PremiumStatTile
-              hint="????????? ? ??????????? 7 ?????"
-              label="????????? ?????"
+              hint="Change vs previous 7 days"
+              label="Weekly pulse"
               tone={derived.trend >= 0 ? 'success' : 'danger'}
               value={formatSignedPercent(derived.trend)}
             />
             <PremiumStatTile
-              hint={derived.latestExpense?.merchant || derived.latestExpense?.category?.name || '??? ??????'}
-              label="????????? ???????"
+              hint={derived.latestExpense?.merchant || derived.latestExpense?.category?.name || 'No data'}
+              label="Last purchase"
               tone="danger"
               value={`-${formatCompactMoney(derived.latestExpense?.amount ?? 0)}`}
             />
             <PremiumStatTile
-              hint="?? ????????? ????????? ??????"
-              label="??????? ???"
+              hint="Based on current spending shape"
+              label="Day budget"
               tone="neutral"
               value={formatCompactMoney(derived.avgTicket)}
             />
             <PremiumStatTile
-              hint="?????????? ???? ?? ????? ??????"
-              label="??????? ????"
+              hint="Average ticket for this month"
+              label="Average spend"
               tone="accent"
               value={formatCompactMoney(derived.safePace)}
             />
@@ -449,10 +449,10 @@ export function DashboardPage() {
 
       <SurfaceCard>
         <SectionHeader
-          eyebrow="???????"
-          title="????????? ????????"
-          description="?????? ????? ????????? ???????? ??? ??????? ????."
-          action={<button className="pill-button pill-button--primary" onClick={() => openSheet('add')} type="button">??????? ????</button>}
+          eyebrow="History"
+          title="Latest transactions"
+          description="The freshest records stay visible so it is easy to keep control during the day."
+          action={<button className="pill-button pill-button--primary" onClick={() => openSheet('add')} type="button">Add expense</button>}
         />
 
         {transactionsQuery.isLoading ? (
@@ -463,7 +463,7 @@ export function DashboardPage() {
           </div>
         ) : transactions.length === 0 ? (
           <div className="mt-4">
-            <EmptyStateCard title="??????? ???? ??????" description="??????? ?????? ????????, ? TrackDen ?????? ???????? ??? ???? ????? ??????? ??????." />
+            <EmptyStateCard title="No transactions yet" description="Add your first transaction and TrackDen will start building a live financial picture for you." />
           </div>
         ) : (
           <div className="mt-4 space-y-3">
@@ -484,8 +484,8 @@ export function DashboardPage() {
                       </div>
                     )}
                     onClick={() => openSheet('edit', { transactionId: transaction.id })}
-                    subtitle={transaction.category?.name ?? '?????????????'}
-                    title={transaction.merchant || transaction.description || '??? ????????'}
+                    subtitle={transaction.category?.name ?? 'Uncategorized'}
+                    title={transaction.merchant || transaction.description || 'No description'}
                     trailing={(
                       <div className="text-right">
                         <p className={clsx('text-base font-semibold', isExpense ? 'text-[var(--app-danger)]' : 'text-[var(--app-success)]')}>

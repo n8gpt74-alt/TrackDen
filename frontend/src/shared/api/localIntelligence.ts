@@ -29,7 +29,7 @@ function ensureCategoryExists(workspace: WorkspaceState, categoryId: string | nu
   if (!categoryId || !workspace.categories.some((category) => category.id === categoryId)) {
     throw new ApiError({
       code: 'category_not_found',
-      message: '?????? ???????????? ?????????.',
+      message: 'Category was not found in this profile.',
     });
   }
 }
@@ -93,8 +93,8 @@ export async function saveSmartRule(input: SmartRuleInput, initDataRaw?: string)
   const now = new Date().toISOString();
   const nextRecord = {
     id: input.id ?? createId(),
-    label: ensurePattern(input.label, '?????? ???????? ??? ???????.'),
-    pattern: ensurePattern(input.pattern, '????? ????? ??? ????? ??? ???????.'),
+    label: ensurePattern(input.label, 'Enter a rule name.'),
+    pattern: ensurePattern(input.pattern, 'Enter a phrase for this rule.'),
     field: input.field,
     transaction_type: input.transaction_type,
     category_id: input.category_id,
@@ -121,7 +121,7 @@ export async function toggleSmartRule(id: string, active: boolean, initDataRaw?:
   if (!current) {
     throw new ApiError({
       code: 'rule_not_found',
-      message: '??????? ?? ???????.',
+      message: 'Rule was not found.',
     });
   }
 
@@ -153,7 +153,7 @@ export async function saveQuickTemplate(input: QuickTemplateInput, initDataRaw?:
   const current = workspace.quick_templates.find((template) => template.id === input.id) ?? null;
   const nextRecord: QuickTemplate = {
     id: input.id ?? createId(),
-    label: ensurePattern(input.label, '?????? ???????? ???????.'),
+    label: ensurePattern(input.label, 'Enter a template name.'),
     type: input.type,
     amount: roundMoney(input.amount),
     currency: (input.currency ?? current?.currency ?? 'RUB').trim().toUpperCase() || 'RUB',

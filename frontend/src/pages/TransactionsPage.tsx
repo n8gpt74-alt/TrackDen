@@ -55,7 +55,7 @@ export function TransactionsPage() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!window.confirm('??????? ??? ?????????')) {
+    if (!window.confirm('Delete this transaction?')) {
       return;
     }
 
@@ -76,17 +76,17 @@ export function TransactionsPage() {
   return (
     <div className="space-y-6">
       <ScreenHeader
-        eyebrow="???????"
-        title="???????????? ?????"
-        description="??? ?????????? ??????, ??????? ???????? ? ??????????? ?? ?????????? ????????? ? ????? ?????."
+        eyebrow="Activity"
+        title="Operations feed"
+        description="Templates, subscription suggestions, and your latest activity stay together on one screen."
         actions={
           localMode ? (
             <div className="flex gap-2">
               <button className="pill-button pill-button--ghost" onClick={() => openSheet('automation')} type="button">
-                ?????????????
+                Automation
               </button>
               <button className="pill-button pill-button--ghost" onClick={() => openSheet('subscriptions')} type="button">
-                ????????
+                Add
               </button>
             </div>
           ) : undefined
@@ -96,18 +96,18 @@ export function TransactionsPage() {
       <SegmentedControl
         onChange={setSegment}
         options={[
-          { label: '??????', value: 'income' },
-          { label: '???????', value: 'expense' },
+          { label: 'Income', value: 'income' },
+          { label: 'Expenses', value: 'expense' },
         ]}
         value={segment}
       />
 
       <section className="space-y-4">
         <SectionHeader
-          eyebrow="????????"
-          title="??????? ????????"
-          description="??????????? ? ???????????? ??????? ???????? ????????? ????? ??? ? ?????? ??????????."
-          action={localMode ? <button className="pill-button pill-button--ghost" onClick={() => openSheet('automation')} type="button">?????????</button> : undefined}
+          eyebrow="Templates"
+          title="Quick transactions"
+          description="Saved and suggested templates make repeat entries much faster."
+          action={localMode ? <button className="pill-button pill-button--ghost" onClick={() => openSheet('automation')} type="button">Open</button> : undefined}
         />
 
         {transactionsQuery.isLoading || automationQuery.isLoading ? (
@@ -115,7 +115,7 @@ export function TransactionsPage() {
             {Array.from({ length: 3 }).map((_, index) => <Skeleton key={index} className="h-28 w-full rounded-[22px]" />)}
           </div>
         ) : templates.length === 0 ? (
-          <EmptyStateCard title="???????? ??? ?? ???????" description="????? ???????? ??????? ??? ?? ??????? ???? ???????, ????? ????? ????? ??????? ???????? ??? ?????." />
+          <EmptyStateCard title="No templates yet" description="Create a few similar records or save your own template and quick actions will appear here automatically." />
         ) : (
           <div className="grid grid-cols-3 gap-3">
             {templates.map((item) => (
@@ -125,8 +125,8 @@ export function TransactionsPage() {
                     {item.label.slice(0, 1).toUpperCase()}
                   </div>
                   <p className="mt-3 truncate text-sm font-medium text-white">{item.label}</p>
-                  <p className="mt-1 truncate text-xs text-[var(--app-muted)]">{item.merchant || item.description || (item.source === 'manual' ? '???? ??????' : '????????? TrackDen')}</p>
-                  <p className="mt-2 text-sm font-semibold text-white">{item.amount ? formatCompactMoney(item.amount) : '??????'}</p>
+                  <p className="mt-1 truncate text-xs text-[var(--app-muted)]">{item.merchant || item.description || (item.source === 'manual' ? 'No description' : 'TrackDen suggestion')}</p>
+                  <p className="mt-2 text-sm font-semibold text-white">{item.amount ? formatCompactMoney(item.amount) : 'No amount'}</p>
                 </button>
               </SurfaceCard>
             ))}
@@ -137,10 +137,10 @@ export function TransactionsPage() {
       {localMode && segment === 'expense' ? (
         <section className="space-y-4">
           <SectionHeader
-            eyebrow="???????????"
-            title="???????? ?? ???????"
-            description="?????? ???? ?????????????: TrackDen ?????????? ?????? ????????????? ??????? ??????????? ????????."
-            action={<StatusBadge tone="accent">{subscriptionManagerQuery.data?.candidate_count ?? 0} ??????????</StatusBadge>}
+            eyebrow="Subscriptions"
+            title="Suggested subscriptions"
+            description="TrackDen spotted repeating monthly spending patterns and suggests turning them into subscriptions."
+            action={<StatusBadge tone="accent">{subscriptionManagerQuery.data?.candidate_count ?? 0} candidates</StatusBadge>}
           />
 
           {subscriptionManagerQuery.isLoading ? (
@@ -149,7 +149,7 @@ export function TransactionsPage() {
               <Skeleton className="h-28 w-full rounded-[24px]" />
             </div>
           ) : candidates.length === 0 ? (
-            <EmptyStateCard title="???? ??? ??????????" description="????? ? ??????? ????????? ??????? ??????????? ????????, ????? ???????? ??????????? ??????????? ????????." />
+            <EmptyStateCard title="Nothing flagged yet" description="Once repeating monthly expenses appear in history, candidates for subscriptions will show up here." />
           ) : (
             <div className="space-y-3">
               {candidates.map((candidate) => (
@@ -158,23 +158,23 @@ export function TransactionsPage() {
                     <div>
                       <p className="text-base font-medium text-white">{candidate.merchant_label}</p>
                       <p className="mt-1 text-sm text-[var(--app-muted)]">
-                        {candidate.match_count} ?????????? ? {Math.round(candidate.confidence * 100)}% ???????????
+                        {candidate.match_count} matches ? {Math.round(candidate.confidence * 100)}% confidence
                       </p>
                     </div>
                     <div className="text-right">
                       <p className="text-base font-semibold text-white">{formatMoney(candidate.expected_amount, candidate.currency)}</p>
-                      <p className="mt-1 text-sm text-[var(--app-muted)]">{candidate.expected_day} ?????</p>
+                      <p className="mt-1 text-sm text-[var(--app-muted)]">{candidate.expected_day} day of month</p>
                     </div>
                   </div>
                   <div className="mt-4 flex flex-wrap gap-3">
                     <button className="pill-button pill-button--primary" onClick={() => void handleCandidateConfirm(candidate.id)} type="button">
-                      ???????????
+                      Confirm
                     </button>
                     <button className="pill-button" onClick={() => void handleCandidateDismiss(candidate.id)} type="button">
-                      ?? ????????
+                      Not a subscription
                     </button>
                     <button className="pill-button" onClick={() => openSheet('subscriptions')} type="button">
-                      ?????
+                      Later
                     </button>
                   </div>
                 </SurfaceCard>
@@ -186,10 +186,10 @@ export function TransactionsPage() {
 
       <section className="space-y-4">
         <SectionHeader
-          eyebrow="?????"
-          title="??? ??????????"
-          description="?????? ??????????? ?? ????? ? ?????????? ???????? ?????????????? ??? ??????????? ????."
-          action={<button className="pill-button pill-button--primary" onClick={() => openSheet('add')} type="button">????????</button>}
+          eyebrow="History"
+          title="All transactions"
+          description="A grouped feed by day and category makes it easy to return to any entry."
+          action={<button className="pill-button pill-button--primary" onClick={() => openSheet('add')} type="button">Add</button>}
         />
 
         {transactionsQuery.isLoading ? (
@@ -199,7 +199,7 @@ export function TransactionsPage() {
             <Skeleton className="h-24 w-full rounded-[24px]" />
           </div>
         ) : groupedTransactions.length === 0 ? (
-          <EmptyStateCard title="?????????? ?? ???? ????? ???? ???" description="?????? ?????? ????????, ? ????? ???????? ?????????? ????? ?? ????? ? ??????????." />
+          <EmptyStateCard title="No transactions this month yet" description="Add your first record and the activity feed will start building itself by day and category." />
         ) : (
           <div className="space-y-5">
             {groupedTransactions.map((group) => (
@@ -225,8 +225,8 @@ export function TransactionsPage() {
                             </div>
                           </div>
                           <div className="list-row__content">
-                            <p className="list-row__title">{transaction.merchant || transaction.description || '??? ????????'}</p>
-                            <p className="list-row__subtitle">{transaction.category?.name ?? '?????????????'}</p>
+                            <p className="list-row__title">{transaction.merchant || transaction.description || 'No description'}</p>
+                            <p className="list-row__subtitle">{transaction.category?.name ?? 'Uncategorized'}</p>
                           </div>
                           <div className="list-row__trailing flex items-center gap-3">
                             <div className="text-right">

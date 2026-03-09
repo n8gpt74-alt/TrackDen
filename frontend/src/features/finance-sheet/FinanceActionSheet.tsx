@@ -188,7 +188,7 @@ export function FinanceActionSheet() {
       ...current,
       amount: receipt.extracted_total ? String(receipt.extracted_total) : current.amount,
       merchant: receipt.extracted_merchant ?? current.merchant,
-      description: current.description || '????????? ?? ???? ????',
+      description: current.description || 'Saved in one tap',
       source: 'ocr',
       receipt_id: receipt.id,
     }));
@@ -198,14 +198,14 @@ export function FinanceActionSheet() {
 
   const isBusy = createMutation.isPending || updateMutation.isPending || markTemplateUsedMutation.isPending;
   const canSubmit = Number(form.amount) > 0 && isTransactionMode;
-  const headerTitle = mode === 'edit' ? '????????????? ????????' : mode === 'ocr' ? '???????? ?? ????' : '??????? ??????????';
+  const headerTitle = mode === 'edit' ? 'Edit transaction' : mode === 'ocr' ? 'Add from receipt' : 'Quick add';
   const headerSubtitle = mode === 'edit'
-    ? '????? ?????, ????????? ? ?????? ? ?????? ????????? ??????.'
+    ? 'Check the amount and category, then save the updated transaction.'
     : mode === 'ocr'
-      ? '??????? ??????? ???, ????? ????????? ???????????? ????.'
+      ? 'Upload a receipt photo to prefill the main fields automatically.'
       : templateQuery.data
-        ? `?????? ??? ??????: ?????? ?${templateQuery.data.label}? ????????? ???????? ????.`
-        : '?????, ????????? ? ???? ??????? ?? ??????????.';
+        ? `Template selected: ${templateQuery.data.label} will prefill the form for you.`
+        : 'Enter the amount, choose a category, and save in seconds.';
 
   const topCategories = useMemo(() => categories.slice(0, 6), [categories]);
 
@@ -285,14 +285,14 @@ export function FinanceActionSheet() {
   return (
     <BottomSheetScaffold
       description={headerSubtitle}
-      eyebrow="????????"
+      eyebrow="Transaction"
       footer={(
         <div className="flex gap-3">
           <button className="sheet-secondary-button" onClick={handleClose} type="button">
-            ??????
+            Save
           </button>
           <button className="sheet-primary-button" disabled={!canSubmit || isBusy} onClick={() => void handleSubmit()} type="button">
-            {isBusy ? '??????????' : mode === 'edit' ? '????????' : '?????????'}
+            {isBusy ? 'Saving' : mode === 'edit' ? 'Update' : 'Add'}
           </button>
         </div>
       )}
@@ -303,30 +303,30 @@ export function FinanceActionSheet() {
         <SurfaceCard>
           <div className="flex items-center justify-between gap-3">
             <div>
-              <p className="text-sm font-medium text-white">???????????? ????</p>
-              <p className="mt-1 text-sm text-[var(--app-muted)]">???? ???? ???????? ????? ? ??????? ????? ? ????? ????.</p>
+              <p className="text-sm font-medium text-white">Scan receipt</p>
+              <p className="mt-1 text-sm text-[var(--app-muted)]">One photo is enough to pull in the amount, merchant, and draft transaction details.</p>
             </div>
             <button className="pill-button pill-button--ghost" onClick={() => inputRef.current?.click()} type="button">
               <UploadIcon size={16} />
-              ?????????
+              Upload photo
             </button>
           </div>
           <input ref={inputRef} accept="image/*" className="hidden" onChange={handleFilePick} type="file" />
           {uploadMutation.isPending ? <Skeleton className="mt-4 h-28 w-full rounded-[22px]" /> : null}
           {receipt?.status === 'pending' ? (
             <div className="mt-4 rounded-[24px] border border-[var(--app-stroke)] bg-white/[0.03] p-4 text-sm text-[var(--app-muted)]">
-              ??? ?????????????? ? ?????? ??? ???????? ???? ??????.
+              OCR filled the draft. Review the amount and category before saving.
             </div>
           ) : null}
           {receipt?.status === 'processed' ? (
             <div className="mt-4 rounded-[24px] border border-emerald-400/20 bg-emerald-400/5 p-4">
               <div className="flex items-center justify-between gap-3">
                 <div>
-                  <p className="text-sm text-[var(--app-muted)]">??????????</p>
-                  <p className="mt-1 text-lg font-semibold text-white">{receipt.extracted_merchant || '??? ????????'}</p>
+                  <p className="text-sm text-[var(--app-muted)]">Merchant</p>
+                  <p className="mt-1 text-lg font-semibold text-white">{receipt.extracted_merchant || 'Unknown merchant'}</p>
                 </div>
                 <div className="text-right">
-                  <p className="text-sm text-[var(--app-muted)]">?????</p>
+                  <p className="text-sm text-[var(--app-muted)]">Amount</p>
                   <p className="mt-1 text-lg font-semibold text-white">{formatMoney(receipt.extracted_total ?? 0)}</p>
                 </div>
               </div>
@@ -334,7 +334,7 @@ export function FinanceActionSheet() {
           ) : null}
           {receipt?.status === 'failed' ? (
             <div className="mt-4 rounded-[24px] border border-[var(--app-danger)]/20 bg-[var(--app-danger)]/10 p-4 text-sm text-[var(--app-danger)]">
-              {receipt.error || '?? ??????? ?????????? ???.'}
+               {receipt.error || 'Could not recognize the receipt.'}
             </div>
           ) : null}
         </SurfaceCard>
@@ -350,14 +350,14 @@ export function FinanceActionSheet() {
           <SegmentedControl
             onChange={(value) => handleChange('type', value)}
             options={[
-              { label: '??????', value: 'income' },
-              { label: '???????', value: 'expense' },
+               { label: 'Income', value: 'income' },
+               { label: 'Expense', value: 'expense' },
             ]}
             value={form.type}
           />
 
           <SurfaceCard>
-            <p className="soft-kicker">?????</p>
+             <p className="soft-kicker">Amount</p>
             <div className="mt-3 flex items-end justify-between gap-3">
               <input
                 className="min-w-0 flex-1 bg-transparent text-[40px] font-semibold tracking-tight text-white outline-none"
@@ -380,9 +380,9 @@ export function FinanceActionSheet() {
 
           {templateQuery.data ? (
             <SurfaceCard>
-              <p className="text-sm text-[var(--app-muted)]">??????</p>
+               <p className="text-sm text-[var(--app-muted)]">Details</p>
               <p className="mt-2 text-base font-semibold text-white">{templateQuery.data.label}</p>
-              <p className="mt-1 text-sm text-[var(--app-muted)]">????? ????? ????????? ??? ???? ??? ?????? ???????? ?????? ????.</p>
+               <p className="mt-1 text-sm text-[var(--app-muted)]">Add merchant, note, category override, or attach the receipt draft.</p>
             </SurfaceCard>
           ) : null}
 
@@ -404,7 +404,7 @@ export function FinanceActionSheet() {
 
           <button className="pill-button pill-button--ghost w-fit" onClick={() => setDetailsOpen((current) => !current)} type="button">
             <SparklesIcon size={16} />
-            {detailsOpen ? '?????? ??????' : '???????? ??????'}
+             {detailsOpen ? 'Hide details' : 'Show details'}
           </button>
 
           {detailsOpen ? (
@@ -413,13 +413,13 @@ export function FinanceActionSheet() {
                 <input
                   className="sheet-input"
                   onChange={(event) => handleChange('merchant', event.target.value)}
-                  placeholder="??????? ??? ??????????"
+                   placeholder="Merchant or seller"
                   value={form.merchant}
                 />
                 <textarea
                   className="sheet-input min-h-24 resize-none"
                   onChange={(event) => handleChange('description', event.target.value)}
-                  placeholder="???????? ???????? ????????"
+                   placeholder="Short transaction note"
                   value={form.description}
                 />
                 <select
@@ -427,7 +427,7 @@ export function FinanceActionSheet() {
                   onChange={(event) => handleChange('category_id', event.target.value)}
                   value={form.category_id}
                 >
-                  <option value="">?????????????</option>
+                   <option value="">Uncategorized</option>
                   {categories.map((category) => (
                     <option key={category.id} value={category.id}>
                       {category.name}
@@ -437,7 +437,7 @@ export function FinanceActionSheet() {
                 {form.receipt_id ? (
                   <div className="flex items-center gap-2 rounded-[18px] border border-[var(--app-stroke)] bg-white/[0.03] px-4 py-3 text-sm text-[var(--app-muted)]">
                     <ReceiptIcon size={16} />
-                    ?????? ??? {form.receipt_id.slice(0, 8)}?
+                     ??? #{form.receipt_id.slice(0, 8)}
                   </div>
                 ) : null}
               </div>
@@ -445,7 +445,7 @@ export function FinanceActionSheet() {
           ) : null}
 
           {!detailsOpen && mode !== 'ocr' && !receipt ? (
-            <EmptyStateCard title="??????? ????????" description="????? ? ????????? ??? ??????????, ????? ????????? ???????? ????????? ?? ????????? ??????." />
+             <EmptyStateCard title="Receipt will appear here" description="Upload or scan a receipt and the OCR preview will show up in this sheet." />
           ) : null}
         </>
       )}

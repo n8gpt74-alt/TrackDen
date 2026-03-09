@@ -230,7 +230,7 @@ export function normalizeIntelligenceState(
     const categoryId = normalizeOptionalString(rawTemplate.category_id);
     quickTemplates.push({
       id,
-      label: normalizeLabel(rawTemplate.label, '??????? ??????'),
+      label: normalizeLabel(rawTemplate.label, 'Quick template'),
       type: rawTemplate.type === 'income' ? 'income' : 'expense',
       amount: normalizePositiveNumber(rawTemplate.amount),
       currency: normalizeCurrency(rawTemplate.currency),

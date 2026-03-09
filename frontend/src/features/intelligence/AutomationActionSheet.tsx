@@ -126,14 +126,14 @@ export function AutomationActionSheet() {
 
   return (
     <BottomSheetScaffold
-      eyebrow="?????????????"
-      title="??????? ? ???????"
-      description="????? TrackDen ?????? ??? ???? ?????: ???? ???????????, ??????? ??????? ? ????????? ?? ???????."
+      eyebrow="Automation"
+      title="Rules and templates"
+      description="Let TrackDen handle the routine with auto-rules, reusable templates, and smart suggestions from history."
       onClose={closeSheet}
       footer={(
         <div className="flex gap-3">
           <button className="sheet-secondary-button" onClick={closeSheet} type="button">
-            ???????
+            Automation
           </button>
         </div>
       )}
@@ -147,45 +147,45 @@ export function AutomationActionSheet() {
       ) : (
         <>
           <div className="stat-grid">
-            <PremiumStatTile hint="?????? ???????? ?????????????" label="???????" tone="accent" value={overview?.active_rule_count ?? 0} />
-            <PremiumStatTile hint="???? ??????????? ????????" label="???????" tone="success" value={overview?.manual_template_count ?? 0} />
-            <PremiumStatTile hint="??????? ?? ???????" label="?????????" tone="warning" value={overview?.suggested_template_count ?? 0} />
-            <PremiumStatTile hint="??????? ???? ??????????????" label="??????????" tone="neutral" value={overview && (overview.active_rule_count + overview.manual_template_count) > 0 ? '???.' : '?????'} />
+            <PremiumStatTile hint="Active categorization rules" label="Rules" tone="accent" value={overview?.active_rule_count ?? 0} />
+            <PremiumStatTile hint="Saved quick templates" label="Templates" tone="success" value={overview?.manual_template_count ?? 0} />
+            <PremiumStatTile hint="Suggestions from history" label="Suggestions" tone="warning" value={overview?.suggested_template_count ?? 0} />
+            <PremiumStatTile hint="Automation readiness" label="System" tone="neutral" value={overview && (overview.active_rule_count + overview.manual_template_count) > 0 ? 'Ready' : 'Empty'} />
           </div>
 
           <section className="space-y-3">
             <SectionHeader
-              eyebrow="???????????"
-              title="????????????? ??? ????"
-              description="????????: ???? ??????????? Netflix ? ????? ???????? ? ?????????."
-              action={<ActionPill onClick={() => setRuleOpen((current) => !current)} variant="ghost">{ruleOpen ? '?????? ?????' : '????? ???????'}</ActionPill>}
+               eyebrow="Auto-rules"
+               title="Categorization that learns your flow"
+               description="Example: whenever Netflix appears, move the purchase straight into subscriptions."
+               action={<ActionPill onClick={() => setRuleOpen((current) => !current)} variant="ghost">{ruleOpen ? 'Hide form' : 'New rule'}</ActionPill>}
             />
 
             {ruleOpen ? (
               <SurfaceCard>
                 <div className="space-y-3">
-                  <input className="sheet-input" placeholder="???????? ???????" value={ruleForm.label} onChange={(event) => setRuleForm((current) => ({ ...current, label: event.target.value }))} />
-                  <input className="sheet-input" placeholder="????? ??? ?????" value={ruleForm.pattern} onChange={(event) => setRuleForm((current) => ({ ...current, pattern: event.target.value }))} />
+                  <input className="sheet-input" placeholder="Rule name" value={ruleForm.label} onChange={(event) => setRuleForm((current) => ({ ...current, label: event.target.value }))} />
+                  <input className="sheet-input" placeholder="Phrase to match" value={ruleForm.pattern} onChange={(event) => setRuleForm((current) => ({ ...current, pattern: event.target.value }))} />
                   <div className="grid grid-cols-2 gap-3">
                     <select className="sheet-input" value={ruleForm.field} onChange={(event) => setRuleForm((current) => ({ ...current, field: event.target.value as SmartRuleField }))}>
-                      <option value="either">??????? ??? ????????</option>
-                      <option value="merchant">?????? ???????</option>
-                      <option value="description">?????? ????????</option>
+                      <option value="either">Merchant or description</option>
+                      <option value="merchant">Merchant only</option>
+                      <option value="description">Description only</option>
                     </select>
                     <select className="sheet-input" value={ruleForm.transaction_type} onChange={(event) => setRuleForm((current) => ({ ...current, transaction_type: event.target.value as SmartRuleTransactionType }))}>
-                      <option value="expense">??????</option>
-                      <option value="income">?????</option>
-                      <option value="any">????? ???</option>
+                      <option value="expense">Expense</option>
+                      <option value="income">Income</option>
+                      <option value="any">Any type</option>
                     </select>
                   </div>
                   <select className="sheet-input" value={ruleForm.category_id} onChange={(event) => setRuleForm((current) => ({ ...current, category_id: event.target.value }))}>
-                    <option value="">?????? ?????????</option>
+                    <option value="">Choose category</option>
                     {categories.map((category) => (
                       <option key={category.id} value={category.id}>{category.name}</option>
                     ))}
                   </select>
                   <button className="sheet-primary-button w-full" disabled={!canSaveRule || saveRuleMutation.isPending} onClick={() => void handleSaveRule()} type="button">
-                    {saveRuleMutation.isPending ? '??????????' : '????????? ???????'}
+                    {saveRuleMutation.isPending ? 'Saving' : 'Save rule'}
                   </button>
                 </div>
               </SurfaceCard>
@@ -198,12 +198,12 @@ export function AutomationActionSheet() {
                   <ListCard key={rule.id}>
                     <ListRow
                       title={rule.label}
-                      subtitle={`???? ${rule.field === 'merchant' ? '???????' : rule.field === 'description' ? '????????' : '??????? ??? ????????'} ???????? ?${rule.pattern}? ? ${category?.name ?? '?????????'}`}
+                      subtitle={`Match ${rule.field === 'merchant' ? 'merchant' : rule.field === 'description' ? 'description' : 'merchant and description'} for "${rule.pattern}" ? ${category?.name ?? 'Uncategorized'}`}
                       trailing={(
                         <div className="flex items-center gap-2">
-                          <StatusBadge tone={rule.active ? 'success' : 'neutral'}>{rule.active ? '????????' : '?????????'}</StatusBadge>
+                          <StatusBadge tone={rule.active ? 'success' : 'neutral'}>{rule.active ? 'Active' : 'Paused'}</StatusBadge>
                           <ActionPill onClick={() => void (async () => { await toggleRuleMutation.mutateAsync({ id: rule.id, active: !rule.active }); await invalidate(); })()} variant="ghost">
-                            {rule.active ? '?????' : '????????'}
+                            {rule.active ? 'Disable' : 'Enable'}
                           </ActionPill>
                           <ActionPill onClick={() => void (async () => { await deleteRuleMutation.mutateAsync(rule.id); await invalidate(); })()} variant="danger">
                             <TrashIcon size={14} />
@@ -215,41 +215,41 @@ export function AutomationActionSheet() {
                 );
               })
             ) : (
-              <EmptyStateCard title="?????? ???? ???" description="?????? 2?3 ??????? ??????? ?? ??????? ?????????, ? ?????? ???? ?????? ??? ???????." />
+               <EmptyStateCard title="No rules yet" description="Add 2?3 clear rules for frequent expenses and TrackDen will start suggesting categories automatically." />
             )}
           </section>
 
           <section className="space-y-3">
             <SectionHeader
-              eyebrow="???????"
-              title="??????? ???????? ?????"
-              description="??????? ?????? ????? ? ??????, ????? ????????? ????? ??? ? ???????? ??????."
-              action={<ActionPill onClick={() => setTemplateOpen((current) => !current)} variant="ghost">{templateOpen ? '?????? ?????' : '????? ??????'}</ActionPill>}
+               eyebrow="Templates"
+               title="Quick actions for the day"
+               description="Save common expenses or income items so you can add them in a couple of taps."
+               action={<ActionPill onClick={() => setTemplateOpen((current) => !current)} variant="ghost">{templateOpen ? 'Hide form' : 'New template'}</ActionPill>}
             />
 
             {templateOpen ? (
               <SurfaceCard>
                 <div className="space-y-3">
                   <SegmentedControl
-                    options={[{ label: '??????', value: 'expense' }, { label: '?????', value: 'income' }]}
+                    options={[{ label: 'Expense', value: 'expense' }, { label: 'Income', value: 'income' }]}
                     value={templateForm.type}
                     onChange={(value) => setTemplateForm((current) => ({ ...current, type: value }))}
                   />
-                  <input className="sheet-input" placeholder="???????? ???????" value={templateForm.label} onChange={(event) => setTemplateForm((current) => ({ ...current, label: event.target.value }))} />
+                  <input className="sheet-input" placeholder="Template name" value={templateForm.label} onChange={(event) => setTemplateForm((current) => ({ ...current, label: event.target.value }))} />
                   <div className="grid grid-cols-[minmax(0,1fr)_88px] gap-3">
-                    <input className="sheet-input" type="number" inputMode="decimal" placeholder="????? (?????????????)" value={templateForm.amount} onChange={(event) => setTemplateForm((current) => ({ ...current, amount: event.target.value }))} />
+                    <input className="sheet-input" type="number" inputMode="decimal" placeholder="Amount (optional)" value={templateForm.amount} onChange={(event) => setTemplateForm((current) => ({ ...current, amount: event.target.value }))} />
                     <input className="sheet-input text-center uppercase" maxLength={3} value={templateForm.currency} onChange={(event) => setTemplateForm((current) => ({ ...current, currency: event.target.value.toUpperCase() }))} />
                   </div>
                   <select className="sheet-input" value={templateForm.category_id} onChange={(event) => setTemplateForm((current) => ({ ...current, category_id: event.target.value }))}>
-                    <option value="">??? ?????????</option>
+                    <option value="">Uncategorized</option>
                     {categories.map((category) => (
                       <option key={category.id} value={category.id}>{category.name}</option>
                     ))}
                   </select>
-                  <input className="sheet-input" placeholder="??????? ??? ??????????" value={templateForm.merchant} onChange={(event) => setTemplateForm((current) => ({ ...current, merchant: event.target.value }))} />
-                  <textarea className="sheet-input min-h-24 resize-none" placeholder="???????? ????????" value={templateForm.description} onChange={(event) => setTemplateForm((current) => ({ ...current, description: event.target.value }))} />
+                  <input className="sheet-input" placeholder="Merchant or seller" value={templateForm.merchant} onChange={(event) => setTemplateForm((current) => ({ ...current, merchant: event.target.value }))} />
+                  <textarea className="sheet-input min-h-24 resize-none" placeholder="Transaction note" value={templateForm.description} onChange={(event) => setTemplateForm((current) => ({ ...current, description: event.target.value }))} />
                   <button className="sheet-primary-button w-full" disabled={!canSaveTemplate || saveTemplateMutation.isPending} onClick={() => void handleSaveTemplate()} type="button">
-                    {saveTemplateMutation.isPending ? '??????????' : '????????? ??????'}
+                    {saveTemplateMutation.isPending ? 'Saving' : 'Save template'}
                   </button>
                 </div>
               </SurfaceCard>
@@ -261,10 +261,10 @@ export function AutomationActionSheet() {
                   <ListRow
                     onClick={() => openSheet('add', { templateId: template.id })}
                     title={template.label}
-                    subtitle={template.merchant || template.description || '??????? ??????? ???? ? ???????? ??????.'}
+                     subtitle={template.merchant || template.description || 'A reusable draft for quick entry.'}
                     trailing={(
                       <div className="flex items-center gap-2">
-                        <StatusBadge tone="accent">{template.amount ? `${template.amount.toLocaleString('ru-RU')} ?` : '??????'}</StatusBadge>
+                         <StatusBadge tone="accent">{template.amount ? `${template.amount.toLocaleString('ru-RU')} ?` : 'No amount'}</StatusBadge>
                         <ActionPill onClick={() => void (async () => { await deleteTemplateMutation.mutateAsync(template.id); await invalidate(); })()} variant="danger">
                           <TrashIcon size={14} />
                         </ActionPill>
@@ -274,15 +274,15 @@ export function AutomationActionSheet() {
                 </ListCard>
               ))
             ) : (
-              <EmptyStateCard title="????? ???????? ???? ???" description="??????? 2?3 ???????????? ???????? ? ? ???? ??????? ?????? ????????? ??? ???? ????." />
+               <EmptyStateCard title="No templates yet" description="Save 2?3 repeat operations and you will be able to re-add them in a single tap." />
             )}
           </section>
 
           <section className="space-y-3">
             <SectionHeader
-              eyebrow="?? ???????"
-              title="????????? TrackDen"
-              description="??? ?????? ????????, ??????? ??????? ????? ????????????? ?? ????? ?????????."
+               eyebrow="From history"
+               title="TrackDen suggestions"
+               description="These templates are generated automatically from similar operations in your history."
             />
 
             {overview?.suggested_templates.length ? (
@@ -291,13 +291,13 @@ export function AutomationActionSheet() {
                   <ListRow
                     onClick={() => openSheet('add', { templateId: template.id })}
                     title={template.label}
-                    subtitle={`${template.use_count} ?????????? ? ${template.merchant || template.description || '?????? ? ???????? ?????'}`}
-                    trailing={<StatusBadge tone="warning">???????????</StatusBadge>}
+                    subtitle={`${template.use_count} uses ? ${template.merchant || template.description || 'frequent operation without a note'}`}
+                    trailing={<StatusBadge tone="warning">Suggested</StatusBadge>}
                   />
                 </ListCard>
               ))
             ) : (
-              <EmptyStateCard title="????????? ??? ?? ???????" description="????? ???????? ?????? ??????, TrackDen ?????? ??? ?????????? ??????? ??????? ????????." />
+               <EmptyStateCard title="No suggestions yet" description="As your history grows, TrackDen will start proposing quick templates from repeating operations." />
             )}
           </section>
         </>
