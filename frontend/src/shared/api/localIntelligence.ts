@@ -29,7 +29,7 @@ function ensureCategoryExists(workspace: WorkspaceState, categoryId: string | nu
   if (!categoryId || !workspace.categories.some((category) => category.id === categoryId)) {
     throw new ApiError({
       code: 'category_not_found',
-      message: 'Category was not found in this profile.',
+      message: '\u0412 \u044d\u0442\u043e\u043c \u043f\u0440\u043e\u0444\u0438\u043b\u0435 \u043d\u0435\u0442 \u0442\u0430\u043a\u043e\u0439 \u043a\u0430\u0442\u0435\u0433\u043e\u0440\u0438\u0438.',
     });
   }
 }
@@ -93,8 +93,8 @@ export async function saveSmartRule(input: SmartRuleInput, initDataRaw?: string)
   const now = new Date().toISOString();
   const nextRecord = {
     id: input.id ?? createId(),
-    label: ensurePattern(input.label, 'Enter a rule name.'),
-    pattern: ensurePattern(input.pattern, 'Enter a phrase for this rule.'),
+    label: ensurePattern(input.label, '\u0412\u0432\u0435\u0434\u0438 \u043d\u0430\u0437\u0432\u0430\u043d\u0438\u0435 \u043f\u0440\u0430\u0432\u0438\u043b\u0430.'),
+    pattern: ensurePattern(input.pattern, '\u0412\u0432\u0435\u0434\u0438 \u0444\u0440\u0430\u0437\u0443 \u0434\u043b\u044f \u0441\u043e\u0432\u043f\u0430\u0434\u0435\u043d\u0438\u044f.'),
     field: input.field,
     transaction_type: input.transaction_type,
     category_id: input.category_id,
@@ -121,7 +121,7 @@ export async function toggleSmartRule(id: string, active: boolean, initDataRaw?:
   if (!current) {
     throw new ApiError({
       code: 'rule_not_found',
-      message: 'Rule was not found.',
+      message: '\u041f\u0440\u0430\u0432\u0438\u043b\u043e \u043d\u0435 \u043d\u0430\u0439\u0434\u0435\u043d\u043e.',
     });
   }
 
@@ -153,7 +153,7 @@ export async function saveQuickTemplate(input: QuickTemplateInput, initDataRaw?:
   const current = workspace.quick_templates.find((template) => template.id === input.id) ?? null;
   const nextRecord: QuickTemplate = {
     id: input.id ?? createId(),
-    label: ensurePattern(input.label, 'Enter a template name.'),
+    label: ensurePattern(input.label, '\u0412\u0432\u0435\u0434\u0438 \u043d\u0430\u0437\u0432\u0430\u043d\u0438\u0435 \u0448\u0430\u0431\u043b\u043e\u043d\u0430.'),
     type: input.type,
     amount: roundMoney(input.amount),
     currency: (input.currency ?? current?.currency ?? 'RUB').trim().toUpperCase() || 'RUB',

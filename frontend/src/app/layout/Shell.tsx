@@ -8,6 +8,7 @@ import { useFinanceSheet } from '../../features/finance-sheet/useFinanceSheet';
 import { AutomationActionSheet } from '../../features/intelligence/AutomationActionSheet';
 import { SubscriptionActionSheet } from '../../features/subscriptions/SubscriptionActionSheet';
 import { ActivityIcon, ChartIcon, HomeIcon, PlusIcon } from '../../shared/ui/premium';
+import { UI_TEXT } from '../../shared/i18n/ui';
 
 const NAV_ITEMS = [
   { path: '/dashboard', label: 'Главная', icon: HomeIcon },

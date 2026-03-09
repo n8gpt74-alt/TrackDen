@@ -55,11 +55,11 @@ function capitalize(value: string) {
 }
 
 function resolveCategoryName(transaction: TransactionLike) {
-  return transaction.category?.name ?? 'Uncategorized';
+  return transaction.category?.name ?? '\u0411\u0435\u0437 \u043a\u0430\u0442\u0435\u0433\u043e\u0440\u0438\u0438';
 }
 
 function buildTemplateLabel(transaction: TransactionLike) {
-  return transaction.merchant || transaction.category?.name || transaction.description || 'Uncategorized';
+  return transaction.merchant || transaction.category?.name || transaction.description || '\u0411\u0435\u0437 \u043a\u0430\u0442\u0435\u0433\u043e\u0440\u0438\u0438';
 }
 
 export function findMatchingSmartRule(
@@ -183,10 +183,10 @@ export function buildForecastOverview(workspace: WorkspaceLike, month: string, n
       : 'safe';
 
   const summary = status === 'risk'
-    ? `Risk of going over plan: projected expenses are ${projectedExpense.toLocaleString('ru-RU')} ?.`
+    ? `\u0415\u0441\u0442\u044c \u0440\u0438\u0441\u043a \u0432\u044b\u0439\u0442\u0438 \u0437\u0430 \u043f\u043b\u0430\u043d: \u043f\u0440\u043e\u0433\u043d\u043e\u0437 \u043f\u043e \u0440\u0430\u0441\u0445\u043e\u0434\u0430\u043c \u2014 ${projectedExpense.toLocaleString('ru-RU')} \u20bd.`
     : status === 'attention'
-      ? 'You are still in control, but the remaining margin is getting tight. It is worth watching spending more closely.'
-      : 'The forecast looks calm: if you keep the current pace, the month should close without pressure.';
+      ? '\u0422\u044b \u0435\u0449\u0451 \u0434\u0435\u0440\u0436\u0438\u0448\u044c \u0441\u0438\u0442\u0443\u0430\u0446\u0438\u044e \u043f\u043e\u0434 \u043a\u043e\u043d\u0442\u0440\u043e\u043b\u0435\u043c, \u043d\u043e \u0437\u0430\u043f\u0430\u0441 \u0441\u0442\u0430\u043d\u043e\u0432\u0438\u0442\u0441\u044f \u0442\u0435\u0441\u043d\u044b\u043c. \u0421\u0442\u043e\u0438\u0442 \u0447\u0443\u0442\u044c \u0432\u043d\u0438\u043c\u0430\u0442\u0435\u043b\u044c\u043d\u0435\u0435 \u0441\u043b\u0435\u0434\u0438\u0442\u044c \u0437\u0430 \u0442\u0440\u0430\u0442\u0430\u043c\u0438.'
+      : '\u041f\u0440\u043e\u0433\u043d\u043e\u0437 \u0441\u043f\u043e\u043a\u043e\u0439\u043d\u044b\u0439: \u0435\u0441\u043b\u0438 \u0434\u0435\u0440\u0436\u0430\u0442\u044c \u0442\u0435\u043a\u0443\u0449\u0438\u0439 \u0442\u0435\u043c\u043f, \u043c\u0435\u0441\u044f\u0446 \u0437\u0430\u043a\u0440\u043e\u0435\u0442\u0441\u044f \u0431\u0435\u0437 \u0434\u0430\u0432\u043b\u0435\u043d\u0438\u044f.';
 
   return {
     month,
@@ -237,12 +237,12 @@ export function buildWeeklyReview(workspace: WorkspaceLike, now = new Date()): W
   const topCategory = [...categoryTotals.entries()].sort((left, right) => right[1] - left[1])[0] ?? null;
   const topMerchant = [...merchantTotals.entries()].sort((left, right) => right[1] - left[1])[0] ?? null;
   const summary = totalExpense === 0
-    ? 'There were no expenses in the last 7 days, so this week can be used as a clean starting point.'
+    ? '\u0417\u0430 \u043f\u043e\u0441\u043b\u0435\u0434\u043d\u0438\u0435 7 \u0434\u043d\u0435\u0439 \u0442\u0440\u0430\u0442 \u043d\u0435 \u0431\u044b\u043b\u043e \u2014 \u043d\u0435\u0434\u0435\u043b\u044e \u043c\u043e\u0436\u043d\u043e \u0441\u0447\u0438\u0442\u0430\u0442\u044c \u0447\u0438\u0441\u0442\u044b\u043c \u0441\u0442\u0430\u0440\u0442\u043e\u043c.'
     : deltaRatio > 15
-      ? `Spending accelerated this week: the biggest pressure came from ${topCategory?.[0] ?? 'your main category'}.`
+      ? `\u041d\u0430 \u044d\u0442\u043e\u0439 \u043d\u0435\u0434\u0435\u043b\u0435 \u0442\u0440\u0430\u0442\u044b \u0443\u0441\u043a\u043e\u0440\u0438\u043b\u0438\u0441\u044c. \u0411\u043e\u043b\u044c\u0448\u0435 \u0432\u0441\u0435\u0433\u043e \u0434\u0430\u0432\u0438\u0442 \u043a\u0430\u0442\u0435\u0433\u043e\u0440\u0438\u044f \u00ab${topCategory?.[0] ?? '\u043e\u0441\u043d\u043e\u0432\u043d\u044b\u0435 \u0442\u0440\u0430\u0442\u044b'}\u00bb.`
       : deltaRatio < -10
-        ? `Spending cooled down this week, especially in ${topCategory?.[0] ?? 'your main categories'}.`
-        : `The week looks steady: the largest share of spending came from ${topCategory?.[0] ?? 'your main categories'}.`;
+        ? `\u041d\u0430 \u044d\u0442\u043e\u0439 \u043d\u0435\u0434\u0435\u043b\u0435 \u0442\u0440\u0430\u0442\u044b \u0441\u043d\u0438\u0437\u0438\u043b\u0438\u0441\u044c, \u043e\u0441\u043e\u0431\u0435\u043d\u043d\u043e \u0432 \u00ab${topCategory?.[0] ?? '\u0433\u043b\u0430\u0432\u043d\u044b\u0445 \u043a\u0430\u0442\u0435\u0433\u043e\u0440\u0438\u044f\u0445'}\u00bb.`
+        : `\u041d\u0435\u0434\u0435\u043b\u044f \u0432\u044b\u0433\u043b\u044f\u0434\u0438\u0442 \u0440\u043e\u0432\u043d\u043e: \u043e\u0441\u043d\u043e\u0432\u043d\u0430\u044f \u0434\u043e\u043b\u044f \u0442\u0440\u0430\u0442 \u043f\u0440\u0438\u0448\u043b\u0430\u0441\u044c \u043d\u0430 \u00ab${topCategory?.[0] ?? '\u0433\u043b\u0430\u0432\u043d\u044b\u0435 \u043a\u0430\u0442\u0435\u0433\u043e\u0440\u0438\u0438'}\u00bb.`;
 
   return {
     period_start: start.toISOString(),

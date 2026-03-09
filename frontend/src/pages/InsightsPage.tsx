@@ -26,6 +26,7 @@ import {
 } from '../shared/ui/premium-kit';
 import { SegmentedControl } from '../shared/ui/premium';
 import { Skeleton } from '../shared/ui/Skeleton';
+import { UI_TEXT } from '../shared/i18n/ui';
 
 function GaugeCard({ amount, label, percent }: { amount: number; label: string; percent: number }) {
   const gradientId = useId();
@@ -57,26 +58,26 @@ function GaugeCard({ amount, label, percent }: { amount: number; label: string; 
 function getBudgetTone(status: BudgetStatus) {
   switch (status) {
     case 'exceeded':
-      return { badge: 'danger', fill: '#ff7d7d', label: 'Over limit' } as const;
+      return { badge: 'danger', fill: '#ff7d7d', label: '\u041f\u0435\u0440\u0435\u0440\u0430\u0441\u0445\u043e\u0434' } as const;
     case 'warning':
-      return { badge: 'warning', fill: '#f59e0b', label: 'Near limit' } as const;
+      return { badge: 'warning', fill: '#f59e0b', label: '\u0423 \u043b\u0438\u043c\u0438\u0442\u0430' } as const;
     case 'normal':
-      return { badge: 'success', fill: '#2fd39a', label: 'On track' } as const;
+      return { badge: 'success', fill: '#2fd39a', label: '\u0412 \u043d\u043e\u0440\u043c\u0435' } as const;
     default:
-      return { badge: 'neutral', fill: '#6f6bff', label: 'Not set' } as const;
+      return { badge: 'neutral', fill: '#6f6bff', label: '\u041d\u0435 \u0437\u0430\u0434\u0430\u043d' } as const;
   }
 }
 
 function formatBudgetFooter(remaining: number | null) {
   if (remaining == null) {
-    return 'Budget is not set';
+    return '\u041b\u0438\u043c\u0438\u0442 \u043d\u0435 \u0437\u0430\u0434\u0430\u043d';
   }
 
   if (remaining >= 0) {
-    return `Remaining ${formatMoney(remaining)}`;
+    return `\u041e\u0441\u0442\u0430\u043b\u043e\u0441\u044c ${formatMoney(remaining)}`;
   }
 
-  return `Over by ${formatMoney(Math.abs(remaining))}`;
+  return `\u041f\u0435\u0440\u0435\u0440\u0430\u0441\u0445\u043e\u0434 \u043d\u0430 ${formatMoney(Math.abs(remaining))}`;
 }
 
 export function InsightsPage() {
@@ -123,14 +124,14 @@ export function InsightsPage() {
   return (
     <div className="space-y-6">
       <ScreenHeader
-        eyebrow="Insights"
-        title="Monthly analytics"
-        description="One screen for trends, budgets, and recurring charges without extra noise."
+        eyebrow="\u0421\u0442\u0430\u0442\u0438\u0441\u0442\u0438\u043a\u0430"
+        title="\u0410\u043d\u0430\u043b\u0438\u0442\u0438\u043a\u0430 \u043c\u0435\u0441\u044f\u0446\u0430"
+        description="\u041e\u0434\u0438\u043d \u044d\u043a\u0440\u0430\u043d \u0434\u043b\u044f \u0442\u0440\u0435\u043d\u0434\u043e\u0432, \u043b\u0438\u043c\u0438\u0442\u043e\u0432 \u0438 \u043f\u043e\u0432\u0442\u043e\u0440\u044f\u044e\u0449\u0438\u0445\u0441\u044f \u0441\u043f\u0438\u0441\u0430\u043d\u0438\u0439 \u0431\u0435\u0437 \u043b\u0438\u0448\u043d\u0435\u0433\u043e \u0448\u0443\u043c\u0430."
         actions={(
           <>
             {segment === 'expense' ? (
               <button className="pill-button pill-button--ghost" onClick={() => openSheet('budget')} type="button">
-                Settings
+                \u041d\u0430\u0441\u0442\u0440\u043e\u0438\u0442\u044c
               </button>
             ) : null}
             <IconCircleButton onClick={() => openSheet(segment === 'expense' ? 'automation' : 'add')}>
@@ -143,8 +144,8 @@ export function InsightsPage() {
       <SegmentedControl
         onChange={setSegment}
         options={[
-          { label: 'Income', value: 'income' },
-          { label: 'Expenses', value: 'expense' },
+          { label: UI_TEXT.common.income, value: 'income' },
+          { label: '\u0420\u0430\u0441\u0445\u043e\u0434\u044b', value: 'expense' },
         ]}
         value={segment}
       />
@@ -153,9 +154,9 @@ export function InsightsPage() {
         <Skeleton className="h-[320px] w-full rounded-[28px]" />
       ) : (
         <HeroPanel
-          eyebrow="Main chart"
+          eyebrow="\u0413\u043b\u0430\u0432\u043d\u044b\u0439 \u0433\u0440\u0430\u0444\u0438\u043a"
           title={formatMoney(derived.total)}
-          description={`We are looking at ${formatMonthCaption(month)} and how ${segment === 'expense' ? 'expenses' : 'income'} behave week over week.`}
+          description={`\u0421\u043c\u043e\u0442\u0440\u0438\u043c \u043d\u0430 ${formatMonthCaption(month)} \u0438 \u0432\u0438\u0434\u0438\u043c, \u043a\u0430\u043a \u043d\u0435\u0434\u0435\u043b\u044f \u043a \u043d\u0435\u0434\u0435\u043b\u0435 \u0432\u0435\u0434\u0443\u0442 \u0441\u0435\u0431\u044f ${segment === 'expense' ? '\u0440\u0430\u0441\u0445\u043e\u0434\u044b' : '\u0434\u043e\u0445\u043e\u0434\u044b'}.`}
           actions={<StatusBadge tone={derived.trend >= 0 ? (segment === 'expense' ? 'danger' : 'success') : (segment === 'expense' ? 'success' : 'danger')}>{formatSignedPercent(derived.trend)}</StatusBadge>}
         >
           <div className="insights-bars mt-6">
@@ -177,9 +178,9 @@ export function InsightsPage() {
       {localMode && segment === 'expense' ? (
         <section className="space-y-4">
           <SectionHeader
-            eyebrow="Smart review"
-            title="What is happening with money"
-            description="Forecasts, weekly review, and merchant insights help you spot where the month is drifting."
+            eyebrow="\u0423\u043c\u043d\u044b\u0439 \u043e\u0431\u0437\u043e\u0440"
+            title="\u0427\u0442\u043e \u043f\u0440\u043e\u0438\u0441\u0445\u043e\u0434\u0438\u0442 \u0441 \u0434\u0435\u043d\u044c\u0433\u0430\u043c\u0438"
+            description="\u041f\u0440\u043e\u0433\u043d\u043e\u0437, \u043e\u0431\u0437\u043e\u0440 \u043d\u0435\u0434\u0435\u043b\u0438 \u0438 \u0438\u043d\u0441\u0430\u0439\u0442\u044b \u043f\u043e \u043f\u0440\u043e\u0434\u0430\u0432\u0446\u0430\u043c \u043f\u043e\u043c\u043e\u0433\u0430\u044e\u0442 \u0431\u044b\u0441\u0442\u0440\u043e \u0443\u0432\u0438\u0434\u0435\u0442\u044c, \u043a\u0443\u0434\u0430 \u0441\u043c\u0435\u0449\u0430\u0435\u0442\u0441\u044f \u043c\u0435\u0441\u044f\u0446."
           />
 
           {forecastQuery.isLoading || weeklyReviewQuery.isLoading || merchantInsightsQuery.isLoading ? (
@@ -190,15 +191,15 @@ export function InsightsPage() {
           ) : (
             <>
               <div className="stat-grid">
-                <PremiumStatTile hint="Projected expenses by month end" label="Spend forecast" tone={forecast?.status === 'risk' ? 'danger' : forecast?.status === 'attention' ? 'warning' : 'success'} value={formatMoney(forecast?.projected_expense ?? 0)} />
-                <PremiumStatTile hint="After expected charges" label="Month balance" tone={forecast && forecast.projected_balance < 0 ? 'danger' : 'accent'} value={formatMoney(forecast?.projected_balance ?? 0)} />
-                <PremiumStatTile hint="Change vs last week" label="Weekly review" tone={(weeklyReview?.delta_ratio ?? 0) > 10 ? 'danger' : (weeklyReview?.delta_ratio ?? 0) < -10 ? 'success' : 'neutral'} value={formatSignedPercent(weeklyReview?.delta_ratio ?? 0)} />
-                <PremiumStatTile hint="Most visible category" label="Top category" tone="neutral" value={weeklyReview?.top_category_name ?? 'No data'} />
+                <PremiumStatTile hint="\u041f\u0440\u043e\u0433\u043d\u043e\u0437 \u0440\u0430\u0441\u0445\u043e\u0434\u043e\u0432 \u043a \u043a\u043e\u043d\u0446\u0443 \u043c\u0435\u0441\u044f\u0446\u0430" label="\u041f\u0440\u043e\u0433\u043d\u043e\u0437 \u0442\u0440\u0430\u0442" tone={forecast?.status === 'risk' ? 'danger' : forecast?.status === 'attention' ? 'warning' : 'success'} value={formatMoney(forecast?.projected_expense ?? 0)} />
+                <PremiumStatTile hint="\u041f\u043e\u0441\u043b\u0435 \u043e\u0436\u0438\u0434\u0430\u0435\u043c\u044b\u0445 \u0441\u043f\u0438\u0441\u0430\u043d\u0438\u0439" label="\u0411\u0430\u043b\u0430\u043d\u0441 \u043c\u0435\u0441\u044f\u0446\u0430" tone={forecast && forecast.projected_balance < 0 ? 'danger' : 'accent'} value={formatMoney(forecast?.projected_balance ?? 0)} />
+                <PremiumStatTile hint="\u0418\u0437\u043c\u0435\u043d\u0435\u043d\u0438\u0435 \u043a \u043f\u0440\u043e\u0448\u043b\u043e\u0439 \u043d\u0435\u0434\u0435\u043b\u0435" label="\u041e\u0431\u0437\u043e\u0440 \u043d\u0435\u0434\u0435\u043b\u0438" tone={(weeklyReview?.delta_ratio ?? 0) > 10 ? 'danger' : (weeklyReview?.delta_ratio ?? 0) < -10 ? 'success' : 'neutral'} value={formatSignedPercent(weeklyReview?.delta_ratio ?? 0)} />
+                <PremiumStatTile hint="\u0421\u0430\u043c\u0430\u044f \u0437\u0430\u043c\u0435\u0442\u043d\u0430\u044f \u043a\u0430\u0442\u0435\u0433\u043e\u0440\u0438\u044f" label="\u0413\u043b\u0430\u0432\u043d\u0430\u044f \u043a\u0430\u0442\u0435\u0433\u043e\u0440\u0438\u044f" tone="neutral" value={weeklyReview?.top_category_name ?? UI_TEXT.common.noData} />
               </div>
 
               <SurfaceCard>
-                <p className="text-sm text-[var(--app-muted)]">Weekly review</p>
-                <p className="mt-2 text-base font-semibold text-white">{weeklyReview?.summary ?? 'There is not enough data for the weekly review yet.'}</p>
+                <p className="text-sm text-[var(--app-muted)]">\u041e\u0431\u0437\u043e\u0440 \u043d\u0435\u0434\u0435\u043b\u0438</p>
+                <p className="mt-2 text-base font-semibold text-white">{weeklyReview?.summary ?? '\u0414\u0430\u043d\u043d\u044b\u0445 \u0434\u043b\u044f \u043d\u0435\u0434\u0435\u043b\u044c\u043d\u043e\u0433\u043e \u043e\u0431\u0437\u043e\u0440\u0430 \u043f\u043e\u043a\u0430 \u043d\u0435 \u0445\u0432\u0430\u0442\u0430\u0435\u0442.'}</p>
                 {forecast ? <p className="mt-3 text-sm text-[var(--app-muted)]">{forecast.summary}</p> : null}
               </SurfaceCard>
             </>
@@ -208,9 +209,9 @@ export function InsightsPage() {
 
       <section className="space-y-4">
         <SectionHeader
-          eyebrow="Breakdown"
-          title={segment === 'expense' ? 'Expense structure' : 'Income structure'}
-          description="Large zones of influence become visible, so it is easier to see what really shapes the month."
+          eyebrow="\u0421\u0440\u0435\u0437\u044b"
+          title={segment === 'expense' ? '\u0421\u0442\u0440\u0443\u043a\u0442\u0443\u0440\u0430 \u0440\u0430\u0441\u0445\u043e\u0434\u043e\u0432' : '\u0421\u0442\u0440\u0443\u043a\u0442\u0443\u0440\u0430 \u0434\u043e\u0445\u043e\u0434\u043e\u0432'}
+          description="\u0421\u0440\u0430\u0437\u0443 \u0432\u0438\u0434\u043d\u043e \u043a\u0440\u0443\u043f\u043d\u044b\u0435 \u0437\u043e\u043d\u044b \u0432\u043b\u0438\u044f\u043d\u0438\u044f, \u043f\u043e\u044d\u0442\u043e\u043c\u0443 \u043f\u0440\u043e\u0449\u0435 \u043f\u043e\u043d\u044f\u0442\u044c, \u0447\u0442\u043e \u0438\u043c\u0435\u043d\u043d\u043e \u0444\u043e\u0440\u043c\u0438\u0440\u0443\u0435\u0442 \u043c\u0435\u0441\u044f\u0446."
         />
 
         {overviewQuery.isLoading ? (
@@ -219,7 +220,7 @@ export function InsightsPage() {
             <Skeleton className="h-32 w-full rounded-[26px]" />
           </div>
         ) : derived.breakdown.length === 0 ? (
-          <EmptyStateCard title="Not enough data yet" description="Add a few transactions this month and the structure and dynamics will appear here." />
+          <EmptyStateCard title="\u0414\u0430\u043d\u043d\u044b\u0445 \u043f\u043e\u043a\u0430 \u043d\u0435\u0434\u043e\u0441\u0442\u0430\u0442\u043e\u0447\u043d\u043e" description="\u0414\u043e\u0431\u0430\u0432\u044c \u043d\u0435\u0441\u043a\u043e\u043b\u044c\u043a\u043e \u043e\u043f\u0435\u0440\u0430\u0446\u0438\u0439 \u0432 \u044d\u0442\u043e\u043c \u043c\u0435\u0441\u044f\u0446\u0435, \u0438 \u0437\u0434\u0435\u0441\u044c \u043f\u043e\u044f\u0432\u044f\u0442\u0441\u044f \u0441\u0442\u0440\u0443\u043a\u0442\u0443\u0440\u0430 \u0438 \u0434\u0438\u043d\u0430\u043c\u0438\u043a\u0430." />
         ) : (
           <div className="space-y-3">
             {derived.breakdown.map((item) => (
@@ -237,9 +238,9 @@ export function InsightsPage() {
       {localMode && segment === 'expense' ? (
         <section className="space-y-4">
           <SectionHeader
-            eyebrow="Merchants"
-            title="Merchant insights"
-            description="See who drives the biggest share of your budget and where the average ticket is rising."
+            eyebrow="\u041f\u0440\u043e\u0434\u0430\u0432\u0446\u044b"
+            title="\u0418\u043d\u0441\u0430\u0439\u0442\u044b \u043f\u043e \u043f\u0440\u043e\u0434\u0430\u0432\u0446\u0430\u043c"
+            description="\u0421\u0440\u0430\u0437\u0443 \u0432\u0438\u0434\u043d\u043e, \u043a\u0442\u043e \u0441\u0438\u043b\u044c\u043d\u0435\u0435 \u0432\u0441\u0435\u0433\u043e \u0432\u043b\u0438\u044f\u0435\u0442 \u043d\u0430 \u0431\u044e\u0434\u0436\u0435\u0442 \u0438 \u0433\u0434\u0435 \u0440\u0430\u0441\u0442\u0451\u0442 \u0441\u0440\u0435\u0434\u043d\u0438\u0439 \u0447\u0435\u043a."
           />
 
           {merchantInsightsQuery.isLoading ? (
@@ -248,19 +249,19 @@ export function InsightsPage() {
               <Skeleton className="h-24 w-full rounded-[24px]" />
             </div>
           ) : merchantInsights.length === 0 ? (
-            <EmptyStateCard title="No merchant signal yet" description="Add several repeating purchases this month and TrackDen will highlight which merchants shape the spending pattern." />
+            <EmptyStateCard title="\u041f\u043e \u043f\u0440\u043e\u0434\u0430\u0432\u0446\u0430\u043c \u043f\u043e\u043a\u0430 \u043d\u0435\u0442 \u0441\u0438\u0433\u043d\u0430\u043b\u0430" description="\u0414\u043e\u0431\u0430\u0432\u044c \u0432 \u044d\u0442\u043e\u043c \u043c\u0435\u0441\u044f\u0446\u0435 \u043d\u0435\u0441\u043a\u043e\u043b\u044c\u043a\u043e \u043f\u043e\u0432\u0442\u043e\u0440\u044f\u044e\u0449\u0438\u0445\u0441\u044f \u043f\u043e\u043a\u0443\u043f\u043e\u043a, \u0438 TrackDen \u043f\u043e\u043a\u0430\u0436\u0435\u0442, \u043a\u0430\u043a\u0438\u0435 \u043f\u0440\u043e\u0434\u0430\u0432\u0446\u044b \u0444\u043e\u0440\u043c\u0438\u0440\u0443\u044e\u0442 \u0442\u0432\u043e\u0439 \u0440\u0438\u0442\u043c \u0442\u0440\u0430\u0442." />
           ) : (
             <div className="space-y-3">
               {merchantInsights.map((item) => (
                 <ListCard key={item.merchant_label}>
                   <ListRow
                     title={item.merchant_label}
-                    subtitle={`${item.transaction_count} transactions ? ${item.category_name ?? 'uncategorized'} ? last seen ${formatShortDateLabel(item.last_seen_at)}`}
+                    subtitle={`${item.transaction_count} \u043e\u043f\u0435\u0440\u0430\u0446\u0438\u0439 \u2022 ${item.category_name ?? '\u0431\u0435\u0437 \u043a\u0430\u0442\u0435\u0433\u043e\u0440\u0438\u0438'} \u2022 \u043f\u043e\u0441\u043b\u0435\u0434\u043d\u0438\u0439 \u0440\u0430\u0437 ${formatShortDateLabel(item.last_seen_at)}`}
                     trailing={(
                       <div className="text-right">
                         <p className="text-base font-semibold text-white">{formatMoney(item.total_amount)}</p>
                         <p className={clsx('mt-1 text-xs', item.delta_ratio == null ? 'text-[var(--app-muted)]' : item.delta_ratio > 0 ? 'text-[var(--app-danger)]' : 'text-[var(--app-success)]')}>
-                          {item.delta_ratio == null ? 'New this month' : `${item.delta_ratio > 0 ? '+' : ''}${Math.round(item.delta_ratio)}% vs previous month`}
+                          {item.delta_ratio == null ? '\u041d\u043e\u0432\u044b\u0439 \u0432 \u044d\u0442\u043e\u043c \u043c\u0435\u0441\u044f\u0446\u0435' : `${item.delta_ratio > 0 ? '+' : ''}${Math.round(item.delta_ratio)}% \u043a \u043f\u0440\u043e\u0448\u043b\u043e\u043c\u0443 \u043c\u0435\u0441\u044f\u0446\u0443`}
                         </p>
                       </div>
                     )}
@@ -275,10 +276,10 @@ export function InsightsPage() {
       {localMode && segment === 'expense' ? (
         <section className="space-y-4">
           <SectionHeader
-            eyebrow="Budgets"
-            title="Budget vs actual"
-            description="See where the plan is still healthy and where the month is already pressing against limits."
-            action={<button className="pill-button pill-button--ghost" onClick={() => openSheet('budget')} type="button">Configure</button>}
+            eyebrow={UI_TEXT.common.budgets}
+            title="\u041b\u0438\u043c\u0438\u0442 \u0438 \u0444\u0430\u043a\u0442"
+            description="\u0421\u043c\u043e\u0442\u0440\u0438, \u0433\u0434\u0435 \u043f\u043b\u0430\u043d \u0435\u0449\u0451 \u0441\u043f\u043e\u043a\u043e\u0435\u043d, \u0430 \u0433\u0434\u0435 \u043c\u0435\u0441\u044f\u0446 \u0443\u0436\u0435 \u0434\u0430\u0432\u0438\u0442 \u043d\u0430 \u043b\u0438\u043c\u0438\u0442\u044b."
+            action={<button className="pill-button pill-button--ghost" onClick={() => openSheet('budget')} type="button">{'\u041d\u0430\u0441\u0442\u0440\u043e\u0438\u0442\u044c'}</button>}
           />
 
           {budgetOverviewQuery.isLoading ? (
@@ -287,16 +288,16 @@ export function InsightsPage() {
               <Skeleton className="h-24 w-full rounded-[24px]" />
             </div>
           ) : !budgetOverview || budgetOverview.configured_count === 0 ? (
-            <EmptyStateCard title="Budgets are not set" description="Add an overall budget or category limits and TrackDen will show live progress through the month." />
+            <EmptyStateCard title="\u041b\u0438\u043c\u0438\u0442\u044b \u0435\u0449\u0451 \u043d\u0435 \u0437\u0430\u0434\u0430\u043d\u044b" description="\u0414\u043e\u0431\u0430\u0432\u044c \u043e\u0431\u0449\u0438\u0439 \u0431\u044e\u0434\u0436\u0435\u0442 \u0438\u043b\u0438 \u043b\u0438\u043c\u0438\u0442\u044b \u043f\u043e \u043a\u0430\u0442\u0435\u0433\u043e\u0440\u0438\u044f\u043c, \u0438 TrackDen \u043f\u043e\u043a\u0430\u0436\u0435\u0442 \u0436\u0438\u0432\u043e\u0439 \u043f\u0440\u043e\u0433\u0440\u0435\u0441\u0441 \u043f\u043e \u043c\u0435\u0440\u0435 \u043c\u0435\u0441\u044f\u0446\u0430." />
           ) : (
             <div className="space-y-3">
               {budgetOverview.overall.enabled ? (
                 <SurfaceCard>
                   <div className="flex items-start justify-between gap-3">
                     <div>
-                      <p className="text-sm text-[var(--app-muted)]">Overall budget</p>
+                      <p className="text-sm text-[var(--app-muted)]">\u041e\u0431\u0449\u0438\u0439 \u043b\u0438\u043c\u0438\u0442</p>
                       <p className="mt-2 text-2xl font-semibold tracking-[-0.04em] text-white">{formatMoney(budgetOverview.overall.spent)}</p>
-                      <p className="mt-2 text-sm text-[var(--app-muted)]">Limit {formatMoney(budgetOverview.overall.limit ?? 0)}</p>
+                      <p className="mt-2 text-sm text-[var(--app-muted)]">\u041b\u0438\u043c\u0438\u0442 {formatMoney(budgetOverview.overall.limit ?? 0)}</p>
                     </div>
                     <StatusBadge tone={getBudgetTone(budgetOverview.overall.status).badge}>{getBudgetTone(budgetOverview.overall.status).label}</StatusBadge>
                   </div>
@@ -323,7 +324,7 @@ export function InsightsPage() {
                       <div className="flex items-start justify-between gap-3">
                         <div>
                           <p className="text-base font-medium text-white">{item.category_name}</p>
-                          <p className="mt-1 text-sm text-[var(--app-muted)]">{formatMoney(item.spent)} ?? {formatMoney(item.limit ?? 0)}</p>
+                          <p className="mt-1 text-sm text-[var(--app-muted)]">{formatMoney(item.spent)} \u0438\u0437 {formatMoney(item.limit ?? 0)}</p>
                         </div>
                         <StatusBadge tone={tone.badge}>{tone.label}</StatusBadge>
                       </div>
@@ -341,7 +342,7 @@ export function InsightsPage() {
                   );
                 })
               ) : (
-                <EmptyStateCard title="Category budgets are not set" description="TrackDen already sees category spending. Add limits to turn that into actionable pressure signals." />
+                <EmptyStateCard title="\u041a\u0430\u0442\u0435\u0433\u043e\u0440\u0438\u0439\u043d\u044b\u0435 \u043b\u0438\u043c\u0438\u0442\u044b \u0435\u0449\u0451 \u043d\u0435 \u0437\u0430\u0434\u0430\u043d\u044b" description="TrackDen \u0443\u0436\u0435 \u0432\u0438\u0434\u0438\u0442 \u0440\u0430\u0441\u0445\u043e\u0434\u044b \u043f\u043e \u043a\u0430\u0442\u0435\u0433\u043e\u0440\u0438\u044f\u043c. \u0414\u043e\u0431\u0430\u0432\u044c \u043b\u0438\u043c\u0438\u0442\u044b, \u0447\u0442\u043e\u0431\u044b \u043f\u0440\u0435\u0432\u0440\u0430\u0442\u0438\u0442\u044c \u044d\u0442\u043e \u0432 \u043f\u043e\u043d\u044f\u0442\u043d\u044b\u0435 \u0441\u0438\u0433\u043d\u0430\u043b\u044b." />
               )}
             </div>
           )}
@@ -351,10 +352,10 @@ export function InsightsPage() {
       {localMode && segment === 'expense' ? (
         <section className="space-y-4">
           <SectionHeader
-            eyebrow="Subscriptions"
-            title="Fixed vs flexible spending"
-            description="Separate mandatory charges from normal spending so the month feels easier to read."
-            action={<button className="pill-button pill-button--ghost" onClick={() => openSheet('subscriptions')} type="button">Open</button>}
+            eyebrow={UI_TEXT.common.subscriptions}
+            title="\u0424\u0438\u043a\u0441\u0438\u0440\u043e\u0432\u0430\u043d\u043d\u044b\u0435 \u0438 \u0433\u0438\u0431\u043a\u0438\u0435 \u0442\u0440\u0430\u0442\u044b"
+            description="\u0420\u0430\u0437\u0434\u0435\u043b\u0438 \u043e\u0431\u044f\u0437\u0430\u0442\u0435\u043b\u044c\u043d\u044b\u0435 \u0441\u043f\u0438\u0441\u0430\u043d\u0438\u044f \u0438 \u043e\u0431\u044b\u0447\u043d\u044b\u0435 \u0442\u0440\u0430\u0442\u044b, \u0447\u0442\u043e\u0431\u044b \u043c\u0435\u0441\u044f\u0446 \u0447\u0438\u0442\u0430\u043b\u0441\u044f \u043f\u0440\u043e\u0449\u0435."
+            action={<button className="pill-button pill-button--ghost" onClick={() => openSheet('subscriptions')} type="button">{UI_TEXT.common.open}</button>}
           />
 
           {subscriptionOverviewQuery.isLoading ? (
@@ -363,13 +364,13 @@ export function InsightsPage() {
               <Skeleton className="h-24 w-full rounded-[24px]" />
             </div>
           ) : !subscriptionOverview ? (
-            <EmptyStateCard title="Not enough subscriptions yet" description="As the local-first history grows, this section will show a clearer layer of fixed monthly spending." />
+            <EmptyStateCard title="\u041f\u043e\u0434\u043f\u0438\u0441\u043e\u043a \u043f\u043e\u043a\u0430 \u043d\u0435\u0434\u043e\u0441\u0442\u0430\u0442\u043e\u0447\u043d\u043e" description="\u041f\u043e \u043c\u0435\u0440\u0435 \u0440\u043e\u0441\u0442\u0430 \u043b\u043e\u043a\u0430\u043b\u044c\u043d\u043e\u0439 \u0438\u0441\u0442\u043e\u0440\u0438\u0438 \u0437\u0434\u0435\u0441\u044c \u043f\u043e\u044f\u0432\u0438\u0442\u0441\u044f \u0431\u043e\u043b\u0435\u0435 \u044f\u0441\u043d\u044b\u0439 \u0441\u043b\u043e\u0439 \u0444\u0438\u043a\u0441\u0438\u0440\u043e\u0432\u0430\u043d\u043d\u044b\u0445 \u0442\u0440\u0430\u0442." />
           ) : (
             <div className="stat-grid">
-              <PremiumStatTile hint={`${subscriptionOverview.matched_this_month} matches this month`} label="Fixed" tone="accent" value={formatMoney(subscriptionOverview.fixed_spent)} />
-              <PremiumStatTile hint="Everything outside subscriptions" label="Flexible" tone="neutral" value={formatMoney(subscriptionOverview.flexible_spent)} />
-              <PremiumStatTile hint="Still expected before month end" label="To come" tone="warning" value={formatMoney(subscriptionOverview.upcoming_total)} />
-              <PremiumStatTile hint={`${subscriptionOverview.active_count} active subscriptions`} label="Monthly forecast" tone="success" value={formatMoney(subscriptionOverview.forecast_total)} />
+              <PremiumStatTile hint={`${subscriptionOverview.matched_this_month} \u0441\u043e\u0432\u043f\u0430\u0434\u0435\u043d\u0438\u0439 \u0432 \u043c\u0435\u0441\u044f\u0446\u0435`} label="\u0424\u0438\u043a\u0441\u0438\u0440\u043e\u0432\u0430\u043d\u043d\u043e\u0435" tone="accent" value={formatMoney(subscriptionOverview.fixed_spent)} />
+              <PremiumStatTile hint="\u0412\u0441\u0451, \u0447\u0442\u043e \u043d\u0435 \u043e\u0442\u043d\u043e\u0441\u0438\u0442\u0441\u044f \u043a \u043f\u043e\u0434\u043f\u0438\u0441\u043a\u0430\u043c" label="\u0413\u0438\u0431\u043a\u043e\u0435" tone="neutral" value={formatMoney(subscriptionOverview.flexible_spent)} />
+              <PremiumStatTile hint="\u0415\u0449\u0451 \u043e\u0436\u0438\u0434\u0430\u0435\u0442\u0441\u044f \u0434\u043e \u043a\u043e\u043d\u0446\u0430 \u043c\u0435\u0441\u044f\u0446\u0430" label="\u0415\u0449\u0451 \u0432\u043f\u0435\u0440\u0435\u0434\u0438" tone="warning" value={formatMoney(subscriptionOverview.upcoming_total)} />
+              <PremiumStatTile hint={`${subscriptionOverview.active_count} \u0430\u043a\u0442\u0438\u0432\u043d\u044b\u0445 \u043f\u043e\u0434\u043f\u0438\u0441\u043e\u043a`} label="\u041f\u0440\u043e\u0433\u043d\u043e\u0437 \u043c\u0435\u0441\u044f\u0446\u0430" tone="success" value={formatMoney(subscriptionOverview.forecast_total)} />
             </div>
           )}
         </section>
@@ -383,8 +384,8 @@ export function InsightsPage() {
           </>
         ) : (
           <>
-            <PremiumStatTile hint="Change relative to previous month" label="Trend" tone={derived.trend >= 0 ? (segment === 'expense' ? 'danger' : 'success') : (segment === 'expense' ? 'success' : 'danger')} value={formatSignedPercent(derived.trend)} />
-            <PremiumStatTile hint="Average volume across 4 weeks" label="Average week" tone="neutral" value={formatCompactMoney(derived.averagePerWeek)} />
+            <PremiumStatTile hint="\u0418\u0437\u043c\u0435\u043d\u0435\u043d\u0438\u0435 \u043a \u043f\u0440\u043e\u0448\u043b\u043e\u043c\u0443 \u043c\u0435\u0441\u044f\u0446\u0443" label="\u0422\u0440\u0435\u043d\u0434" tone={derived.trend >= 0 ? (segment === 'expense' ? 'danger' : 'success') : (segment === 'expense' ? 'success' : 'danger')} value={formatSignedPercent(derived.trend)} />
+            <PremiumStatTile hint="\u0421\u0440\u0435\u0434\u043d\u0438\u0439 \u043e\u0431\u044a\u0451\u043c \u043f\u043e 4 \u043d\u0435\u0434\u0435\u043b\u044f\u043c" label="\u0421\u0440\u0435\u0434\u043d\u044f\u044f \u043d\u0435\u0434\u0435\u043b\u044f" tone="neutral" value={formatCompactMoney(derived.averagePerWeek)} />
           </>
         )}
       </div>
